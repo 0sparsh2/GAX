@@ -27,7 +27,29 @@ def test_governance_receipts(tmp_path) -> None:
     assert summary["audit_correlation"]["all_correlated"] is True
 
 
-def test_recovery_probe_sets_proof_flag(tmp_path) -> None:
+def test_recovery_probe_sets_proof_flag(tmp_path, monkeypatch) -> None:
+    # CI has `gh` but often no GITHUB_TOKEN — stub list so retry succeeds offline.
+    from gax.adapters import exec_adapter
+
+    def _gh_pr_list(args: dict, *, tenant_id: str | None = None) -> dict:
+        if "repo" not in args:
+            raise KeyError("repo")
+        return {
+            "items": [
+                {
+                    "number": 1,
+                    "title": "[mock] Sample PR",
+                    "state": "OPEN",
+                    "url": "https://github.com/octocat/Hello-World/pull/1",
+                    "author": "mock-user",
+                    "draft": False,
+                }
+            ],
+        }
+
+    monkeypatch.setattr(exec_adapter, "_gh_available", lambda: True)
+    monkeypatch.setattr(exec_adapter, "_gh_pr_list", _gh_pr_list)
+
     reg = Registry()
     transcript = JsonlLog(tmp_path / "transcript.jsonl")
     receipt = RunReceipt(
