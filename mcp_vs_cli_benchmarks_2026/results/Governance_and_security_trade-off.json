@@ -1,0 +1,20 @@
+{
+  "name": "Governance and security trade-off",
+  "category": "Enterprise",
+  "summary": "MCP wins multi-tenant deployments: OAuth 2.1, per-user tokens, scoped tools, centralized audit. Raw CLI inherits ambient GH_TOKEN and shell history. Scalekit and enterprise posts recommend CLI for solo dev inner-loop and MCP (or governed gateways) for org-wide agents. CLI Agent Spec and agent-native CLI designs add structured errors and contracts without MCP overhead. GAX targets both: caps + sidecar auth + envelope without schema bloat.",
+  "key_metrics": {
+    "mcp_oauth": "OAuth 2.1 per user",
+    "cli_risk": "ambient credentials, broad shell",
+    "gax_controls": "cap token, tenant_id, audit_id, policy.yaml",
+    "scalekit_recommendation": "CLI solo; MCP/gateway enterprise"
+  },
+  "methodology_notes": "Synthesis from Scalekit decision framework, Stacklok/Firecrawl enterprise framing, MCP specification auth extensions. Not a single quantitative benchmark.",
+  "primary_sources": [
+    {"title": "Scalekit MCP vs CLI", "url": "https://www.scalekit.com/blog/mcp-vs-cli-use"},
+    {"title": "Stacklok MCP vs CLI security", "url": "https://stacklok.com/blog/mcp-vs-cli-tools-why-security-changes-the-answer/"},
+    {"title": "MCP specification", "url": "https://modelcontextprotocol.io/"}
+  ],
+  "confidence_level": "medium",
+  "implications_for_gax": "GAX is positioned for outer-loop: gax auth login device flow, cap-from-oauth, macaroons, OTEL audit export. Eval scores governance 0.95 for GAX vs 0.2 CLI vs 0.7 simulated MCP.",
+  "corrections_to_repo_docs": "None."
+}

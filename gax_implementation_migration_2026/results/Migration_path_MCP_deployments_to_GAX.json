@@ -1,0 +1,26 @@
+{
+  "name": "Migration path MCP deployments to GAX",
+  "category": "migration",
+  "current_usage_summary": "Migration is incremental wrapping, not rip-and-replace. Organizations with production MCP servers preserve OAuth investments and HTTP endpoints; GAX adds gaxd as policy/audit/projection layer. Model-facing interface shrinks to gax CLI or thin MCP meta-server. Dual-run period: same backend handler serves MCP tools/call and GAX /invoke via adapter map.",
+  "typical_stack": "Existing: remote MCP on ACA/K8s. Target: gaxd + manifest repo + optional thin MCP bridge for Claude/Cursor. Tools: manifest generator from MCP tool schemas; integration tests comparing envelope outputs.",
+  "auth_and_identity_model": "Import OAuth tokens from MCP client vault into gaxd tenant vault. Caps derived from former tool scopes—map tools/list scopes to command allowlists. Session: user SSO → gax auth login → cap-mint with commands mirroring previously enabled MCP tools.",
+  "context_and_token_behavior": "Immediate win: remove tools/list from agent context; only gax help line in rules. MCP bridge exposes 3 meta-tools vs 40—same as Code Mode migration path.",
+  "operational_pain_points": "Maintaining dual interfaces during migration. Schema drift between MCP tool JSON Schema and GAX manifest. Versioning command@1.0.0 vs MCP tool name changes.",
+  "developer_experience_friction": "ISV must publish manifests; consumers update skills. Testing matrix doubles temporarily.",
+  "gax_mapping": "Direct: each MCP tool → manifest command + mcp adapter. Intent-grouped MCP tools map 1:1. Code Mode MCP → native gax search/execute over registry.",
+  "migration_phases": "Phase 0 inventory: tools/list export, token cost measure. Phase 1 shadow invoke: gaxd calls MCP, log diff. Phase 2 pilot team: mcp.json only gax-bridge. Phase 3 policy: caps per role. Phase 4 decommission direct MCP URLs from clients. Phase 5 ACSP spec publication for native host support (optional long-term).",
+  "adapter_or_bridge_strategy": "mcp_bridge adapter in gaxd: spawns or HTTP to existing server, translates invoke. Auto-manifest from MCP schema JSON (roadmap). For stdio servers, gaxd manages subprocess pool—replaces IDE spawning N processes.",
+  "breaking_changes_and_mitigations": "MCP Apps/elicitation: keep legacy MCP channel for UI until GAX extension. Custom clients hardcoding tool names: alias registry. OAuth client IDs may change when token custody moves to gaxd—document re-consent.",
+  "infrastructure_changes": "Deploy gaxd; network allow MCP localhost only from gaxd; rotate secrets into vault. CI validates manifests on PR.",
+  "deployment_topology": "gaxd colocated in same K8s namespace as MCP server initially; later gaxd centralizes multiple MCP backends.",
+  "adoption_drivers": "CISO mandate for per-action audit; platform team reduces MCP server count exposed to clients.",
+  "adoption_blockers": "Anthropic directory visibility tied to MCP not GAX. Sunk cost in MCP Apps UX.",
+  "adoption_timeline_estimate": "Technical dual-run: 3–6 months per integrator; org-wide cutover 12–24 months.",
+  "historical_parallel": "gRPC gateway in front of REST microservices during service mesh adoption.",
+  "primary_sources": [
+    {"title": "research/03-architecture.md GAX adapter model", "url": "file:///Users/sparshnagpal/Desktop/projects/MCP%20vs%20CLI/research/03-architecture.md"},
+    {"title": "research/06-implementation-roadmap.md MCP bridge", "url": "file:///Users/sparshnagpal/Desktop/projects/MCP%20vs%20CLI/research/06-implementation-roadmap.md"},
+    {"title": "MCP specification transports", "url": "https://modelcontextprotocol.io/"}
+  ],
+  "uncertain": []
+}

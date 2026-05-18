@@ -1,0 +1,98 @@
+# Deep research: GAX implementation & migration (2026)
+field_categories:
+  - category: Identity
+    fields:
+      - name: name
+        description: Display name of the research item
+        detail_level: brief
+        required: true
+      - name: category
+        description: Segment bucket (mcp_usage, cli_usage, migration, infra, adoption)
+        detail_level: brief
+        required: true
+
+  - category: Current state
+    fields:
+      - name: current_usage_summary
+        description: How practitioners use this pattern with agents today
+        detail_level: detailed
+        required: true
+      - name: typical_stack
+        description: Tools, hosts, transports, config files involved
+        detail_level: detailed
+        required: true
+      - name: auth_and_identity_model
+        description: How users/tenants authenticate and how credentials flow
+        detail_level: detailed
+        required: true
+      - name: context_and_token_behavior
+        description: What enters the model context; token/latency implications
+        detail_level: detailed
+        required: true
+
+  - category: Pain points
+    fields:
+      - name: operational_pain_points
+        description: Ops, security, reliability issues teams report
+        detail_level: detailed
+        required: true
+      - name: developer_experience_friction
+        description: What slows builders and agent authors
+        detail_level: detailed
+        required: true
+
+  - category: GAX migration
+    fields:
+      - name: gax_mapping
+        description: Which GAX planes/components replace current pieces
+        detail_level: detailed
+        required: true
+      - name: migration_phases
+        description: Ordered steps from current state to GAX (pilot → prod)
+        detail_level: detailed
+        required: true
+      - name: adapter_or_bridge_strategy
+        description: How existing MCP servers or CLIs are wrapped without rewrite
+        detail_level: detailed
+        required: true
+      - name: breaking_changes_and_mitigations
+        description: What breaks for users/agents and how to soften it
+        detail_level: detailed
+        required: true
+
+  - category: Infrastructure
+    fields:
+      - name: infrastructure_changes
+        description: New/changed services (gaxd, vault, policy, audit, CI)
+        detail_level: detailed
+        required: true
+      - name: deployment_topology
+        description: Local sidecar vs hosted vs per-tenant patterns
+        detail_level: detailed
+        required: true
+
+  - category: Adoption
+    fields:
+      - name: adoption_drivers
+        description: Who benefits and why they would switch
+        detail_level: detailed
+        required: true
+      - name: adoption_blockers
+        description: Inertia, ecosystem lock-in, cost, org politics
+        detail_level: detailed
+        required: true
+      - name: adoption_timeline_estimate
+        description: Realistic horizon for solo dev vs enterprise (with rationale)
+        detail_level: brief
+        required: true
+      - name: historical_parallel
+        description: Prior tech shift that rhymes (e.g. service mesh, OAuth for APIs)
+        detail_level: brief
+        required: false
+
+  - category: Evidence
+    fields:
+      - name: primary_sources
+        description: List of {title, url} evidence objects
+        detail_level: detailed
+        required: true

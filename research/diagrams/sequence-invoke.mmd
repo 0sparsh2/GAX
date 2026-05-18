@@ -1,0 +1,19 @@
+sequenceDiagram
+  participant A as Agent / LLM
+  participant C as gax CLI
+  participant D as gaxd
+  participant P as Policy
+  participant X as Adapter
+  participant L as Audit log
+
+  A->>C: gax gh.pr.list --surface model
+  C->>D: POST /invoke + GAX-Capability
+  D->>D: Verify cap + tenant
+  D->>P: Allow command?
+  P-->>D: allow
+  D->>L: audit_id created
+  D->>X: execute(args)
+  X-->>D: raw result
+  D->>D: validate schema + project
+  D-->>C: envelope JSON
+  C-->>A: stdout

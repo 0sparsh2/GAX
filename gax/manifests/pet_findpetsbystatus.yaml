@@ -1,0 +1,19 @@
+command: pet.findpetsbystatus
+version: 1.0.0
+description: Find pets by status
+category: pet
+adapter: mock
+required_scopes:
+- pet:read
+side_effects: read
+idempotent: true
+input_schema:
+  type: object
+  properties:
+    status:
+      type: string
+      description: ''
+  required:
+  - status
+output_schema:
+  type: object

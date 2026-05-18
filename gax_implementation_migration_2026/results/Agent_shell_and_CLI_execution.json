@@ -1,0 +1,26 @@
+{
+  "name": "Agent shell and CLI execution",
+  "category": "cli_usage",
+  "current_usage_summary": "Coding agents expose a shell/run_terminal_cmd capability as the default integration path for local work: git, npm test, gh pr, docker, kubectl. The model constructs command strings; the host executes in a sandbox or user workspace with optional approval gates. Output is stdout/stderr text (sometimes JSON via flags like gh --json). Rules files (AGENTS.md, .cursor/rules) encode conventions: prefer non-interactive flags, use --json, avoid pagers. This is the dominant pattern for inner-loop development because CLIs are mature, composable via pipes, and add minimal schema overhead.",
+  "typical_stack": "Cursor Agent / Claude Code / Codex CLI / CI agents (GitHub Actions with cursor-agent or claude -p). Tools: built-in bash, read_file, grep. Credentials: ~/.config/gh hosts.yml, AWS_PROFILE, kubeconfig, .env files—ambient on the machine running the agent. No standard envelope—agents parse text or JSON heuristically.",
+  "auth_and_identity_model": "Identity is the OS user running the agent. CLIs use their own auth (gh auth login, aws sso login, gcloud auth). Agents inherit full power of that login—no per-invocation attenuation. CI uses long-lived tokens in secrets. Multi-tenant SaaS from a shared agent host is an anti-pattern with raw shell.",
+  "context_and_token_behavior": "Low upfront cost: no tool schemas except brief rules mentioning available CLIs. Per-turn cost is command output size—unbounded logs can blow context. Agents often chain pipes (git log | head) to trim. Failures return exit codes but interpretation is model-dependent unless documented in rules.",
+  "operational_pain_points": "Arbitrary command execution risk (rm -rf, curl | bash). Weak audit—shell history incomplete, no correlation id across agent sessions. Non-reproducible invocations (model phrasing varies). Secret leakage via env in logs. Compliance teams cannot allow production SaaS access from developer laptops' ambient gh tokens.",
+  "developer_experience_friction": "Parsing fragile for non-JSON CLIs. Each CLI different flags/help style. Composing across SaaS boundaries needs many CLIs installed. Teaching agents via rules is manual per repo.",
+  "gax_mapping": "Replace shell strings with `gax <registered-command>` for governed paths; keep raw shell only for truly local file ops if policy allows. exec adapter in prototype runs gh with mapped args—same binary, governed gateway. GAX_CAP replaces ambient authority for those commands. envelope v1 + surface=model gives predictable parsing. --jq in gaxd replaces pipe chains for registered reads.",
+  "migration_phases": "1) Inventory high-risk/high-value CLI uses in agent logs. 2) Register manifests (gh.pr.list, aws.s3.ls, …). 3) Update AGENTS.md: 'Use gax for GitHub/AWS; never gh/aws directly.' 4) CI mints short-TTL caps from OIDC workload identity. 5) Block direct gh in sandbox via allowlisted shell wrapper.",
+  "adapter_or_bridge_strategy": "exec adapter: manifest declares argv template + JSON output parser for CLI --json. Gradual: one manifest per subcommand cluster. For CLIs without JSON, add jq/python transform in adapter layer inside gaxd (not in model context).",
+  "breaking_changes_and_mitigations": "Pipes and shell grammar lost for migrated commands—mitigate with gax plan YAML DAG and in-daemon jq. Power users lose ad-hoc awk—mitigate with registered 'escape hatch' commands under stricter caps or break-glass audit.",
+  "infrastructure_changes": "gaxd on dev machine (launchd) + CI gaxd sidecar. Policy repo defining allowed commands per role. Secret migration from .env to tenant vault referenced only by gaxd.",
+  "deployment_topology": "Local: gaxd localhost, caps from `gax auth cap-mint` after SSO (roadmap). CI: ephemeral cap per job from OIDC→gaxd token exchange. No agent host changes if shell invokes gax binary.",
+  "adoption_drivers": "Security teams get audit_id + least-privilege without banning agents. Developers keep mental model of short commands. Token savings vs MCP for same SaaS operations.",
+  "adoption_blockers": "Developers trust pipes and muscle memory. gaxd another daemon to run. Until coverage complete, hybrid rules confuse the model ('sometimes gh sometimes gax').",
+  "adoption_timeline_estimate": "Security-mandated teams: 12–24 months for CI/CD and shared commands; solo devs may never migrate low-risk local git if not required.",
+  "historical_parallel": "sudo/runas wrappers around shell—familiar commands, centralized policy enforcement.",
+  "primary_sources": [
+    {"title": "Cursor CLI using agents (shell, MCP)", "url": "https://cursor.com/docs/cli/using"},
+    {"title": "CLI design for AI agents (Joel Claw)", "url": "https://joelclaw.com/cli-design-for-ai-agents"},
+    {"title": "CLI Agent Spec", "url": "https://github.com/cli-agent-spec/cli-agent-spec"}
+  ],
+  "uncertain": []
+}

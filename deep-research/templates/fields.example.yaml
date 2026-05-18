@@ -1,0 +1,31 @@
+# Example field schema — copy to <topic_slug>/fields.yaml and extend.
+# JSON results must use FLAT top-level keys matching every field "name" below.
+field_categories:
+  - category: Basic Info
+    fields:
+      - name: name
+        description: Display name of the item
+        detail_level: brief
+        required: true
+      - name: category
+        description: Segment / bucket
+        detail_level: brief
+        required: true
+      - name: official_url
+        description: Main doc or product URL
+        detail_level: brief
+        required: false
+
+  - category: Technical Features
+    fields:
+      - name: summary
+        description: What it does regarding the research topic
+        detail_level: detailed
+        required: true
+
+  - category: Market Positioning
+    fields:
+      - name: primary_sources
+        description: List of {title, url} evidence objects
+        detail_level: detailed
+        required: true

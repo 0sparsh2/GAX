@@ -1,0 +1,27 @@
+{
+  "name": "Enterprise MCP infrastructure",
+  "category": "infra",
+  "current_usage_summary": "Enterprises deploy MCP servers as containerized HTTP services (Azure Container Apps, K8s ingress) with OAuth 2.1 tied to Entra ID/Okta. Patterns from Microsoft ISE: validate tokens at server, On-Behalf-Of flows, avoid per-request IdP round trips. Migration narratives (Scalekit, Okta blog) push API keys → OAuth for AI agents with short-lived tokens and scope limits. mcp-oauth libraries standardize provider plugins. Security reviews focus on DCR, PKCE, token storage, and which SaaS data exfiltration paths MCP enables.",
+  "typical_stack": "Identity: Entra ID, Okta, Keycloak. Hosting: ACA/K8s + WAF. MCP servers per domain (data, IT ops, CRM). Clients: Claude Enterprise, Cursor Business, custom agents. Observability: server access logs, IdP sign-in logs—rarely unified agent-action audit. API gateways sometimes front MCP; debate whether auth at gateway vs server (Microsoft favors server-embedded for latency).",
+  "auth_and_identity_model": "Human SSO → OAuth tokens → MCP server validates JWT/scopes per tool. M2M agents use client credentials or token exchange. Service accounts discouraged; OAuth 2.1 M2M patterns emerging for agent-to-agent. STDIO MCP discouraged in enterprise—HTTP only for central policy.",
+  "context_and_token_behavior": "Less visible to infra teams—owned by AI platform team. Enterprises may mandate tool search/programmatic patterns on client side. Large internal OpenAPI surfaces may adopt Code Mode-style servers.",
+  "operational_pain_points": "Provisioning MCP servers per team; certificate rotation; token vault compliance. Lack of standard audit event for 'agent X called tool Y with args hash Z'. Policy engines (OPA) not MCP-native—custom per server.",
+  "developer_experience_friction": "Long security review per MCP server. DCR registration friction across environments. Duplicating corporate API gateways already solved authZ for REST.",
+  "gax_mapping": "gaxd becomes enterprise control plane: OPA/Rego bundles (roadmap) replace ad hoc server-side checks; tenant vault holds OAuth refresh tokens; every invoke emits audit_id to SIEM. MCP servers demote to adapters behind gaxd or fade as thin facades. SPIFFE for gaxd workload identity (Phase 3 roadmap).",
+  "migration_phases": "1) Deploy hosted gaxd in security enclave. 2) Wrap approved MCP servers as adapters; block direct employee MCP to SaaS. 3) Generate manifests from internal OpenAPI catalog. 4) Issue caps via SSO portal (self-service 'request Jira read cap'). 5) Deprecate standalone MCP except partner UI tools.",
+  "adapter_or_bridge_strategy": "Enterprise integration bus: existing MCP investments wrapped, not rewritten. Okta/Entra token exchange into gaxd vault on login. Policy as code in Git synced to gaxd.",
+  "breaking_changes_and_mitigations": "Employees lose arbitrary MCP installs—mitigate curated marketplace feeding gax manifests. Latency add of gaxd hop—mitigate co-locate gaxd with adapters in same region/VPC.",
+  "infrastructure_changes": "New services: gaxd cluster, vault, policy repo, audit pipeline (JSONL → Kafka → SIEM). Network: agents reach gaxd, gaxd reaches SaaS APIs—no direct laptop→production SaaS. IAM: new roles cap-mint-admin vs cap-user.",
+  "deployment_topology": "Hub: multi-tenant hosted gaxd per business unit. Spoke: optional edge gaxd for dev. High availability, regional. Compare to API management layer (Apigee/Kong) but agent-native.",
+  "adoption_drivers": "SOC2-friendly audit_id per action. Central revocation (cap TTL + kill switch). Uniform policy across Claude/Cursor/custom agents without reimplementing per client.",
+  "adoption_blockers": "MCP already approved in 2025 security reviews—re-approval for GAX. Vendor doesn't ship gaxd—internal build burden. Platform vendors may not expose cap injection.",
+  "adoption_timeline_estimate": "Fortune 500 pilot: 18–30 months after gaxd enterprise GA; regulated industries may mandate faster if breach traced to ambient CLI tokens.",
+  "historical_parallel": "API Management gateways (2010s): centralized OAuth, rate limits, analytics for REST—GAX is APIM for agent invocations.",
+  "primary_sources": [
+    {"title": "Microsoft ISE secure MCP on Azure ACA", "url": "https://devblogs.microsoft.com/ise/aca-secure-mcp-server-oauth21-azure-ad/"},
+    {"title": "Scalekit API keys to OAuth for MCP", "url": "https://www.scalekit.com/blog/migrating-from-api-keys-to-oauth-mcp-servers"},
+    {"title": "Okta MCP Server announcement", "url": "https://developer.okta.com/blog/2025/09/22/okta-mcp-server"},
+    {"title": "giantswarm/mcp-oauth library", "url": "https://github.com/giantswarm/mcp-oauth"}
+  ],
+  "uncertain": []
+}

@@ -1,0 +1,26 @@
+{
+  "name": "Migration path CLI workflows to GAX",
+  "category": "migration",
+  "current_usage_summary": "CLI migration is bottom-up: wrap the 20 commands agents actually run (from shell logs), not entire gh/aws CLIs. Prototype uses exec adapter mapping gh.pr.list to `gh pr list --json …`. Agents switch from `run_terminal_cmd('gh pr list …')` to `gax gh.pr.list --surface model`. Governance uplift is the reason to migrate—token savings secondary vs MCP but still real vs naive MCP.",
+  "typical_stack": "Start: AGENTS.md rules + shell. Target: gax CLI + gaxd + manifests in git. CI: OIDC → cap mint → gax in pipeline. Standards overlap: CLI Agent Spec envelope {ok,data,error} ≈ GAX envelope v1.",
+  "auth_and_identity_model": "Move from ambient GITHUB_TOKEN to vault-stored token only gaxd reads; agent holds GAX_CAP JWT with command allowlist and TTL. Device flow login (roadmap) for developers. CI uses workload identity federation.",
+  "context_and_token_behavior": "Structured envelope ends fragile stdout parsing. surface=model caps rows/fields. Agents stop seeing 500-line gh output.",
+  "operational_pain_points": "Incomplete manifest coverage forces fallback shell—undermines policy. gh CLI updates may break exec templates.",
+  "developer_experience_friction": "Writing manifests for irregular CLIs (interactive, TUI). Testing manifests in CI.",
+  "gax_mapping": "exec/http/mock adapters; registry YAML; policy allowlist; audit.jsonl; projection layer—all in prototype gax/ package.",
+  "migration_phases": "1) Log analysis → top commands. 2) Manifest + exec adapter. 3) AGENTS.md mandate. 4) Pre-commit or sandbox wrapper blocks raw gh. 5) Expand to aws/kubectl via OpenAPI generator. 6) plan executor replaces multi-step shell scripts.",
+  "adapter_or_bridge_strategy": "exec adapter with argv templates; optional wrapper scripts checked into repo. For JSON-less CLIs, adapter runs jq transform inside gaxd. CLI Agent Spec compliant CLIs need thinner manifests.",
+  "breaking_changes_and_mitigations": "Loss of pipe composition—gax plan + jq flag. Muscle memory—provide `gax` completions and doc parity with gh help.",
+  "infrastructure_changes": "gaxd on dev laptops; secrets removed from agent-visible .env; audit ship to central store.",
+  "deployment_topology": "Identical command names local and CI; caps differ by TTL and scope.",
+  "adoption_drivers": "Security bans ambient tokens in agent sandboxes. Predictable JSON for evals/benchmarks.",
+  "adoption_blockers": "Low friction of raw shell for solo devs. 'Good enough' gh --json.",
+  "adoption_timeline_estimate": "Mandatory for enterprise CI agents in 12–18 months; optional for local git indefinitely.",
+  "historical_parallel": "Moving from shell mysql to ORM/query API—less flexible, safer and measurable.",
+  "primary_sources": [
+    {"title": "CLI Agent Spec envelope", "url": "https://github.com/cli-agent-spec/cli-agent-spec"},
+    {"title": "agent-native-cli standard", "url": "https://agents365-ai.github.io/agent-native-cli/"},
+    {"title": "gax prototype manifests", "url": "file:///Users/sparshnagpal/Desktop/projects/MCP%20vs%20CLI/gax/manifests/"}
+  ],
+  "uncertain": []
+}

@@ -1,0 +1,15 @@
+name: pr-inspect-demo
+description: List PRs then view the first (template args from prior step)
+surface: model
+steps:
+  - id: list
+    command: gh.pr.list
+    args:
+      repo: octocat/Hello-World
+      limit: 5
+      state: open
+  - id: view
+    command: gh.pr.view
+    args:
+      repo: octocat/Hello-World
+      number: "{{ steps.list.data.items[0].number }}"

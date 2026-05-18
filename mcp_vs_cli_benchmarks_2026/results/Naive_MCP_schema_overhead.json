@@ -1,0 +1,24 @@
+{
+  "name": "Naive MCP schema overhead",
+  "category": "Mechanism",
+  "summary": "Naive MCP clients inject full tools/list JSON Schema into every agent turn. GitHub surfaces differ: Copilot MCP (~43 tools) drives ~28k-44k tokens on simple tasks; the larger github-mcp-server (~93 tools) reports ~55k tokens idle before work. Stacking servers (e.g. three integrations) can consume ~143k tokens (~72% of a 200k window) before the first user question.",
+  "key_metrics": {
+    "github_copilot_mcp_tools": 43,
+    "tokens_per_simple_task_copilot_mcp": 44026,
+    "github_mcp_server_tools": 93,
+    "tokens_idle_93_tool_server": 55000,
+    "three_service_stack_tokens": 143000,
+    "firecrawl_four_servers_tokens": "150000+",
+    "mechanism": "Full tool schema injection each turn"
+  },
+  "methodology_notes": "Mechanism analysis from Scalekit per-task measures, OnlyCLI idle registration counts, Firecrawl multi-server synthesis, Anthropic advanced-tool-use examples. Not all figures from a single controlled n; treat server variant as a first-class variable.",
+  "primary_sources": [
+    {"title": "Scalekit MCP vs CLI blog", "url": "https://www.scalekit.com/blog/mcp-vs-cli-use"},
+    {"title": "OnlyCLI MCP Token Trap", "url": "https://onlycli.github.io/OnlyCLI/blog/mcp-token-cost-benchmark/"},
+    {"title": "Firecrawl MCP vs CLI 2026", "url": "https://www.firecrawl.dev/blog/mcp-vs-cli"},
+    {"title": "Anthropic Advanced Tool Use", "url": "https://www.anthropic.com/engineering/advanced-tool-use"}
+  ],
+  "confidence_level": "high",
+  "implications_for_gax": "GAX must never preload full registries into context. Manifest index + gax doc/search targets ~80-250 tokens per discovery call. MCP servers should be wrapped as GAX adapters so schemas stay in gaxd, not the LLM transcript.",
+  "corrections_to_repo_docs": "research/01: split 43-tool vs 93-tool figures; avoid single 44k-55k range without labels."
+}

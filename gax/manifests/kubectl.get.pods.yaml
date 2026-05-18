@@ -1,0 +1,20 @@
+command: kubectl.get.pods
+version: "1.0.0"
+description: List pods in namespace (mock unless kubectl configured)
+category: kubernetes
+adapter: mock
+required_scopes:
+  - k8s:pods:read
+side_effects: read
+idempotent: true
+input_schema:
+  type: object
+  properties:
+    namespace:
+      type: string
+      default: default
+output_schema:
+  type: object
+  properties:
+    items:
+      type: array

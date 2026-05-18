@@ -1,0 +1,27 @@
+{
+  "name": "MCP context optimization layer",
+  "category": "mcp_usage",
+  "current_usage_summary": "Industry converged on fixing MCP token cost without abandoning protocol: (1) Tool Search / defer_loading—load tool defs on demand (~85% reduction, Claude Code 2.1.7+). (2) Programmatic tool calling—agent writes code in sandbox to call tools, filter results, only final output in context (~37% reduction). (3) Code Mode—two tools search/execute over OpenAPI (~99.9% vs naive MCP for Cloudflare-scale APIs). Insight: overhead is exposure policy, not MCP wire format. GAX thesis aligns: lazy discovery + projection + in-daemon processing mirror these patterns with CLI ergonomics.",
+  "typical_stack": "Anthropic betas: tool_search, code_execution_20260120. Cloudflare @cloudflare/codemode + Workers sandbox. Claude Code config enables deferred MCP tools. Skills teach orchestration atop lean tool surface.",
+  "auth_and_identity_model": "Unchanged from base MCP—optimization is client-side. Sandboxes need isolated credentials injection same as MCP server auth.",
+  "context_and_token_behavior": "Before: 50 tools ≈ 77K tokens → after tool search ≈ 8.7K. Programmatic calling prevents intermediate JSON in chat. Code Mode: ~1K tokens for 2500 endpoints. Accuracy improvements reported when noise reduced (Opus 4 selection 49%→74%).",
+  "operational_pain_points": "Sandbox hosting cost and security review. Not all MCP clients implement tool search yet—fragmented savings. Debugging harder when logic runs in generated code.",
+  "developer_experience_friction": "Server authors must still design for code orchestration (return composable data). Two mental models: classic tools vs code mode.",
+  "gax_mapping": "GAX bakes optimization into protocol defaults: registry in gaxd (not context), `gax search/doc`, `surface=model` truncation, `--jq` and `gax plan` in daemon. Equivalent to 'always on' tool search + programmatic post-processing without requiring JS sandbox in client—optional plan executor in gaxd.",
+  "migration_phases": "Teams already on optimized MCP: migrate to GAX for governance delta, not token delta—pitch caps/audit. Teams on naive MCP: GAX + thin MCP shim beats raw 40-tool schema dump.",
+  "adapter_or_bridge_strategy": "Code Mode MCP server can be implemented AS gaxd meta-commands (search schema registry, execute registered HTTP adapter). Manifest generator from OpenAPI (roadmap) is GAX-native Code Mode.",
+  "breaking_changes_and_mitigations": "Lose client-specific sandboxes if moving processing to gaxd—mitigate WASM/isolated workers inside gaxd for untrusted jq.",
+  "infrastructure_changes": "gaxd hosts registry index for search; optional embedded JS runtime for plan steps (security boundary).",
+  "deployment_topology": "Optimization runs server-side (gaxd) vs client-side (Claude sandbox)—enterprise may prefer server-side for data residency.",
+  "adoption_drivers": "Organizations already sold on 'fix MCP tokens' understand GAX value prop immediately—governance plus same economics.",
+  "adoption_blockers": "If Claude/Cursor keep improving native MCP client, GAX must exceed combined feature set (MCP Apps, elicitation).",
+  "adoption_timeline_estimate": "Optimization patterns mainstream 2026; GAX competes as governance superset 2027+.",
+  "historical_parallel": "HTTP/2 server push vs client caching—where processing lives shifts, problem (bloat) same.",
+  "primary_sources": [
+    {"title": "Anthropic code execution with MCP", "url": "https://anthropic.com/engineering/code-execution-with-mcp"},
+    {"title": "Programmatic tool calling", "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/programmatic-tool-calling"},
+    {"title": "Cloudflare Code Mode blog", "url": "https://blog.cloudflare.com/code-mode-mcp/"},
+    {"title": "Claude Code MCP tool search analysis", "url": "https://www.softwarethug.com/posts/claude-code-mcp-tool-search-lazy-loading/"}
+  ],
+  "uncertain": []
+}

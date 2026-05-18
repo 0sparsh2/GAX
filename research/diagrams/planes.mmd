@@ -1,0 +1,8 @@
+flowchart LR
+  I["Invocation plane\n(short commands)"]
+  C["Control plane\n(auth, caps, policy, audit)"]
+  D["Data plane\n(envelope + schemas)"]
+
+  I -->|"gax CLI"| GAXD["gaxd"]
+  GAXD --> C
+  GAXD --> D

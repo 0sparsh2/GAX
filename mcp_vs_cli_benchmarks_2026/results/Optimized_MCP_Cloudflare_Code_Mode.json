@@ -1,0 +1,21 @@
+{
+  "name": "Optimized MCP — Cloudflare Code Mode",
+  "category": "Mitigation",
+  "summary": "Cloudflare Code Mode exposes large APIs via two tools—search() and execute()—with the model writing JavaScript against a typed SDK in a sandbox. For the full Cloudflare API surface, native MCP with full schemas was ~1.17M tokens versus ~1,000 tokens for Code Mode (~99.9% reduction). Minimal-params MCP was ~244k tokens; raw OpenAPI ~2M tokens.",
+  "key_metrics": {
+    "code_mode_tools": 2,
+    "code_mode_tokens_approx": 1000,
+    "native_mcp_tokens_full_schema": 1170523,
+    "native_mcp_tokens_minimal_params": 244047,
+    "openapi_raw_tokens": 2000000,
+    "reduction_vs_native_mcp_percent": 99.9
+  },
+  "methodology_notes": "Cloudflare blog Feb 2026; mcp.cloudflare.com server. Pattern: dynamic discovery + server-side execution. Gateway filtering (~90% schema reduction) cited separately in Scalekit for filtered tool lists.",
+  "primary_sources": [
+    {"title": "Cloudflare Code Mode MCP", "url": "https://blog.cloudflare.com/code-mode-mcp/"},
+    {"title": "Cloudflare MCP servers docs", "url": "https://developers.cloudflare.com/agents/model-context-protocol/mcp-servers-for-cloudflare/"}
+  ],
+  "confidence_level": "high",
+  "implications_for_gax": "GAX search/doc is analogous to Code Mode search() at CLI ergonomics. GAX adds tenancy, audit_id, and policy bundle without requiring JS execution in the agent. For Cloudflare-scale APIs, GAX adapters + lazy schema remain the integration path.",
+  "corrections_to_repo_docs": "research/05: mitigation table already lists Code Mode; ensure 1.17M vs 1k figures present."
+}

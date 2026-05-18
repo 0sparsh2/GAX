@@ -1,0 +1,21 @@
+# OAuth 2.0 device authorization (RFC 8628) providers for `gax auth login`
+#
+# GitHub: create an OAuth App at https://github.com/settings/developers
+#   - Enable Device Flow
+#   - Set GAX_GITHUB_CLIENT_ID to the Client ID
+
+providers:
+  github:
+    device_authorization_url: https://github.com/login/device/code
+    token_url: https://github.com/login/oauth/access_token
+    client_id_env: GAX_GITHUB_CLIENT_ID
+    scopes:
+      - repo
+      - read:org
+
+  # Generic template (OIDC/OAuth provider with RFC 8628 endpoints)
+  # custom:
+  #   device_authorization_url: https://auth.example.com/oauth/device
+  #   token_url: https://auth.example.com/oauth/token
+  #   client_id_env: GAX_CUSTOM_CLIENT_ID
+  #   scopes: [openid, profile]

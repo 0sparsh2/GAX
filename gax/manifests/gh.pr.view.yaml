@@ -1,0 +1,30 @@
+command: gh.pr.view
+version: "1.0.0"
+description: View a single pull request
+category: github
+adapter: exec
+backend:
+  - gh
+  - pr
+  - view
+required_scopes:
+  - github:pull_request:read
+side_effects: read
+idempotent: true
+input_schema:
+  type: object
+  required: [repo, number]
+  properties:
+    repo:
+      type: string
+    number:
+      type: integer
+output_schema:
+  type: object
+  properties:
+    number: { type: integer }
+    title: { type: string }
+    body: { type: string }
+    state: { type: string }
+    url: { type: string }
+    author: { type: string }

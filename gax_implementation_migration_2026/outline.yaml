@@ -1,0 +1,37 @@
+topic: "GAX implementation & migration — how agents use MCP/CLI today and path to governed execution"
+items:
+  - name: IDE and coding agents with MCP
+    category: mcp_usage
+    description: Cursor, VS Code, Windsurf — mcp.json, marketplace, stdio/HTTP transports, tool auto-discovery.
+  - name: Claude platform MCP production patterns
+    category: mcp_usage
+    description: Claude Desktop/Code/Cowork/Managed Agents — remote servers, vaults, plugins, OAuth CIMD.
+  - name: Agent shell and CLI execution
+    category: cli_usage
+    description: Bash/shell tools in Cursor Agent, Claude Code, CI agents — gh/git/kubectl patterns.
+  - name: Developer-local hybrid reality
+    category: cli_usage
+    description: When teams use MCP + CLI together; rules, AGENTS.md, skills, sandbox boundaries.
+  - name: Enterprise MCP infrastructure
+    category: infra
+    description: Hosted MCP, OAuth 2.1, identity platforms (Okta/Azure), gateway vs embedded auth.
+  - name: MCP context optimization layer
+    category: mcp_usage
+    description: Tool search, programmatic tool calling, Code Mode — exposure policy not protocol swap.
+  - name: Migration path MCP deployments to GAX
+    category: migration
+    description: MCP→GAX adapter bridge, manifest generation, dual-run, deprecating tool schemas in context.
+  - name: Migration path CLI workflows to GAX
+    category: migration
+    description: exec adapters, capability caps, replacing ambient env keys, plan executor vs pipes.
+  - name: GAX infrastructure evolution
+    category: infra
+    description: gaxd sidecar, hosted control plane, policy bundles, audit/SIEM, multi-tenant vault.
+  - name: Adoption dynamics and organizational change
+    category: adoption
+    description: Who adapts, incentives, platform vs integrator vs end-user, realistic timelines.
+
+execution:
+  batch_size: 5
+  items_per_agent: 1
+  output_dir: "./gax_implementation_migration_2026/results"

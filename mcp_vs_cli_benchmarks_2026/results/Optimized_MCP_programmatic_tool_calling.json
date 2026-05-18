@@ -1,0 +1,21 @@
+{
+  "name": "Optimized MCP — programmatic tool calling",
+  "category": "Mitigation",
+  "summary": "Anthropic's code execution with MCP exposes servers as filesystem/API surfaces the model reads selectively instead of loading all tool definitions. An example workflow dropped from ~150,000 to ~2,000 tokens (~98.7% reduction). Programmatic Tool Calling in Claude SDK runs orchestration in a sandbox with compact outputs returned to the model. Tool Search / deferred loading further reduces upfront definitions.",
+  "key_metrics": {
+    "example_workflow_tokens_before": 150000,
+    "example_workflow_tokens_after": 2000,
+    "reduction_percent": 98.7,
+    "pattern": "filesystem discovery + sandbox execution",
+    "sdk_feature": "Programmatic Tool Calling"
+  },
+  "methodology_notes": "Primary: Anthropic engineering Nov 2025. Requires code execution tool enabled on Claude API. Example is vendor-reported; independent replication in Phase 2 eval TBD.",
+  "primary_sources": [
+    {"title": "Code execution with MCP", "url": "https://www.anthropic.com/engineering/code-execution-with-mcp"},
+    {"title": "Programmatic tool calling docs", "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/programmatic-tool-calling"},
+    {"title": "Advanced tool use", "url": "https://www.anthropic.com/engineering/advanced-tool-use"}
+  ],
+  "confidence_level": "medium",
+  "implications_for_gax": "GAX and programmatic MCP share the same axis: do not load what you do not need. GAX differs by shell-like commands (gax gh.pr.list), cap-per-invoke, and envelope v1 for non-LLM consumers—without requiring a JS sandbox in the model loop.",
+  "corrections_to_repo_docs": "research/01: anchor 98.7% to anthropic.com primary URL."
+}

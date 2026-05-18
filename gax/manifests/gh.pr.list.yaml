@@ -1,0 +1,41 @@
+command: gh.pr.list
+version: "1.0.0"
+description: List pull requests for a repository
+category: github
+adapter: exec
+backend:
+  - gh
+  - pr
+  - list
+required_scopes:
+  - github:pull_request:read
+side_effects: read
+idempotent: true
+input_schema:
+  type: object
+  required: [repo]
+  properties:
+    repo:
+      type: string
+      description: "owner/name"
+    limit:
+      type: integer
+      default: 30
+    state:
+      type: string
+      enum: [open, closed, merged, all]
+      default: open
+output_schema:
+  type: object
+  properties:
+    items:
+      type: array
+      items:
+        type: object
+        properties:
+          number: { type: integer }
+          title: { type: string }
+          state: { type: string }
+          url: { type: string }
+          author: { type: string }
+          draft: { type: boolean }

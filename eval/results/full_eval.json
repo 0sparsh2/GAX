@@ -1,0 +1,23 @@
+{
+  "steps": [
+    {
+      "name": "pytest",
+      "ok": true,
+      "code": 0
+    },
+    {
+      "name": "comparison",
+      "ok": true,
+      "code": 0
+    }
+  ],
+  "winner": "gax",
+  "summary": {
+    "cli": 0.678,
+    "mcp_naive_43": 0.5605,
+    "gax": 0.986,
+    "gax_mcp_bridge": 0.7363,
+    "gax_plan": 0.9838
+  },
+  "gax_leads_composite": true
+}

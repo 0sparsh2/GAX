@@ -1,0 +1,10 @@
+name: parallel-demo
+surface: model
+steps:
+  - parallel:
+      - id: echo_a
+        command: demo.echo
+        args: { message: "branch-a" }
+      - id: echo_b
+        command: demo.echo
+        args: { message: "branch-b" }

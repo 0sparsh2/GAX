@@ -1,0 +1,20 @@
+command: aws.s3.list
+version: "1.0.0"
+description: List S3 buckets (mock MVP)
+category: aws
+adapter: mock
+required_scopes:
+  - aws:s3:read
+side_effects: read
+idempotent: true
+input_schema:
+  type: object
+  properties:
+    prefix:
+      type: string
+      default: ""
+output_schema:
+  type: object
+  properties:
+    buckets:
+      type: array

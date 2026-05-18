@@ -1,0 +1,26 @@
+{
+  "name": "Developer-local hybrid reality",
+  "category": "cli_usage",
+  "current_usage_summary": "Practitioners rarely pick MCP or CLI exclusively. Typical repo: MCP for SaaS connectors (Linear, Sentry, browser automation) + shell for git/npm/tests + optional HTTP tools. Unified clients emerge (agents-cli.sh) syncing MCP config, skills, hooks across Claude/Cursor/Codex. AGENTS.md and .cursor/rules document when to use which. Sandboxed cloud agents skew MCP; local agents skew shell. 'Hybrid' is operational default per Anthropic's mature-integration framing: API foundation, CLI local, MCP cloud.",
+  "typical_stack": "Project: .cursor/mcp.json + AGENTS.md + skills. Global: ~/.cursor/mcp.json, ~/.claude/settings. Browser MCP for verification. Firecrawl/playwright MCP vs curl. gh in terminal for PRs while GitHub MCP disabled to save tokens.",
+  "auth_and_identity_model": "Split brain: OAuth in MCP clients for SaaS; OS credentials for CLIs. Same GitHub identity may exist in both gh and GitHub MCP with no linkage. Developers consciously disable heavy MCP servers locally.",
+  "context_and_token_behavior": "Manual optimization: turn off MCP servers not needed for task; use CLI for GitHub; enable tool search in Claude Code when available. Skills reduce trial-and-error without schema cost. Context budgeting is artisanal—not platform-enforced.",
+  "operational_pain_points": "Two auth stories to refresh. Rules drift from actual config. Agents pick wrong surface (MCP vs gh) unless rules explicit. Onboarding new teammate requires explaining hybrid policy.",
+  "developer_experience_friction": "Cognitive load: which integration for which task. Duplicate capability (gh vs github MCP). Testing agent behavior requires both surfaces configured.",
+  "gax_mapping": "GAX explicitly targets unifying hybrid into one runtime: SaaS and CLI-backed commands both register in gaxd with same envelope and caps. Invocation plane stays CLI-mental (`gax …`); control plane centralizes OAuth + vault; lazy discovery replaces 'disable MCP server' hacks.",
+  "migration_phases": "1) Document current hybrid map in repo. 2) Register all SaaS+CLI paths as GAX commands. 3) Collapse mcp.json to single gax-bridge server. 4) Simplify AGENTS.md to GAX-only external actions. 5) Remove duplicate MCP entries.",
+  "adapter_or_bridge_strategy": "Parallel run: keep MCP for UI-only tools; route data-plane ops through GAX. agents-cli style sync can distribute gax manifests + cap policies across agents.",
+  "breaking_changes_and_mitigations": "Team habits ('just use gh')—mitigate with linter on AGENTS.md in PR review. Temporary dual config documented in migration runbook.",
+  "infrastructure_changes": "One gaxd per dev machine replaces N MCP stdio processes for wrapped services—potential RAM win. Org publishes manifest bundle git submodule.",
+  "deployment_topology": "Local gaxd + optional team registry URL for manifest updates. Cloud agents use hosted gaxd with same command names—dev/prod parity.",
+  "adoption_drivers": "Eliminates hybrid ops complexity—one grammar, one audit stream. Matches how developers already want to work (short commands, turn off bloat).",
+  "adoption_blockers": "Works until one tool lacks GAX manifest—forces fallback hybrid again. Sunk cost in tuned rules per repo.",
+  "adoption_timeline_estimate": "Early adopters in this repo prototype: immediate; mainstream hybrid teams: 18–36 months as manifest coverage grows.",
+  "historical_parallel": "Consolidating npm scripts + Makefile + raw binaries into task runner (just, mise)—one interface, many backends.",
+  "primary_sources": [
+    {"title": "agents-cli unified MCP/skills sync", "url": "https://agents-cli.sh/"},
+    {"title": "Anthropic production MCP blog (three paths)", "url": "https://claude.com/blog/building-agents-that-reach-production-systems-with-mcp"},
+    {"title": "research/01-background-mcp-vs-cli.md (this repo)", "url": "file:///Users/sparshnagpal/Desktop/projects/MCP%20vs%20CLI/research/01-background-mcp-vs-cli.md"}
+  ],
+  "uncertain": []
+}

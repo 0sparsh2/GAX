@@ -1,0 +1,29 @@
+command: mcp.github.list_pulls
+version: "1.0.0"
+description: List pull requests via GitHub MCP server (governed bridge)
+category: mcp
+adapter: mcp
+required_scopes:
+  - github:pull_request:read
+side_effects: read
+idempotent: true
+mcp:
+  server_command: npx
+  server_args:
+    - "-y"
+    - "@modelcontextprotocol/server-github"
+  tool_name: list_pull_requests
+  timeout: 90
+input_schema:
+  type: object
+  required: [repo]
+  properties:
+    repo:
+      type: string
+      description: owner/name
+    state:
+      type: string
+      enum: [open, closed, all]
+      default: open
+output_schema:
+  type: object

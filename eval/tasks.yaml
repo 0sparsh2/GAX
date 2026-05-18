@@ -1,0 +1,28 @@
+# Evaluation tasks — same logical work across CLI, MCP (simulated), GAX
+name: mcp-vs-cli-vs-gax-eval
+repo: octocat/Hello-World
+
+tasks:
+  - id: pr_list
+    description: List open pull requests (limit 5)
+    gax_command: gh.pr.list
+    gax_args:
+      repo: octocat/Hello-World
+      limit: 5
+      state: open
+    cli_argv: ["gh", "pr", "list", "--repo", "octocat/Hello-World", "--limit", "5", "--json", "number,title,state"]
+
+  - id: pr_view_first
+    description: View first PR from list (depends on pr_list for GAX plan; standalone for CLI)
+    gax_command: gh.pr.view
+    gax_args:
+      repo: octocat/Hello-World
+      number: 1
+    cli_argv: ["gh", "pr", "view", "1", "--repo", "octocat/Hello-World", "--json", "number,title"]
+
+  - id: echo
+    description: Minimal no-op structured command
+    gax_command: demo.echo
+    gax_args:
+      message: eval
+    cli_argv: []

@@ -1,0 +1,14 @@
+# Example only — copy to <topic_slug>/outline.yaml and edit.
+topic: "Example topic (replace me)"
+items:
+  - name: Example item A
+    category: Category label
+    description: One line on what to research.
+  - name: Example item B
+    category: Category label
+    description: One line on what to research.
+
+execution:
+  batch_size: 2
+  items_per_agent: 1
+  output_dir: "./example_topic_slug/results"

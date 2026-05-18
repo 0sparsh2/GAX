@@ -1,0 +1,26 @@
+{
+  "name": "Adoption dynamics and organizational change",
+  "category": "adoption",
+  "current_usage_summary": "Adoption follows three constituencies: (1) Platform/security—want audit, least-privilege, kill switch; will fund GAX-like control planes. (2) Integrators/ISVs—follow distribution (MCP directory today); adopt GAX only if customers demand or hosts add ACSP. (3) Individual developers—optimize for speed; resist unless blocked or token costs hurt. MCP momentum (300M SDK downloads/month, Apr 2026) means GAX wins as governance layer on top, not replacement, for 5+ years. People adapt when pain exceeds switching cost—breaches, token bills, compliance audits accelerate; solo devs adapt slowly.",
+  "typical_stack": "Change management: security policy → platform engineering → developer enablement. Training: update AGENTS.md templates, cap self-service portal, runbooks for break-glass.",
+  "auth_and_identity_model": "Org shift from 'credentials on laptop' to 'capabilities per task' mirrors zero-trust maturation—familiar to security buyers, alien to developers until enforced.",
+  "context_and_token_behavior": "FinOps may mandate GAX projection when MCP tool costs show on invoices—economic driver alongside security.",
+  "operational_pain_points": "Shadow IT: developers re-enable raw MCP/CLI to avoid caps. Incomplete manifest coverage erodes trust. Vendor fragmentation if every SaaS ships own gaxd flavor.",
+  "developer_experience_friction": "Perceived as bureaucracy unless cap mint is one-click and commands feel like gh. Need excellent doc/search UX.",
+  "gax_mapping": "Position GAX as 'the way your org already wants MCP to work in production' not 'cancel MCP'.",
+  "migration_phases": "Awareness (security whitepaper) → pilot (one team, GitHub/Jira only) → mandate (CI/production agents) → standard (new hires taught gax first) → optional native ACSP in hosts.",
+  "adapter_or_bridge_strategy": "Open spec (ACSP) + reference impl + manifest registry prevents vendor lock-in fears.",
+  "breaking_changes_and_mitigations": "Union of developer backlash and integrator inertia—mitigate grandfather period, open source gaxd core, certify manifests.",
+  "infrastructure_changes": "New role: agent platform engineer. Budget line for hosted control plane.",
+  "deployment_topology": "Adoption faster in regulated cloud-first orgs; slower in OSS-heavy startups until acquihire/enterprise sale forces it.",
+  "adoption_drivers": "SOC2/ISO findings on agent actions; OAuth already approved for MCP; token cost visibility; need one audit stream across Cursor+Claude+custom agents.",
+  "adoption_blockers": "MCP ecosystem network effects; Anthropic advocacy; lack of IDE-native GAX; build vs buy; 'gh works fine'.",
+  "adoption_timeline_estimate": "2026–2027: early adopters, security pilots. 2028–2030: enterprise standard for external SaaS from agents if spec stabilizes. Never full replacement of local shell for file/git on laptop.",
+  "historical_parallel": "Kubernetes adoption: years of docker-compose coexistence; eventual default for prod, not for every script. OAuth for APIs replaced API keys over ~5 years in SaaS.",
+  "primary_sources": [
+    {"title": "Claude MCP production blog (ecosystem growth)", "url": "https://claude.com/blog/building-agents-that-reach-production-systems-with-mcp"},
+    {"title": "research/05-comparison-matrix.md", "url": "file:///Users/sparshnagpal/Desktop/projects/MCP%20vs%20CLI/research/05-comparison-matrix.md"},
+    {"title": "RhinoInsight deep research control (methodology)", "url": "https://arxiv.org/html/2511.18743v1"}
+  ],
+  "uncertain": []
+}

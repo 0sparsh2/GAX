@@ -1,0 +1,22 @@
+{
+  "name": "MCP reliability and failure modes",
+  "category": "Reliability",
+  "summary": "Infrastructure failures distinguish MCP from CLI in production harnesses. Scalekit reports 28% MCP run failures (7/25) due to ConnectTimeout to remote GitHub Copilot MCP, while CLI completed 25/25 runs. Task-level success when connected was high for both. Separate from token optimization: GitHub cli-proxy reports ~24% workflow token reduction by removing MCP schemas in an agent loop—that is client architecture, not the 32x per-task gap.",
+  "key_metrics": {
+    "mcp_run_failure_rate_scalekit": 0.28,
+    "mcp_failure_cause": "ConnectTimeout",
+    "cli_run_completion_scalekit": 1.0,
+    "cli_proxy_workflow_token_reduction": 0.24,
+    "cli_agent_spec_failure_modes": 67
+  },
+  "methodology_notes": "Scalekit n=25 per modality subset within 75 total runs. cli-proxy figure from GitHub gh-aw-firewall issue #1885 (workflow-level, n=1 style post). CLI Agent Spec catalogs structured exit codes and retry semantics for agent-native CLIs.",
+  "primary_sources": [
+    {"title": "Scalekit MCP vs CLI", "url": "https://www.scalekit.com/blog/mcp-vs-cli-use"},
+    {"title": "GitHub gh-aw-firewall cli-proxy #1885", "url": "https://github.com/github/gh-aw-firewall/issues/1885"},
+    {"title": "CLI Agent Spec", "url": "https://github.com/cli-agent-spec/cli-agent-spec"}
+  ],
+  "confidence_level": "medium",
+  "implications_for_gax": "gaxd as local broker reduces remote MCP connection churn for agents. Envelope error kinds (adapter_error, policy_denied) support CLI Agent Spec-style automation. Eval models MCP reliability at 0.72 for composite scoring until live MCP runs are added.",
+  "corrections_to_repo_docs": "research/01: clarify 28% is run/infrastructure failure, not task logic failure when connected.",
+  "uncertain": ["cli_proxy_workflow_token_reduction"]
+}

@@ -1,0 +1,18 @@
+command: jira.issue.get
+version: "1.0.0"
+description: Get Jira issue by key (mock MVP)
+category: jira
+adapter: mock
+required_scopes:
+  - jira:issue:read
+side_effects: read
+idempotent: true
+input_schema:
+  type: object
+  required: [issue_key]
+  properties:
+    issue_key:
+      type: string
+      description: e.g. PROJ-123
+output_schema:
+  type: object

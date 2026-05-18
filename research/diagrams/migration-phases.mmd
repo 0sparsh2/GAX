@@ -1,0 +1,34 @@
+flowchart TB
+  subgraph phase0 ["Phase 0 — Today"]
+    IDE[IDE / Claude / CI Agent]
+    IDE --> MCP[MCP servers OAuth]
+    IDE --> SH[Shell gh git aws]
+    MCP --> SaaS1[SaaS APIs]
+    SH --> SaaS1
+    SH --> LOCAL[Local filesystem]
+  end
+
+  subgraph phase1 ["Phase 1 — Shadow"]
+    IDE1[Agent]
+    IDE1 --> GAX1[gax CLI]
+    GAX1 --> GAXD1[gaxd sidecar]
+    GAXD1 --> MCPB[mcp_bridge adapter]
+    GAXD1 --> EXEC[exec adapter]
+    MCPB --> MCP1[Existing MCP]
+    EXEC --> CLI1[gh aws CLI]
+    GAXD1 --> AUD1[audit.jsonl / SIEM]
+  end
+
+  subgraph phase2 ["Phase 2 — Governed default"]
+    IDE2[Agent]
+    IDE2 --> GAX2[gax only external]
+    GAX2 --> GAXD2[hosted gaxd]
+    GAXD2 --> VAULT[tenant vault]
+    GAXD2 --> OPA[OPA policy]
+    GAXD2 --> ADP[adapters]
+    ADP --> SaaS2[SaaS APIs]
+    IDE2 --> LOCAL2[local file ops only]
+  end
+
+  phase0 --> phase1
+  phase1 --> phase2

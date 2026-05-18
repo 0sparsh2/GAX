@@ -1,0 +1,20 @@
+command: demo.echo
+version: "1.0.0"
+description: Echo arguments (demo / testing without gh)
+category: demo
+adapter: mock
+required_scopes:
+  - demo:echo
+side_effects: read
+idempotent: true
+input_schema:
+  type: object
+  properties:
+    message:
+      type: string
+      default: hello
+output_schema:
+  type: object
+  properties:
+    echo:
+      type: string

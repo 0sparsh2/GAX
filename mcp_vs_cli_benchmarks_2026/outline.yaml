@@ -1,0 +1,53 @@
+topic: "MCP vs CLI for AI agents — token costs, reliability benchmarks, optimized MCP patterns (2024-2026)"
+items:
+  - name: Scalekit MCP vs CLI benchmark
+    category: Empirical benchmark
+    description: >
+      Primary reproducible study: 75 runs, Claude Sonnet 4, GitHub Copilot MCP (43 tools)
+      vs gh CLI / CLI+Skills on five read-only repo tasks; token medians, cost at scale,
+      statistical significance; open-source harness at scalekit-inc/mcp-vs-cli-benchmark.
+  - name: Naive MCP schema overhead
+    category: Mechanism
+    description: >
+      Tool-definition injection every turn; GitHub variants (43-tool Copilot MCP ~28k–44k
+      per task vs 93-tool github-mcp-server ~55k idle); multi-server stacking (~143k for
+      three services); OnlyCLI / Firecrawl practitioner numbers.
+  - name: CLI token baseline
+    category: Mechanism
+    description: >
+      gh + bash modality: hundreds–low thousands of tokens per task; --help discovery
+      (~150–250 tokens); CLI+Skills ~800-token skill file ROI; Afroze Amjad cost/turn
+      comparisons; contrast with ambient-credential risks.
+  - name: MCP reliability and failure modes
+    category: Reliability
+    description: >
+      Scalekit 28% ConnectTimeout on remote Copilot MCP (18/25); GitHub cli-proxy ~24%
+      workflow token reduction (different layer); CLI Agent Spec failure modes for
+      agent-native CLIs; task completion vs infrastructure failure distinction.
+  - name: Optimized MCP — programmatic tool calling
+    category: Mitigation
+    description: >
+      Anthropic code execution with MCP (Nov 2025): filesystem discovery, intermediate
+      results outside context; 150k→2k (98.7%) example; Programmatic Tool Calling in Claude
+      SDK; Tool Search / deferred loading.
+  - name: Optimized MCP — Cloudflare Code Mode
+    category: Mitigation
+    description: >
+      Server-side search()+execute(); ~1k tokens fixed footprint; 1.17M native MCP vs
+      244k minimal-params vs 2M OpenAPI raw; gateway/schema-filtering (~90%) from Scalekit.
+  - name: Governance and security trade-off
+    category: Enterprise
+    description: >
+      When MCP wins: OAuth 2.1, per-user scopes, typed tool boundaries, audit trails;
+      Scalekit decision framework; CLI Agent Spec / Agent-Native CLI for governable CLI
+      ergonomics; OpenClaw-style multi-tenant CLI risks cited in Scalekit.
+  - name: GAX positioning vs benchmarks
+    category: Synthesis
+    description: >
+      Map GAX lazy doc/search, caps, envelope v1 to benchmark axes; validate or revise
+      claims in research/01, research/05, research/02; hybrid CLI inner-loop + MCP outer-loop.
+
+execution:
+  batch_size: 3
+  items_per_agent: 1
+  output_dir: "./mcp_vs_cli_benchmarks_2026/results"

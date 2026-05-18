@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.gax.dev/envelope/v1",
+  "title": "GAX Envelope v1",
+  "type": "object",
+  "required": ["v", "ok", "cmd", "audit_id", "surface", "data", "meta"],
+  "properties": {
+    "v": { "const": 1 },
+    "ok": { "type": "boolean" },
+    "cmd": { "type": "string", "description": "command@version" },
+    "audit_id": { "type": "string" },
+    "schema": { "type": "string", "format": "uri" },
+    "surface": { "enum": ["model", "human", "full"] },
+    "data": {},
+    "meta": {
+      "type": "object",
+      "properties": {
+        "truncated": { "type": "boolean" },
+        "cursor": { "type": "string" },
+        "row_count": { "type": "integer" },
+        "duration_ms": { "type": "number" }
+      },
+      "additionalProperties": true
+    },
+    "error": {
+      "type": ["object", "null"],
+      "properties": {
+        "kind": { "type": "string" },
+        "message": { "type": "string" },
+        "retryable": { "type": "boolean" }
+      }
+    },
+    "next": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["cmd", "args"],
+        "properties": {
+          "cmd": { "type": "string" },
+          "args": { "type": "object" },
+          "reason": { "type": "string" }
+        }
+      }
+    }
+  }
+}

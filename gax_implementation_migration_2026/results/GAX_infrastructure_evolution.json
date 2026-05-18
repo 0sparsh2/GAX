@@ -1,0 +1,26 @@
+{
+  "name": "GAX infrastructure evolution",
+  "category": "infra",
+  "current_usage_summary": "Prototype establishes pattern: gax CLI (invocation) → gaxd HTTP sidecar (localhost:9477) → policy/caps/audit → adapters. Roadmap phases: harden auth (OAuth device, keychain, macaroons), OPA, OTel, plan DAG; ecosystem (OpenAPI manifests, MCP bridge); enterprise (multi-tenant vault, SPIFFE, hosted gaxd, compliance exports). Infrastructure evolves from 'developer daemon' to 'organizational agent control plane' analogous to API gateway + secrets manager + policy engine.",
+  "typical_stack": "Phase 0 (now): Python gax/gaxd, JWT caps (dev secret), JSONL audit in ~/.gax/, YAML manifests. Phase 1: OAuth, keychain, OPA bundles, OTel. Phase 2: MCP bridge, kubectl/aws manifests. Phase 3: Vault integration, hosted gaxd SaaS, SPIFFE mTLS between agent host and gaxd.",
+  "auth_and_identity_model": "Evolution: dev tenant in config.json → per-user OAuth refresh in vault → cap mint with attenuation (command, scope, TTL, budget) → macaroons for delegation → workload identity for gaxd itself.",
+  "context_and_token_behavior": "Projection service in gaxd enforces surface=model|human|full. Registry search index for lazy discovery. plan run batches steps server-side.",
+  "operational_pain_points": "gaxd SPOF unless HA. Cap revocation lag if only JWT TTL. Manifest signing/trust chain needed for third-party commands.",
+  "developer_experience_friction": "Operating gaxd clusters new skill for platform teams. Manifest versioning semver per command.",
+  "gax_mapping": "N/A—this item describes GAX infra itself.",
+  "migration_phases": "Org installs hosted gaxd → connects IdP → publishes internal manifest bundle → agents receive caps via SSO portal plugin → SIEM ingests audit stream → gradually disconnect direct SaaS from laptops.",
+  "adapter_or_bridge_strategy": "Adapter types: exec, http, mock, mcp (roadmap). Manifest generator from OpenAPI reduces ops toil.",
+  "breaking_changes_and_mitigations": "JWT dev secret → production keys: rotation playbook. Envelope v1 → v2: version field already in schema.",
+  "infrastructure_changes": "Components: gaxd replicas, Redis for revocation, vault, OPA bundle CDN, manifest git repo, OTel collector, optional WASM sandbox for jq/plan. Network policies: agents → gaxd only; gaxd → SaaS APIs. Cost: small always-on service vs per-MCP-server process proliferation.",
+  "deployment_topology": "Tier 1 solo: single local gaxd. Tier 2 team: gaxd in shared dev cluster. Tier 3 enterprise: multi-region gaxd, private link to vault, per-BU tenants. Tier 4 vendor: ISV hosts gaxd multi-tenant for customers (SaaS control plane).",
+  "adoption_drivers": "Platform teams want one knob for agent permissions across Claude/Cursor/custom bots. FinOps ties caps to API quota budgets.",
+  "adoption_blockers": "Another infrastructure product to operate. Overlap with API gateway and PAM tools—requires clear positioning.",
+  "adoption_timeline_estimate": "Prototype ops now; production-grade hosted gaxd 24–36 months without major vendor partnership.",
+  "historical_parallel": "HashiCorp Vault + Consul + Envoy mesh combined for human ops; GAX consolidates for agent ops.",
+  "primary_sources": [
+    {"title": "research/06-implementation-roadmap.md", "url": "file:///Users/sparshnagpal/Desktop/projects/MCP%20vs%20CLI/research/06-implementation-roadmap.md"},
+    {"title": "research/04-protocol-envelope.md", "url": "file:///Users/sparshnagpal/Desktop/projects/MCP%20vs%20CLI/research/04-protocol-envelope.md"},
+    {"title": "gax daemon and caps implementation", "url": "file:///Users/sparshnagpal/Desktop/projects/MCP%20vs%20CLI/gax/gax/daemon.py"}
+  ],
+  "uncertain": []
+}

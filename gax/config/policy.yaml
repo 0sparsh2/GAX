@@ -1,0 +1,20 @@
+# GAX policy bundle (MVP — YAML rules; OPA/Rego compatible path later)
+version: 1
+
+defaults:
+  deny_destructive: true
+  max_rows_per_invoke: 500
+
+tenants:
+  default:
+    allowed_commands:
+      - demo.echo
+      - gh.pr.list
+      - gh.pr.view
+    denied_commands: []
+    repo_allowlist: []  # empty = allow all repos
+
+rules:
+  - id: block_private_repos
+    description: Deny gh commands on repos marked private (future)
+    enabled: false

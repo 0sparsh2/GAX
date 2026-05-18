@@ -1,0 +1,27 @@
+{
+  "name": "Scalekit MCP vs CLI benchmark",
+  "category": "Empirical benchmark",
+  "summary": "Scalekit ran 75 paired trials (Claude Sonnet 4) on five read-only GitHub repository tasks comparing GitHub Copilot MCP (43 tools) against gh CLI and CLI+Skills. MCP consumed far more tokens per task; remote MCP runs failed 28% of the time with ConnectTimeout while CLI completed all 25 runs. When connected, both modalities achieved task-level success on the measured operations.",
+  "key_metrics": {
+    "runs_total": 75,
+    "model": "Claude Sonnet 4",
+    "mcp_tool_count": 43,
+    "token_ratio_range": "4x to 32x MCP over CLI",
+    "example_simple_task_cli_tokens": 1365,
+    "example_simple_task_mcp_tokens": 44026,
+    "example_multiplier": 32,
+    "mcp_run_failure_rate": 0.28,
+    "mcp_successful_runs": 18,
+    "mcp_total_runs": 25,
+    "cli_successful_runs": 25,
+    "failure_mode": "ConnectTimeout to remote Copilot MCP"
+  },
+  "methodology_notes": "Five GitHub read-only tasks; modalities include MCP, gh CLI, and CLI+Skills (~800-token skill file). Open harness: scalekit-inc/mcp-vs-cli-benchmark. Published Mar 2026. Statistical significance claimed for suite-level token differences.",
+  "primary_sources": [
+    {"title": "MCP vs CLI: Benchmarking AI Agent Cost & Reliability", "url": "https://www.scalekit.com/blog/mcp-vs-cli-use"},
+    {"title": "scalekit-inc/mcp-vs-cli-benchmark", "url": "https://github.com/scalekit-inc/mcp-vs-cli-benchmark"}
+  ],
+  "confidence_level": "high",
+  "implications_for_gax": "Validates GAX core bet: lazy discovery (doc/search) is required to avoid 40k+ schema tax per session. gaxd sidecar + adapters address MCP reliability via local broker rather than model-facing remote tool list. Cap-per-invoke preserves MCP-class governance without shipping full schemas to the model.",
+  "corrections_to_repo_docs": "research/01: use 4x-32x and 28% failure with ConnectTimeout citation; distinguish task success when connected vs run completion."
+}

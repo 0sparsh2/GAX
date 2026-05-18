@@ -1,0 +1,50 @@
+# Flat keys for Phase 2 JSON — one file per outline item
+field_categories:
+  - category: Basic Info
+    fields:
+      - name: name
+        description: Research item name (matches outline)
+        detail_level: brief
+        required: true
+      - name: category
+        description: Segment from outline (benchmark, mechanism, mitigation, etc.)
+        detail_level: brief
+        required: true
+
+  - category: Evidence
+    fields:
+      - name: summary
+        description: What was measured or claimed; 2–4 sentences
+        detail_level: detailed
+        required: true
+      - name: key_metrics
+        description: "Structured metrics: token counts, ratios, success %, cost $/10k ops"
+        detail_level: detailed
+        required: true
+      - name: methodology_notes
+        description: Model, tasks, n, modality, limitations, replication status
+        detail_level: detailed
+        required: false
+      - name: primary_sources
+        description: "List of {title, url} evidence objects"
+        detail_level: detailed
+        required: true
+      - name: confidence_level
+        description: "high | medium | low — based on sample size, independence, reproducibility"
+        detail_level: brief
+        required: true
+
+  - category: Implications
+    fields:
+      - name: implications_for_gax
+        description: How findings support, weaken, or refine GAX design claims
+        detail_level: detailed
+        required: true
+      - name: corrections_to_repo_docs
+        description: Specific edits for research/*.md (file + claim); empty if none
+        detail_level: brief
+        required: false
+      - name: uncertain
+        description: "List of field names still weak; omit or [] if none"
+        detail_level: brief
+        required: false

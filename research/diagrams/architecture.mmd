@@ -1,0 +1,35 @@
+flowchart TB
+  subgraph model_ctx["Model context (small)"]
+    LLM["LLM / Agent"]
+    INV["gax gh.pr.list --surface model"]
+    DOC["gax doc / gax search"]
+  end
+
+  subgraph control["Control plane (not in context)"]
+    AUTH["OAuth / SSO broker"]
+    CAP["Capability issuer"]
+    POL["Policy engine"]
+    AUD["Audit / SIEM"]
+    TEN["Tenant credential vault"]
+  end
+
+  subgraph runtime["gaxd sidecar"]
+    GAXD["gaxd"]
+    REG["Command registry"]
+    PROJ["Projection layer"]
+    ADP["Adapters"]
+  end
+
+  LLM --> INV
+  LLM --> DOC
+  INV --> GAXD
+  DOC --> GAXD
+  GAXD --> AUTH
+  GAXD --> CAP
+  GAXD --> POL
+  GAXD --> TEN
+  GAXD --> AUD
+  GAXD --> REG
+  GAXD --> PROJ
+  GAXD --> ADP
+  PROJ --> LLM

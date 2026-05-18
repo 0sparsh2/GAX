@@ -1,0 +1,18 @@
+{
+  "github_copilot_mcp_43_tools": {
+    "tool_count": 43,
+    "estimated_schema_tokens_per_session": 44026,
+    "source": "https://www.scalekit.com/blog/mcp-vs-cli-use",
+    "note": "Injected on simple task alongside response"
+  },
+  "github_mcp_server_93_tools": {
+    "tool_count": 93,
+    "estimated_schema_tokens_idle": 55000,
+    "source": "https://onlycli.github.io/OnlyCLI/blog/mcp-token-cost-benchmark/",
+    "note": "Idle registration cost before first invoke"
+  },
+  "optimized_code_mode": {
+    "estimated_schema_tokens": 1000,
+    "source": "https://blog.cloudflare.com/code-mode-mcp/"
+  }
+}

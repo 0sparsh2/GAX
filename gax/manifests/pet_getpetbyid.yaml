@@ -1,0 +1,19 @@
+command: pet.getpetbyid
+version: 1.0.0
+description: Get pet by ID
+category: pet
+adapter: mock
+required_scopes:
+- pet:read
+side_effects: read
+idempotent: true
+input_schema:
+  type: object
+  properties:
+    petId:
+      type: string
+      description: ''
+  required:
+  - petId
+output_schema:
+  type: object

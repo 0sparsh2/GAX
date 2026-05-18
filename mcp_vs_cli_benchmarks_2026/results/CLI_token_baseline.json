@@ -1,0 +1,22 @@
+{
+  "name": "CLI token baseline",
+  "category": "Mechanism",
+  "summary": "CLI agents pay primarily for command text, stdout/stderr, and short system guidance—not for dozens of tool schemas. Scalekit reports hundreds to low thousands of tokens per GitHub task via gh. Discovery via --help or compact skill files (~800 tokens) can reduce tool-call count versus naive CLI. Trade-off: ambient credentials and weak audit versus MCP OAuth.",
+  "key_metrics": {
+    "example_repo_language_cli_tokens": 1365,
+    "example_pr_details_cli_tokens": 1648,
+    "example_repo_metadata_cli_tokens": 9386,
+    "cli_skills_file_tokens": 800,
+    "help_discovery_tokens_estimate": "150-250",
+    "composability": "pipes and shell scripts in one turn"
+  },
+  "methodology_notes": "Baseline from Scalekit harness (gh, bash). Practitioner posts (Afroze Amjad, Joel Claw CLI-for-agents) align on JSON --output and schema commands for agent-native CLIs. GAX eval uses chars/4 token heuristic on gh stdout.",
+  "primary_sources": [
+    {"title": "Scalekit MCP vs CLI", "url": "https://www.scalekit.com/blog/mcp-vs-cli-use"},
+    {"title": "CLI Agent Spec", "url": "https://github.com/cli-agent-spec/cli-agent-spec"},
+    {"title": "Joel Claw CLI design for AI agents", "url": "https://joelclaw.com/cli-design-for-ai-agents"}
+  ],
+  "confidence_level": "high",
+  "implications_for_gax": "GAX matches CLI invocation size (short commands) while adding envelope v1 and audit_id. surface=model projection keeps response tokens comparable to filtered CLI JSON. Inner-loop dev should default to GAX or gh-with-cap, not naive MCP.",
+  "corrections_to_repo_docs": "None required if 4x-32x and CLI token ranges already cite Scalekit."
+}
