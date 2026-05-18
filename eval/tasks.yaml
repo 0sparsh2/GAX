@@ -1,28 +1,167 @@
-# Evaluation tasks — same logical work across CLI, MCP (simulated), GAX
-name: mcp-vs-cli-vs-gax-eval
+# 18-task evaluation suite — happy path, errors, multi-turn, plans, truncation, discovery
+name: gax-eval-v2
 repo: octocat/Hello-World
+schema_fixture_43: github_copilot_mcp_43_tools
+schema_fixture_93: github_mcp_server_93_tools
 
 tasks:
+  # --- Happy path (1–6) ---
   - id: pr_list
+    category: happy_path
     description: List open pull requests (limit 5)
     gax_command: gh.pr.list
-    gax_args:
-      repo: octocat/Hello-World
-      limit: 5
-      state: open
+    gax_args: {repo: octocat/Hello-World, limit: 5, state: open}
     cli_argv: ["gh", "pr", "list", "--repo", "octocat/Hello-World", "--limit", "5", "--json", "number,title,state"]
+    mcp_bridge: true
+    expect_ok: {cli: true, gax: true}
 
   - id: pr_view_first
-    description: View first PR from list (depends on pr_list for GAX plan; standalone for CLI)
+    category: happy_path
+    description: View PR #1 metadata
     gax_command: gh.pr.view
-    gax_args:
-      repo: octocat/Hello-World
-      number: 1
+    gax_args: {repo: octocat/Hello-World, number: 1}
     cli_argv: ["gh", "pr", "view", "1", "--repo", "octocat/Hello-World", "--json", "number,title"]
+    expect_ok: {cli: true, gax: true}
 
   - id: echo
-    description: Minimal no-op structured command
+    category: happy_path
+    description: Minimal structured no-op
+    gax_command: demo.echo
+    gax_args: {message: eval}
+    cli_argv: []
+    expect_ok: {gax: true}
+
+  - id: kubectl_mock
+    category: happy_path
+    description: Mock kubectl pods list (no cluster)
+    gax_command: kubectl.get.pods
+    gax_args: {namespace: default}
+    cli_argv: []
+    expect_ok: {gax: true}
+
+  - id: aws_mock_list
+    category: happy_path
+    description: Mock S3 bucket list
+    gax_command: aws.s3.list
+    gax_args: {}
+    cli_argv: []
+    expect_ok: {gax: true}
+
+  - id: jira_mock_get
+    category: happy_path
+    description: Mock Jira issue fetch
+    gax_command: jira.issue.get
+    gax_args: {issue_key: DEMO-42}
+    cli_argv: []
+    expect_ok: {gax: true}
+
+  # --- Error / denial (7–11) ---
+  - id: pr_list_invalid_repo
+    category: error
+    description: gh fails on nonexistent repository
+    gax_command: gh.pr.list
+    gax_args: {repo: octocat/this-repo-does-not-exist-99999, limit: 3}
+    cli_argv: ["gh", "pr", "list", "--repo", "octocat/this-repo-does-not-exist-99999", "--limit", "3"]
+    expect_ok: {cli: false, gax: false}
+
+  - id: pr_view_invalid_number
+    category: error
+    description: View PR number that does not exist
+    gax_command: gh.pr.view
+    gax_args: {repo: octocat/Hello-World, number: 999999}
+    cli_argv: ["gh", "pr", "view", "999999", "--repo", "octocat/Hello-World"]
+    expect_ok: {cli: false, gax: false}
+
+  - id: unknown_command
+    category: error
+    description: Invoke unregistered GAX command
+    gax_command: demo.does_not_exist
+    gax_args: {}
+    cli_argv: []
+    gax_only: true
+    expect_ok: {gax: false}
+    expect_error_kind: not_found
+
+  - id: policy_denied
+    category: error
+    description: Capability missing command permission
+    gax_command: gh.pr.list
+    gax_args: {repo: octocat/Hello-World, limit: 2}
+    cap_commands: [demo.echo]
+    cli_argv: []
+    gax_only: true
+    expect_ok: {gax: false}
+    expect_error_kind: policy_denied
+
+  - id: cli_bad_flag
+    category: error
+    description: CLI fails mid-workflow (invalid gh flag)
+    gax_command: gh.pr.list
+    gax_args: {repo: octocat/Hello-World, limit: 3}
+    cli_argv: ["gh", "pr", "list", "--repo", "octocat/Hello-World", "--not-a-real-flag"]
+    expect_ok: {cli: false, gax: true}
+
+  # --- Truncation & discovery (12–14) ---
+  - id: large_output_truncation
+    category: truncation
+    description: Agent-visible output capped at 8k chars in transcript
     gax_command: demo.echo
     gax_args:
-      message: eval
+      message: "Lorem ipsum dolor sit amet. "
+    repeat_message: 2500
     cli_argv: []
+    transcript_cap_chars: 8000
+    expect_ok: {gax: true}
+
+  - id: discovery_only
+    category: discovery
+    description: Token cost of gax doc stub without invoke
+    discovery_command: gh.pr.list
+    cli_argv: []
+    gax_only: true
+    expect_ok: {gax: true}
+
+  - id: search_stub
+    category: discovery
+    description: Token cost of search result stub (one hit)
+    discovery_mode: search
+    discovery_query: pull request
+    cli_argv: []
+    gax_only: true
+    expect_ok: {gax: true}
+
+  # --- Multi-turn & plans (15–18) ---
+  - id: multi_turn_pr_workflow
+    category: multi_turn
+    description: Three-turn agent session (list → view → echo)
+    turns:
+      - {gax_command: gh.pr.list, gax_args: {repo: octocat/Hello-World, limit: 3}}
+      - {gax_command: gh.pr.view, gax_args: {repo: octocat/Hello-World, number: 1}}
+      - {gax_command: demo.echo, gax_args: {message: workflow-complete}}
+    cli_turns:
+      - ["gh", "pr", "list", "--repo", "octocat/Hello-World", "--limit", "3", "--json", "number,title"]
+      - ["gh", "pr", "view", "1", "--repo", "octocat/Hello-World", "--json", "number,title"]
+    expect_ok: {gax: true}
+
+  - id: plan_parallel_happy
+    category: plan
+    description: Parallel echo + PR list plan succeeds
+    plan_file: eval/plans/plan_parallel.yaml
+    expect_ok: {gax: true}
+
+  - id: plan_with_failure
+    category: plan
+    description: Plan stops after unknown command step
+    plan_file: eval/plans/plan_with_failure.yaml
+    expect_ok: {gax: false}
+    expect_error_kind: plan_failed
+
+  - id: mcp_bridge_pr_list
+    category: integration
+    description: GAX envelope over live GitHub MCP tool
+    gax_command: mcp.github.list_pulls
+    gax_args: {repo: octocat/Hello-World, state: open}
+    mcp_bridge: true
+    requires_token: true
+    cli_argv: ["gh", "pr", "list", "--repo", "octocat/Hello-World", "--limit", "5", "--json", "number,title,state"]
+    expect_ok: {gax: true}

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Full evaluation pipeline: unit tests + comparison + optional live MCP + report."""
+"""Full evaluation pipeline: unit tests + comparison + optional live MCP."""
 
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ def main() -> int:
     if not py.exists():
         py = Path(sys.executable)
 
-    report: dict = {"steps": []}
+    report: dict = {"steps": [], "bias_disclosure": "GAX self-assessment — no composite winner"}
 
     code, out = run([str(py), "-m", "pytest", "-q"], cwd=GAX)
     report["steps"].append({"name": "pytest", "ok": code == 0, "code": code})
@@ -33,30 +33,34 @@ def main() -> int:
         _write(report)
         return code
 
-    code, out = run([str(py), str(EVAL / "run_comparison.py")], cwd=GAX)
-    report["steps"].append({"name": "comparison", "ok": code == 0, "code": code})
+    code, out = run([str(py), str(EVAL / "run_comparison.py")], cwd=ROOT)
+    report["steps"].append({"name": "comparison_v2", "ok": code == 0, "code": code})
+    if code != 0:
+        print(out)
 
-    if __import__("os").environ.get("GITHUB_TOKEN") or __import__("os").environ.get(
-        "GITHUB_PERSONAL_ACCESS_TOKEN"
-    ):
-        code2, _ = run([str(py), str(EVAL / "run_comparison.py"), "--live-mcp"], cwd=GAX)
-        report["steps"].append({"name": "comparison_live_mcp", "ok": code2 == 0, "code": code2})
+    import os
 
-    comp = json.loads((OUT / "comparison.json").read_text())
-    report["winner"] = comp.get("winner")
-    report["summary"] = comp.get("summary_mean_composite")
+    if os.environ.get("GITHUB_TOKEN") or os.environ.get("GITHUB_PERSONAL_ACCESS_TOKEN"):
+        code2, _ = run(
+            [str(py), str(EVAL / "run_comparison.py"), "--live-mcp"],
+            cwd=ROOT,
+        )
+        report["steps"].append(
+            {"name": "comparison_live_mcp", "ok": code2 == 0, "code": code2}
+        )
 
-    gax_ok = report["summary"].get("gax", 0) >= max(
-        report["summary"].get("cli", 0),
-        report["summary"].get("mcp_naive_43", 0),
-    )
-    report["gax_leads_composite"] = gax_ok
+    comp_path = OUT / "comparison.json"
+    if comp_path.exists():
+        comp = json.loads(comp_path.read_text())
+        report["aggregate_by_modality"] = comp.get("aggregate_by_modality")
+        report["pareto_winners"] = comp.get("pareto_winners_per_axis")
+        report["task_count"] = comp.get("task_count")
+        report["token_counter"] = comp.get("token_counter")
 
     _write(report)
-    print(json.dumps(report["summary"], indent=2))
-    print(f"gax_leads_composite={gax_ok}")
+    print(json.dumps(report.get("aggregate_by_modality"), indent=2))
     print(f"Full report: {OUT / 'full_eval.json'}")
-    return 0 if gax_ok else 1
+    return 0 if all(s.get("ok") for s in report["steps"]) else 1
 
 
 def _write(report: dict) -> None:

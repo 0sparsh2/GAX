@@ -11,6 +11,10 @@ tenants:
       - demo.echo
       - gh.pr.list
       - gh.pr.view
+      - kubectl.get.pods
+      - aws.s3.list
+      - jira.issue.get
+      - mcp.github.list_pulls
     denied_commands: []
     repo_allowlist: []  # empty = allow all repos
 

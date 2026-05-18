@@ -1,0 +1,9 @@
+name: eval-plan-parallel
+steps:
+  - parallel:
+      - id: echo
+        command: demo.echo
+        args: {message: parallel-a}
+      - id: list
+        command: gh.pr.list
+        args: {repo: octocat/Hello-World, limit: 3}

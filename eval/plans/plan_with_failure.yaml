@@ -1,0 +1,8 @@
+name: eval-plan-fail
+steps:
+  - id: echo_ok
+    command: demo.echo
+    args: {message: step-before-failure}
+  - id: fail_step
+    command: demo.does_not_exist
+    args: {}

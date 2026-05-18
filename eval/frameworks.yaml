@@ -1,0 +1,20 @@
+# External frameworks referenced for context — we do NOT blend these into a single GAX-favored score.
+frameworks:
+  - name: Scalekit MCP vs CLI study
+    url: https://www.scalekit.com/blog/mcp-vs-cli-use
+    metrics: [token_multiplier_vs_cli, mcp_timeout_rate]
+    cited_values:
+      token_multiplier: "4x–32x"
+      mcp_failure_rate: "28%"
+
+  - name: Anthropic code execution with MCP
+    url: https://www.anthropic.com/engineering/code-execution-with-mcp
+    metrics: [context_reduction_with_code_mode]
+
+  - name: Cloudflare Code Mode
+    url: https://blog.cloudflare.com/code-mode-mcp/
+    metrics: [schema_tokens_idle_vs_optimized]
+
+bias_disclosure: |
+  GAX/ACSP is authored by this repository's maintainers. Primary eval outputs are
+  separate axes (tokens, success, audit_id, structured envelope). See eval/METHODOLOGY.md.
