@@ -23,6 +23,9 @@ cd gax && pip install -e ".[dev]"
 
 # repo-root .env:
 #   GITHUB_TOKEN=...          # live gh.pr.*
+#   GEMINI_API_KEY=...        # preferred if set (uses OpenAI-compatible API)
+#   GEMINI_MODEL=gemini-2.5-flash   # recommended (3.1-pro often has zero free quota)
+#   GEMINI_FALLBACK_MODEL=gemini-2.5-flash
 #   OPENAI_API_KEY=...        # or ANTHROPIC_API_KEY
 ```
 

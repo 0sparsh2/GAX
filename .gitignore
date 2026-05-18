@@ -12,6 +12,7 @@ venv/
 examples/agent_runs/*/
 !examples/agent_runs/.gitkeep
 !examples/agent_runs/README.md
+!examples/agent_runs/SAMPLE_RUN/
 *.log
 .DS_Store
 .pytest_cache/

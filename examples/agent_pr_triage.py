@@ -9,7 +9,7 @@ Proves:
   - multi-step PR triage with error recovery
 
 Requires: pip install -r examples/requirements-agent.txt
-           OPENAI_API_KEY or ANTHROPIC_API_KEY in repo .env
+           GEMINI_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY in repo .env
            GITHUB_TOKEN for live gh.pr.* (optional: mock fallback)
 
 Outputs: examples/agent_runs/<run_id>/
@@ -25,9 +25,10 @@ import argparse
 import json
 import os
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 ROOT = Path(__file__).resolve().parents[1]
 EXAMPLES = Path(__file__).resolve().parent
@@ -57,6 +58,16 @@ MAX_TURNS = 24
 
 
 def _pick_llm() -> tuple[str, str]:
+    # Prefer explicit provider env, else first key found
+    prefer = os.environ.get("AGENT_LLM_PROVIDER", "").lower()
+    if prefer == "gemini" and os.environ.get("GEMINI_API_KEY"):
+        return "gemini", os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
+    if prefer == "openai" and os.environ.get("OPENAI_API_KEY"):
+        return "openai", os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
+    if prefer == "anthropic" and os.environ.get("ANTHROPIC_API_KEY"):
+        return "anthropic", os.environ.get("ANTHROPIC_MODEL", "claude-3-5-haiku-latest")
+    if os.environ.get("GEMINI_API_KEY"):
+        return "gemini", os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
     if os.environ.get("OPENAI_API_KEY"):
         return "openai", os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
     if os.environ.get("ANTHROPIC_API_KEY"):
@@ -64,13 +75,252 @@ def _pick_llm() -> tuple[str, str]:
     return "", ""
 
 
-def _run_openai(
-    messages: list[dict[str, Any]],
+def _is_rate_limit_error(exc: BaseException) -> bool:
+    msg = str(exc).lower()
+    return any(
+        x in msg
+        for x in (
+            "429",
+            "rate limit",
+            "rate_limit",
+            "resource_exhausted",
+            "quota",
+            "too many requests",
+        )
+    )
+
+
+def _is_quota_exhausted(exc: BaseException) -> bool:
+    return "quota" in str(exc).lower() and "exceeded" in str(exc).lower()
+
+
+def _gemini_fallback_model(model: str) -> str | None:
+    """Free tier often blocks pro/preview; gemini-2.5-flash usually works."""
+    low = model.lower()
+    if "2.5-flash" in low or "flash-lite" in low:
+        return None
+    return os.environ.get("GEMINI_FALLBACK_MODEL", "gemini-2.5-flash")
+
+
+def _gemini_tool_declarations():
+    from google.genai import types
+
+    decls = []
+    for t in LLM_TOOL_SPECS:
+        decls.append(
+            types.FunctionDeclaration(
+                name=t["name"],
+                description=t["description"],
+                parameters_json_schema=t["parameters"],
+            )
+        )
+    return types.Tool(function_declarations=decls)
+
+
+def _gemini_client():
+    from google import genai
+
+    return genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+
+
+def _gemini_generate(
+    client: Any,
     model: str,
+    contents: list[Any],
+) -> tuple[str, list[dict[str, Any]], list[Any]]:
+    from google.genai import types
+
+    config = types.GenerateContentConfig(
+        system_instruction=AGENT_SYSTEM_PROMPT,
+        tools=[_gemini_tool_declarations()],
+        temperature=0.2,
+        automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
+    )
+    response = client.models.generate_content(model=model, contents=contents, config=config)
+    text_parts: list[str] = []
+    tool_calls: list[dict[str, Any]] = []
+    if response.candidates and response.candidates[0].content:
+        model_content = response.candidates[0].content
+        new_contents = list(contents) + [model_content]
+        for part in model_content.parts or []:
+            if part.text:
+                text_parts.append(part.text)
+            if part.function_call:
+                fc = part.function_call
+                tool_calls.append(
+                    {
+                        "id": f"call_{fc.name}_{len(tool_calls)}",
+                        "name": fc.name,
+                        "arguments": dict(fc.args) if fc.args else {},
+                    }
+                )
+        return "\n".join(text_parts), tool_calls, new_contents
+    return "", [], contents
+
+
+def run_agent_loop_gemini(
+    registry: Registry,
+    capability: str,
+    receipt: RunReceipt,
+    transcript: JsonlLog,
+    *,
+    model: str,
+    repo: str,
+    max_turns: int = MAX_TURNS,
+) -> dict[str, Any]:
+    from google.genai import types
+
+    client = _gemini_client()
+    active_model = model
+    contents: list[Any] = [
+        types.Content(
+            role="user",
+            parts=[types.Part.from_text(text=build_user_mission(repo))],
+        )
+    ]
+    transcript.write({"type": "system", "content": AGENT_SYSTEM_PROMPT})
+    transcript.write({"type": "user", "content": build_user_mission(repo)})
+
+    final_answer = ""
+    turn = 0
+
+    def _log(msg: str) -> None:
+        transcript.write({"type": "rate_limit", "message": msg})
+        print(msg, flush=True)
+
+    def _generate() -> tuple[str, list[dict[str, Any]], list[Any]]:
+        nonlocal active_model
+        try:
+            return _gemini_generate(client, active_model, contents)
+        except Exception as e:
+            fallback = _gemini_fallback_model(active_model)
+            if fallback and (_is_quota_exhausted(e) or _is_rate_limit_error(e)):
+                print(f"Gemini {active_model!r} unavailable; switching to {fallback!r} …", flush=True)
+                active_model = fallback
+                return _gemini_generate(client, active_model, contents)
+            raise
+
+    while turn < max_turns:
+        turn += 1
+        text, tool_calls, contents = _call_with_retry(_generate, log=_log)
+
+        if text:
+            transcript.write({"type": "assistant_text", "turn": turn, "content": text})
+            if "FINAL_ANSWER" in text:
+                final_answer = text
+                transcript.write({"type": "final_answer", "turn": turn, "content": text})
+                break
+
+        if not tool_calls:
+            if text:
+                contents.append(
+                    types.Content(
+                        role="user",
+                        parts=[
+                            types.Part.from_text(
+                                text="Continue using gax_search/gax_doc/gax_invoke, or reply with FINAL_ANSWER."
+                            )
+                        ],
+                    )
+                )
+            continue
+
+        response_parts: list[Any] = []
+        for tc in tool_calls:
+            name = tc["name"]
+            args = tc["arguments"]
+            result = dispatch_tool(registry, capability, name, args)
+            aid = result.get("audit_id")
+            receipt.record_audit(aid)
+
+            transcript.write(
+                {
+                    "type": "tool_call",
+                    "turn": turn,
+                    "tool": name,
+                    "arguments": args,
+                    "result": result,
+                    "audit_id": aid,
+                }
+            )
+
+            if name == "gax_invoke":
+                env = result.get("envelope") or {}
+                transcript.write(
+                    {
+                        "type": "gax_invoke_receipt",
+                        "turn": turn,
+                        "command": args.get("command"),
+                        "audit_id": aid,
+                        "ok": env.get("ok"),
+                        "error_kind": (env.get("error") or {}).get("kind")
+                        if isinstance(env.get("error"), dict)
+                        else None,
+                        "data_keys": list((env.get("data") or {}).keys()),
+                    }
+                )
+
+            response_parts.append(
+                types.Part.from_function_response(name=name, response=result)
+            )
+
+        contents.append(
+            types.Content(role="user", parts=response_parts)
+        )
+
+    correlation = verify_audit_ids(receipt.audit_ids)
+    proof = analyze_transcript_for_proof(transcript.path)
+
+    return {
+        "turns": turn,
+        "final_answer": final_answer[:2000] if final_answer else None,
+        "audit_correlation": correlation,
+        "proof_flags": proof,
+        "completed": proof.get("completed") or bool(final_answer),
+        "gemini_model_used": active_model,
+    }
+
+
+def _call_with_retry(
+    fn: Callable[[], tuple[str, list[dict[str, Any]]]],
+    *,
+    max_retries: int = 6,
+    log: Callable[[str], None] | None = None,
 ) -> tuple[str, list[dict[str, Any]]]:
+    last: BaseException | None = None
+    for attempt in range(max_retries):
+        try:
+            return fn()
+        except Exception as e:
+            last = e
+            if _is_rate_limit_error(e) and attempt < max_retries - 1:
+                wait = min(90, 5 * (2**attempt))
+                if log:
+                    log(f"Rate limited (attempt {attempt + 1}/{max_retries}), sleeping {wait}s …")
+                time.sleep(wait)
+                continue
+            raise
+    raise last  # type: ignore[misc]
+
+
+def _openai_client(provider: str):
     from openai import OpenAI
 
-    client = OpenAI()
+    if provider == "gemini":
+        return OpenAI(
+            api_key=os.environ["GEMINI_API_KEY"],
+            base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+        )
+    return OpenAI()
+
+
+def _run_openai_compat(
+    messages: list[dict[str, Any]],
+    model: str,
+    *,
+    provider: str,
+) -> tuple[str, list[dict[str, Any]]]:
+    client = _openai_client(provider)
     tools = [{"type": "function", "function": t} for t in LLM_TOOL_SPECS]
     resp = client.chat.completions.create(
         model=model,
@@ -92,6 +342,21 @@ def _run_openai(
                 }
             )
     return text, tool_calls
+
+
+def _run_openai(messages: list[dict[str, Any]], model: str) -> tuple[str, list[dict[str, Any]]]:
+    return _run_openai_compat(messages, model, provider="openai")
+
+
+def _run_gemini(messages: list[dict[str, Any]], model: str) -> tuple[str, list[dict[str, Any]]]:
+    try:
+        return _run_openai_compat(messages, model, provider="gemini")
+    except Exception as e:
+        fallback = _gemini_fallback_model(model)
+        if fallback and _is_quota_exhausted(e):
+            print(f"Gemini model {model!r} quota exhausted; retrying with {fallback!r} …", flush=True)
+            return _run_openai_compat(messages, fallback, provider="gemini")
+        raise
 
 
 def _run_anthropic(
@@ -184,13 +449,35 @@ def run_agent_loop(
     transcript.write({"type": "system", "content": AGENT_SYSTEM_PROMPT})
     transcript.write({"type": "user", "content": build_user_mission(repo)})
 
-    llm_fn = _run_openai if provider == "openai" else _run_anthropic
+    if provider == "gemini":
+        return run_agent_loop_gemini(
+            registry,
+            capability,
+            receipt,
+            transcript,
+            model=model,
+            repo=repo,
+            max_turns=max_turns,
+        )
+
+    if provider == "openai":
+        llm_fn = _run_openai
+    else:
+        llm_fn = _run_anthropic
+
     final_answer = ""
     turn = 0
 
+    def _log(msg: str) -> None:
+        transcript.write({"type": "rate_limit", "message": msg})
+        print(msg, flush=True)
+
     while turn < max_turns:
         turn += 1
-        text, tool_calls = llm_fn(messages, model)
+        text, tool_calls = _call_with_retry(
+            lambda: llm_fn(messages, model),
+            log=_log,
+        )
 
         if text:
             transcript.write({"type": "assistant_text", "turn": turn, "content": text})
@@ -318,6 +605,8 @@ def write_summary(
         ]
     )
     if agent:
+        if agent.get("gemini_model_used"):
+            lines.append(f"- Gemini model used: **{agent.get('gemini_model_used')}**")
         lines.extend(
             [
                 f"- Completed: **{agent.get('completed')}**",
@@ -337,7 +626,7 @@ def write_summary(
         if agent.get("final_answer"):
             lines.extend(["", "### Final answer (excerpt)", "", "```", agent["final_answer"][:1500], "```"])
     else:
-        lines.append("*Agent loop skipped (no OPENAI_API_KEY / ANTHROPIC_API_KEY).*")
+        lines.append("*Agent loop skipped (set GEMINI_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY).*")
 
     lines.extend(
         [
@@ -390,7 +679,7 @@ def main() -> int:
     if not args.governance_only:
         if not provider:
             print(
-                "ERROR: Set OPENAI_API_KEY or ANTHROPIC_API_KEY in .env to run the LLM agent loop.",
+                "ERROR: Set GEMINI_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY in .env to run the LLM agent loop.",
                 file=sys.stderr,
             )
             print("Governance receipts were still written.", file=sys.stderr)
