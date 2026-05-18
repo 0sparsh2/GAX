@@ -205,7 +205,17 @@ Reproducible harness: **18 tasks** (happy path, errors, policy denial, truncatio
 | `gax` | `gax doc` stub + envelope v1 |
 | `gax_mcp_bridge` | Envelope over MCP tool (schema not in prompt) |
 
-*Latest run: [`eval/results/comparison.md`](eval/results/comparison.md)* · **Case study:** [eval/case_study/README.md](eval/case_study/README.md)
+**Latest live run** ([summary](eval/results/live-run-summary.md)):
+
+| Modality | Median tokens | Audit-id rate |
+|----------|---------------|---------------|
+| cli | 104 | 0% |
+| gax | 137 | 80% |
+| gax_mcp_bridge | 732 | 100% |
+| mcp_live (26-tool GitHub server) | 4,483 | 0% |
+| mcp_naive_43 (Scalekit fixture) | 44,062 | 0% |
+
+*Details:* [`eval/results/comparison.md`](eval/results/comparison.md) · **Case study:** [eval/case_study/README.md](eval/case_study/README.md)
 
 ### Run evaluation locally
 
@@ -214,10 +224,8 @@ pip install -r eval/requirements.txt
 cd gax && python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 
+# Put GITHUB_TOKEN in repo-root .env (gitignored) or export it
 python ../eval/run_full.py
-python ../eval/run_comparison.py
-
-export GITHUB_TOKEN=ghp_...
 python ../eval/run_comparison.py --live-mcp
 python ../eval/case_study/run_case_study.py
 ```

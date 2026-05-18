@@ -6,18 +6,94 @@
       "code": 0
     },
     {
-      "name": "comparison",
+      "name": "comparison_v2",
+      "ok": true,
+      "code": 0
+    },
+    {
+      "name": "comparison_live_mcp",
       "ok": true,
       "code": 0
     }
   ],
-  "winner": "gax",
-  "summary": {
-    "cli": 0.678,
-    "mcp_naive_43": 0.5605,
-    "gax": 0.986,
-    "gax_mcp_bridge": 0.7363,
-    "gax_plan": 0.9838
+  "bias_disclosure": "GAX self-assessment \u2014 no composite winner",
+  "aggregate_by_modality": {
+    "cli": {
+      "n": 7,
+      "success_rate": 1.0,
+      "median_tokens": 104,
+      "mean_tokens": 105.6,
+      "audit_id_rate": 0.0,
+      "structured_envelope_rate": 0.0,
+      "mean_latency_ms": 303.84
+    },
+    "mcp_naive_43": {
+      "n": 12,
+      "success_rate": 1.0,
+      "median_tokens": 44062,
+      "mean_tokens": 44061.2,
+      "audit_id_rate": 0.0,
+      "structured_envelope_rate": 0.0,
+      "mean_latency_ms": 192.39
+    },
+    "mcp_naive_live": {
+      "n": 11,
+      "success_rate": 1.0,
+      "median_tokens": 4483,
+      "mean_tokens": 4480.4,
+      "audit_id_rate": 0.0,
+      "structured_envelope_rate": 0.0,
+      "mean_latency_ms": 149.97
+    },
+    "gax": {
+      "n": 15,
+      "success_rate": 1.0,
+      "median_tokens": 138,
+      "mean_tokens": 189.7,
+      "audit_id_rate": 0.8,
+      "structured_envelope_rate": 0.8,
+      "mean_latency_ms": 140.69
+    },
+    "gax_mcp_bridge": {
+      "n": 2,
+      "success_rate": 1.0,
+      "median_tokens": 734,
+      "mean_tokens": 595.0,
+      "audit_id_rate": 1.0,
+      "structured_envelope_rate": 1.0,
+      "mean_latency_ms": 856.95
+    },
+    "gax_plan": {
+      "n": 2,
+      "success_rate": 1.0,
+      "median_tokens": 657,
+      "mean_tokens": 482.0,
+      "audit_id_rate": 1.0,
+      "structured_envelope_rate": 1.0,
+      "mean_latency_ms": 166.47
+    }
   },
-  "gax_leads_composite": true
+  "pareto_winners": {
+    "lowest_median_tokens": [
+      "cli"
+    ],
+    "highest_success_rate": [
+      "cli",
+      "mcp_naive_43",
+      "mcp_naive_live",
+      "gax",
+      "gax_mcp_bridge",
+      "gax_plan"
+    ],
+    "highest_audit_id_rate": [
+      "gax_mcp_bridge",
+      "gax_plan"
+    ],
+    "highest_structured_envelope_rate": [
+      "gax_mcp_bridge",
+      "gax_plan"
+    ]
+  },
+  "task_count": 18,
+  "token_counter": "tiktoken cl100k_base"
 }

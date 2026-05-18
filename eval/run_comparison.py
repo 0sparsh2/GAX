@@ -595,10 +595,22 @@ def main() -> None:
         "# Evaluation: CLI vs naive MCP vs GAX (v2)\n",
         f"**Tasks:** {len(spec['tasks'])} · **Token counter:** `{enc}`\n",
         "**No weighted composite.** Separate metrics only; see [METHODOLOGY.md](../METHODOLOGY.md).\n",
-        "\n## Aggregate by modality\n",
-        "| modality | n | success_rate | median_tokens | audit_id_rate | structured_envelope_rate |\n",
-        "|---|---:|---:|---:|---:|---:|\n",
     ]
+    if mcp_probe and mcp_probe.get("ok"):
+        md.append(
+            f"\n**Live MCP probe:** {mcp_probe.get('tool_count')} tools, "
+            f"**{mcp_probe.get('schema_tokens')}** schema tokens (measured `tools/list`).\n"
+        )
+    md.append(
+        "\nPublishable summary: [live-run-summary.md](./live-run-summary.md)\n"
+        "\n## Aggregate by modality\n",
+    )
+    md.extend(
+        [
+            "| modality | n | success_rate | median_tokens | audit_id_rate | structured_envelope_rate |\n",
+            "|---|---:|---:|---:|---:|---:|\n",
+        ]
+    )
     for mod, a in sorted(agg.items()):
         md.append(
             f"| {mod} | {a['n']} | {a['success_rate']} | {a['median_tokens']} | "
@@ -607,7 +619,7 @@ def main() -> None:
     md.append("\n## Pareto winners (per axis, ties allowed)\n")
     for axis, winners in pareto.items():
         md.append(f"- **{axis}**: {', '.join(winners)}\n")
-    md.append("\n## Per-run sample\n| task | category | modality | ok | tokens | latency_ms |\n")
+    md.append("\n## Per-run sample\n| task | category | modality | success | tokens | latency_ms |\n")
     md.append("|---|---|---|---:|---:|---:|\n")
     for r in all_rows[:40]:
         md.append(
