@@ -2,58 +2,53 @@
 
 ## Goal
 
-Demonstrate that **GAX** matches or beats **CLI** on token efficiency while exceeding both on **governance** and **structured automation** — the dimensions where naive **MCP** pays a heavy cost.
+Measure **agent context cost** (tiktoken) and **outcome quality** (success, audit, structure) when the same logical work is done via CLI, naive MCP, or GAX.
+
+## Bias disclosure
+
+GAX is our protocol and reference implementation. We do **not** publish a team-weighted composite score. See [eval/METHODOLOGY.md](../eval/METHODOLOGY.md) and [eval/frameworks.yaml](../eval/frameworks.yaml).
 
 ## Harness
 
 ```bash
-cd gax && source .venv/bin/activate && pip install -e .
+pip install -r eval/requirements.txt
+cd gax && pip install -e ".[dev]"
 python ../eval/run_comparison.py
-# Optional: measure real tools/list from GitHub MCP server
-export GITHUB_TOKEN=ghp_...
+export GITHUB_TOKEN=...
 python ../eval/run_comparison.py --live-mcp
+python ../eval/case_study/run_case_study.py
 ```
 
-Outputs:
+## Suite (v2)
 
-- `eval/results/comparison.json`
-- `eval/results/comparison.md`
+18 tasks in `eval/tasks.yaml`: happy path, errors, policy denial, truncation, discovery, multi-turn, plan failure, MCP bridge.
 
 ## Modalities
 
 | Modality | What it measures |
 |----------|------------------|
-| `cli` | Raw `gh` subprocess; tokens ≈ command + stdout |
-| `mcp_naive_43` | Same backend + **43-tool** schema overhead (~44k tokens, Scalekit) |
-| `mcp_naive_93` | Same + **93-tool** idle schema (~55k, OnlyCLI) |
-| `gax` | `invoke()` with `surface=model`, cap, envelope, audit |
-| `gax_plan` | Parallel plan block → single combined envelope |
+| `cli` | `gh` subprocess; command + stdout in transcript |
+| `mcp_naive_43` | Same + **~44k schema tax** (Scalekit fixture) |
+| `mcp_live` | Real `tools/list` size when `--live-mcp` |
+| `gax` | `gax doc` stub + envelope v1 |
+| `gax_mcp_bridge` | Envelope over MCP (schema not in prompt) |
+| `gax_plan` | Multi-step plan → one envelope |
 
-## Composite score (higher = better)
+## Primary metrics (separate axes)
 
-| Dimension | Weight | CLI | MCP naive | GAX |
-|-----------|--------|-----|-----------|-----|
-| Token efficiency | 30% | High | Low | High |
-| Reliability | 25% | High | ~72% (Scalekit infra) | High |
-| Governance | 25% | Low | Medium | High |
-| Structured output | 20% | Medium | High | High |
+- Median / mean tokens (`tiktoken` cl100k_base)
+- Success rate (including expected failures on error tasks)
+- Audit-id rate
+- Structured-envelope rate
 
-Expected leader: **`gax`** or **`gax_plan`** on composite; **`cli`** on raw tokens only; **`mcp_naive_*`** lowest overall.
+Pareto winners per axis are reported in `eval/results/comparison.md` without declaring an overall champion.
 
-## Full pipeline
+## Case study
 
-```bash
-python eval/run_full.py   # pytest + comparison + full_eval.json
-```
+[eval/case_study/README.md](../eval/case_study/README.md) — 3-turn PR triage with published token table.
 
-## Limitations (document honestly)
+## Limitations
 
-- MCP is **simulated** (schema token tax + reliability factor), not a live MCP server in the loop.
-- Token counts are **estimates** (chars/4), not provider billing tokens.
-- For publication-grade results, wire Anthropic/OpenAI token APIs and Scalekit’s harness repo.
-
-## Next
-
-- Phase 2 deep-research JSON per benchmark item
-- Live MCP server in eval (optional `--live-mcp` flag)
-- Publish reproducible notebook from `comparison.json`
+- MCP schema tax uses published fixtures unless `--live-mcp`
+- `gax_mcp_bridge` requires `GITHUB_TOKEN`
+- Self-assessment; external benchmarks remain in `mcp_vs_cli_benchmarks_2026/`

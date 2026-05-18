@@ -1,48 +1,55 @@
-# Implementation roadmap
+# Implementation roadmap (honest status)
 
-## Phase 0 — Reference prototype ✅
+Labels: **Prototype** = works in repo/demo · **Stub** = interface/hook only · **Aspirational** = design only
+
+## Phase 0 — Reference prototype ✅ Prototype
 
 - [x] Envelope v1, manifests, gaxd, CLI, JWT caps, policy, audit, projection, adapters
 
-## Phase 1 — Hardening ✅
+## Phase 1 — Hardening ✅ Prototype
 
 - [x] OAuth device flow, cap-from-oauth, plan run (sequential + parallel)
-- [x] Mermaid PNG, deep-research Phase 1–2, keyring, macaroons, YAML policy, OTEL audit
-- [x] Evaluation harness
+- [x] Mermaid PNG, deep-research Phase 1–2, macaroons, YAML policy, OTEL audit hooks
+- [x] Evaluation harness v2 (18 tasks, tiktoken, no composite score)
 
-## Phase 2 — Adapters & ecosystem ✅ (MVP)
+## Phase 2 — Adapters & ecosystem — mixed
 
-- [x] **MCP bridge** — `adapter: mcp`, `mcp.github.list_pulls`, `gax/mcp_client.py`
-- [x] **OpenAPI generator** — `gax openapi generate`
-- [x] **Manifests** — kubectl, aws, jira (mock); petstore OpenAPI example
-- [x] **ACSP spec site** — `docs/acsp/`
-- [x] deep-research report + eval `--live-mcp`
+| Item | Status | Notes |
+|------|--------|-------|
+| MCP bridge | **Prototype** | `mcp.github.list_pulls`; needs `GITHUB_TOKEN`; eval integration tasks |
+| OpenAPI generator | **Prototype** | `gax openapi generate` |
+| kubectl / aws / jira | **Stub** | Mock adapters only |
+| ACSP-1.0 spec | **Prototype** | `docs/acsp/ACSP-1.0.md` (implementation-agnostic) |
+| deep-research report | **Prototype** | cited external benchmarks |
+| Live MCP eval | **Prototype** | `--live-mcp`; optional token |
 
-## Phase 3 — Enterprise ✅ (MVP)
+## Phase 3 — Enterprise — mostly stub
 
-- [x] **Vault** — `gax vault put/get`; file store + `GAX_HASHICORP_VAULT_ADDR` hook
-- [x] **SPIFFE** — `GAX_SPIFFE_*` env → audit metadata
-- [x] **Hosted gaxd** — `gaxd start --host 0.0.0.0` (TLS at gateway)
-- [x] **Compliance** — `gax compliance export --format csv|json`
-- [x] **OPA/Rego** — `config/policy.rego` + `opa eval` when `opa` binary present
+| Item | Status | Notes |
+|------|--------|-------|
+| Vault | **Stub** | File store + env hook; not production Vault cluster |
+| SPIFFE | **Stub** | Metadata from env vars |
+| Hosted gaxd | **Prototype** | `gaxd start --host 0.0.0.0`; TLS at gateway is deployment concern |
+| Compliance export | **Prototype** | CSV/JSON from audit log |
+| OPA/Rego | **Stub** | Optional `opa eval` when binary present |
 
-## Evaluation ✅
+## Evaluation — Prototype
 
 ```bash
-cd gax && source .venv/bin/activate && pip install -e ".[dev]"
-python ../eval/run_full.py          # pytest + comparison + report
-python ../eval/run_comparison.py    # quick matrix
-python ../eval/run_comparison.py --live-mcp   # + real tools/list
+pip install -r eval/requirements.txt
+cd gax && pip install -e ".[dev]"
+python ../eval/run_comparison.py          # mock-friendly
+export GITHUB_TOKEN=...
+python ../eval/run_comparison.py --live-mcp
+python ../eval/case_study/run_case_study.py
 ```
 
-Outputs: `eval/results/comparison.md`, `full_eval.json`
+Outputs: `eval/results/comparison.md` — **separate metrics**, no team-weighted “winner.”
 
-**Expected leader:** `gax` / `gax_mcp_bridge` on composite score (tokens + governance + structure).
+## Post-MVP (aspirational)
 
-## Post-MVP (production hardening)
-
-- [ ] MCP connection pool / persistent gaxd sessions
+- [ ] MCP connection pool / persistent sessions
 - [ ] Real kubectl/aws/jira exec adapters
-- [ ] Provider-native token counting (Anthropic/OpenAI APIs)
-- [ ] Hosted SSO gateway in front of gaxd
-- [ ] Formal ACSP RFC / independent conformance tests
+- [ ] Provider-native token APIs (Anthropic/OpenAI usage fields)
+- [ ] Independent ACSP conformance suite
+- [ ] External adopters / second implementation (Go/Rust)

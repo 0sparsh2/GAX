@@ -43,7 +43,7 @@ The formal protocol name is **ACSP** (Agent Capability Shell Protocol). This rep
 | Component | Path | Description |
 |-----------|------|-------------|
 | **Reference implementation** | [`gax/`](gax/) | Python package: `gax` CLI + `gaxd` daemon (v0.4) |
-| **ACSP specification** | [`docs/acsp/`](docs/acsp/) | Protocol docs, envelope, discovery |
+| **ACSP specification** | [`docs/acsp/`](docs/acsp/) | [ACSP-1.0](docs/acsp/ACSP-1.0.md) (implementation-agnostic) + envelope, discovery |
 | **Research hub** | [`research/`](research/) | MCP vs CLI analysis, diagrams, comparisons |
 | **Evaluation harness** | [`eval/`](eval/) | Reproducible CLI / MCP / GAX benchmarks |
 | **Deep research** | [`mcp_vs_cli_benchmarks_2026/`](mcp_vs_cli_benchmarks_2026/) | Cited benchmark synthesis |
@@ -193,43 +193,36 @@ MCP servers and existing CLIs become **adapters** behind stable GAX command name
 
 ## Evaluation
 
-We ship a reproducible harness comparing **CLI**, **simulated naive MCP**, and **GAX** on the same GitHub tasks.
+Reproducible harness: **18 tasks** (happy path, errors, policy denial, truncation, multi-turn, plan failure, MCP bridge). Token counts use **tiktoken** (`cl100k_base`), not hardcoded estimates.
 
-### Composite score (higher = better)
+**Bias disclosure:** GAX is our implementation. We report **separate metrics** (median tokens, success rate, audit-id rate, structured-envelope rate) — no team-chosen weighted composite. See [eval/METHODOLOGY.md](eval/METHODOLOGY.md).
 
-Weights: **tokens 30%** · **reliability 25%** · **governance 25%** · **structure 20%**
+| Modality | What it measures |
+|----------|------------------|
+| `cli` | Shell command + stdout in agent transcript |
+| `mcp_naive_43` | Same work + ~44k schema tax (Scalekit fixture) |
+| `mcp_live` | Optional real `tools/list` size (`--live-mcp`) |
+| `gax` | `gax doc` stub + envelope v1 |
+| `gax_mcp_bridge` | Envelope over MCP tool (schema not in prompt) |
 
-| Modality | Mean composite | Notes |
-|----------|----------------|-------|
-| **gax** | **0.986** | Best overall |
-| **gax_plan** | 0.984 | Multi-step + parallel in one envelope |
-| cli | 0.678 | Good tokens, weak governance |
-| mcp_naive_43 | 0.561 | ~44k schema tax per session |
-| gax_mcp_bridge | 0.74+ | GAX envelope over MCP adapter (needs `GITHUB_TOKEN`) |
-
-*Latest run: [`eval/results/comparison.md`](eval/results/comparison.md)*
+*Latest run: [`eval/results/comparison.md`](eval/results/comparison.md)* · **Case study:** [eval/case_study/README.md](eval/case_study/README.md)
 
 ### Run evaluation locally
 
 ```bash
-cd gax
-python3 -m venv .venv && source .venv/bin/activate
+pip install -r eval/requirements.txt
+cd gax && python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 
-# Full pipeline: pytest + comparison + report
 python ../eval/run_full.py
-
-# Quick comparison only
 python ../eval/run_comparison.py
 
-# Include live MCP tools/list probe
 export GITHUB_TOKEN=ghp_...
 python ../eval/run_comparison.py --live-mcp
+python ../eval/case_study/run_case_study.py
 ```
 
-**Conclusion:** GAX matches CLI on token efficiency while leading on governance and structured automation—the dimensions where naive MCP and raw CLI trade off against each other.
-
-Details: [research/10-evaluation.md](research/10-evaluation.md) · [mcp_vs_cli_benchmarks_2026/report.md](mcp_vs_cli_benchmarks_2026/report.md)
+Independent references: [mcp_vs_cli_benchmarks_2026/report.md](mcp_vs_cli_benchmarks_2026/report.md) · [research/10-evaluation.md](research/10-evaluation.md)
 
 ---
 
@@ -512,10 +505,10 @@ python ../deep-research/scripts/validate_json.py \
 
 | Phase | Status | Highlights |
 |-------|--------|------------|
-| **0** Prototype | ✅ | Envelope, gaxd, manifests, JWT caps |
-| **1** Hardening | ✅ | OAuth, plans, macaroons, OTEL audit, eval |
-| **2** Ecosystem | ✅ MVP | MCP bridge, OpenAPI gen, ACSP docs |
-| **3** Enterprise | ✅ MVP | Vault, SPIFFE hooks, compliance export, OPA |
+| **0** Prototype | Working | Envelope, gaxd, manifests, JWT caps |
+| **1** Hardening | Working | OAuth, plans, macaroons, eval v2 |
+| **2** Ecosystem | Mixed | MCP bridge (prototype); kubectl/aws/jira (stub) |
+| **3** Enterprise | Mostly stub | Vault/SPIFFE/OPA hooks; compliance export (prototype) |
 
 **Post-MVP:** MCP connection pooling · real kubectl/aws/jira exec adapters · provider-native token APIs · hosted SSO gateway
 
@@ -531,7 +524,7 @@ Full checklist: [research/06-implementation-roadmap.md](research/06-implementati
 
 ## Contributing
 
-Issues and PRs welcome. For large changes, open an issue first to discuss adapter design or protocol changes (ACSP).
+See [CONTRIBUTING.md](CONTRIBUTING.md) — adapters, eval tasks, manifests, protocol change process.
 
 **Quick links**
 

@@ -6,6 +6,7 @@
 
 | Doc | Description |
 |-----|-------------|
+| **[ACSP-1.0.md](./ACSP-1.0.md)** | **Implementation-agnostic protocol spec** |
 | [protocol.md](./protocol.md) | Normative overview: planes, envelope, capabilities |
 | [envelope-v1.md](./envelope-v1.md) | Response envelope schema |
 | [discovery.md](./discovery.md) | Lazy `search` / `doc` / `schema` |
