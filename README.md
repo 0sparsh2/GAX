@@ -225,7 +225,7 @@ Reproducible harness: **18 tasks** (happy path, errors, policy denial, truncatio
 
 [`examples/agent_pr_triage.py`](examples/agent_pr_triage.py) runs an **actual LLM** with only `gax_search` / `gax_doc` / `gax_invoke` — no hardcoded tool catalog. The agent discovers commands at runtime, lists and inspects a live PR on `octocat/Hello-World`, summarizes review risk, and posts a draft comment via `demo.echo`. A deterministic **governance block** (policy deny, scope mismatch, expired capability) runs first; every invoke gets an `audit_id` verifiable in `~/.gax/audit.jsonl`.
 
-**Proof run:** [examples/agent_runs/SAMPLE_RUN/](examples/agent_runs/SAMPLE_RUN/) (`20260518T185623Z` — Gemini 2.5 Flash, `discovery_before_first_invoke: true`, all audit IDs correlated). See [examples/README.md](examples/README.md).
+**Proof run:** [examples/agent_runs/SAMPLE_RUN/](examples/agent_runs/SAMPLE_RUN/) (`20260518T193305Z` — Gemini 2.5 Flash-Lite, recovery probe + full agent loop, all audit IDs correlated). See [examples/README.md](examples/README.md).
 
 ```bash
 pip install -r examples/requirements-agent.txt

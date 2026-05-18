@@ -44,7 +44,7 @@ Outputs: `examples/agent_runs/<timestamp>/`
 
 ### Committed proof run
 
-[`agent_runs/SAMPLE_RUN/`](agent_runs/SAMPLE_RUN/) — operational receipts from a live run (`20260518T185623Z`): the LLM discovers commands via `gax_search` / `gax_doc`, invokes `gh.pr.list` and `gh.pr.view` against `octocat/Hello-World`, drafts a review comment, and posts via `demo.echo`. Governance scenarios (policy deny, scope mismatch, expired capability) run without the LLM and every `audit_id` correlates to `~/.gax/audit.jsonl`. Inspect `transcript.jsonl` for the full tool chain (including API-key fallback on rate limit).
+[`agent_runs/SAMPLE_RUN/`](agent_runs/SAMPLE_RUN/) — operational receipts from one live run (`20260518T193305Z`): pre-LLM recovery probe (`adapter_error` → retry), then the LLM discovers commands via `gax_search` / `gax_doc`, triages PR #9520 on `octocat/Hello-World`, and posts a draft comment via `demo.echo`. Governance scenarios run without the LLM; every `audit_id` correlates to `~/.gax/audit.jsonl`.
 
 ### Other examples
 

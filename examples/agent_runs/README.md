@@ -2,7 +2,7 @@
 
 Each `python examples/agent_pr_triage.py` run creates a timestamped folder here.
 
-**Committed proof run:** [`SAMPLE_RUN/`](SAMPLE_RUN/) — LLM loop from `20260518T185623Z` plus pre-LLM recovery probe (`adapter_error` on missing `repo` → retry; `recovery_after_error: true`). Re-run `python examples/agent_pr_triage.py` locally to refresh; never commit secrets or tokens.
+**Committed proof run:** [`SAMPLE_RUN/`](SAMPLE_RUN/) — single run `20260518T193305Z` (`gemini-2.5-flash-lite`, governance + recovery probe + live PR triage on `octocat/Hello-World`). Re-run `python examples/agent_pr_triage.py` locally to refresh; never commit secrets or tokens.
 
 **Not committed by default** (see root `.gitignore`). After a successful run, you may commit a redacted folder as proof.
 

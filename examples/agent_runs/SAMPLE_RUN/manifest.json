@@ -1,41 +1,41 @@
 {
-  "run_id": "20260518T185623Z",
+  "run_id": "20260518T193305Z",
   "repo": "octocat/Hello-World",
-  "model": "gemini:gemini-2.5-flash",
+  "model": "gemini:gemini-2.5-flash-lite",
   "governance": {
     "scenarios": [
       {
         "scenario": "policy_denied_command",
         "expected": "policy_denied",
         "pass": true,
-        "audit_id": "aud_df6972e2a2744b5a",
+        "audit_id": "aud_6d171edc76924b3d",
         "envelope_ok": false
       },
       {
         "scenario": "scope_mismatch",
         "expected": "policy_denied",
         "pass": true,
-        "audit_id": "aud_17ea138423d14fd5"
+        "audit_id": "aud_b9b8afe214bd4f86"
       },
       {
         "scenario": "expired_cap",
         "expected": "capability_invalid",
         "pass": true,
-        "audit_id": "aud_1ee2b3e4a9b7479a"
+        "audit_id": "aud_c78e05d063554cf4"
       },
       {
         "scenario": "allowed_invoke",
         "expected": "ok",
         "pass": true,
-        "audit_id": "aud_f77c24a4a7424a6f"
+        "audit_id": "aud_a3ecf6bc4f2546ea"
       }
     ],
     "all_pass": true,
     "audit_correlation": {
       "found": {
-        "aud_df6972e2a2744b5a": {
-          "ts": "2026-05-18T18:56:23.698251+00:00",
-          "audit_id": "aud_df6972e2a2744b5a",
+        "aud_6d171edc76924b3d": {
+          "ts": "2026-05-18T19:33:05.392092+00:00",
+          "audit_id": "aud_6d171edc76924b3d",
           "tenant_id": "default",
           "subject": "dev@local",
           "command": "gh.pr.list",
@@ -47,9 +47,9 @@
           "error_kind": "policy_denied",
           "duration_ms": null
         },
-        "aud_17ea138423d14fd5": {
-          "ts": "2026-05-18T18:56:23.698923+00:00",
-          "audit_id": "aud_17ea138423d14fd5",
+        "aud_b9b8afe214bd4f86": {
+          "ts": "2026-05-18T19:33:05.392764+00:00",
+          "audit_id": "aud_b9b8afe214bd4f86",
           "tenant_id": "default",
           "subject": "dev@local",
           "command": "gh.pr.list",
@@ -61,9 +61,9 @@
           "error_kind": "policy_denied",
           "duration_ms": null
         },
-        "aud_1ee2b3e4a9b7479a": {
-          "ts": "2026-05-18T18:56:25.703725+00:00",
-          "audit_id": "aud_1ee2b3e4a9b7479a",
+        "aud_c78e05d063554cf4": {
+          "ts": "2026-05-18T19:33:07.393378+00:00",
+          "audit_id": "aud_c78e05d063554cf4",
           "tenant_id": "unknown",
           "subject": "unknown",
           "command": "demo.echo",
@@ -74,9 +74,9 @@
           "error_kind": "capability_invalid",
           "duration_ms": null
         },
-        "aud_f77c24a4a7424a6f": {
-          "ts": "2026-05-18T18:56:25.706377+00:00",
-          "audit_id": "aud_f77c24a4a7424a6f",
+        "aud_a3ecf6bc4f2546ea": {
+          "ts": "2026-05-18T19:33:07.394995+00:00",
+          "audit_id": "aud_a3ecf6bc4f2546ea",
           "tenant_id": "default",
           "subject": "dev@local",
           "command": "demo.echo",
@@ -85,7 +85,7 @@
           },
           "ok": true,
           "error_kind": null,
-          "duration_ms": 1.96
+          "duration_ms": 1.2
         }
       },
       "missing": [],
@@ -93,13 +93,13 @@
     }
   },
   "agent": {
-    "turns": 9,
-    "final_answer": "FINAL_ANSWER\nHere's the summary of the merge/review risk for PR 9494 \"Feature dashboard\" and the drafted GitHub review comment:\n\n**Selected PR:**\nPR #9494 \"Feature dashboard\" by @Roobini-192421114. I chose this PR because it has the lowest number among the listed open PRs, which often suggests it might be older and potentially more neglected.\n\n**Merge/Review Risk Summary for PR 9494 \"Feature dashboard\":**\n*   **Vague Description:** The PR body \"Implemented dashboard feature in dashboard.py file.\" is very brief and lacks details about what the dashboard does, its purpose, or how to test it. This increases review effort.\n*   **Potential for Scope Creep/Missing Context:** A \"dashboard feature\" can be quite broad. Without more context, it's hard to assess the full impact, potential dependencies, or if it aligns with the project's roadmap.\n*   **Lack of Testing Information:** There's no mention of how to test this new feature, what scenarios it covers, or if any unit/integration tests were added. This increases the risk of introducing bugs.\n*   **Single File Change:** While not inherently a risk, a significant \"dashboard feature\" being implemented in a single `dashboard.py` file might indicate a large, monolithic change that could be harder to review and maintain, or it might be a very minimal feature. Without more details, it's a flag for closer inspection.\n\n**Drafted GitHub Review Comment:**\n\n```\nHi @Roobini-192421114, thanks for your contribution! Could you please provide more details about this dashboard feature? Specifically, it would be helpful to understand:\n*   What is the primary purpose or functionality of this dashboard?\n*   Are there any specific steps to test this feature?\n*   Could you elaborate on the changes made in `dashboard.py` and how they contribute to the overall feature?\n\nThis information will help us review your pull request more effectively. Thanks!\n```",
+    "turns": 7,
+    "final_answer": "FINAL_ANSWER\nHi there! Thanks for your contribution. This PR seems to be a very small change. Could you please provide a bit more context on what this change is intended to do? This will help us review it more effectively. Thanks!",
     "audit_correlation": {
       "found": {
-        "aud_df6972e2a2744b5a": {
-          "ts": "2026-05-18T18:56:23.698251+00:00",
-          "audit_id": "aud_df6972e2a2744b5a",
+        "aud_6d171edc76924b3d": {
+          "ts": "2026-05-18T19:33:05.392092+00:00",
+          "audit_id": "aud_6d171edc76924b3d",
           "tenant_id": "default",
           "subject": "dev@local",
           "command": "gh.pr.list",
@@ -111,9 +111,9 @@
           "error_kind": "policy_denied",
           "duration_ms": null
         },
-        "aud_17ea138423d14fd5": {
-          "ts": "2026-05-18T18:56:23.698923+00:00",
-          "audit_id": "aud_17ea138423d14fd5",
+        "aud_b9b8afe214bd4f86": {
+          "ts": "2026-05-18T19:33:05.392764+00:00",
+          "audit_id": "aud_b9b8afe214bd4f86",
           "tenant_id": "default",
           "subject": "dev@local",
           "command": "gh.pr.list",
@@ -125,9 +125,9 @@
           "error_kind": "policy_denied",
           "duration_ms": null
         },
-        "aud_1ee2b3e4a9b7479a": {
-          "ts": "2026-05-18T18:56:25.703725+00:00",
-          "audit_id": "aud_1ee2b3e4a9b7479a",
+        "aud_c78e05d063554cf4": {
+          "ts": "2026-05-18T19:33:07.393378+00:00",
+          "audit_id": "aud_c78e05d063554cf4",
           "tenant_id": "unknown",
           "subject": "unknown",
           "command": "demo.echo",
@@ -138,9 +138,9 @@
           "error_kind": "capability_invalid",
           "duration_ms": null
         },
-        "aud_f77c24a4a7424a6f": {
-          "ts": "2026-05-18T18:56:25.706377+00:00",
-          "audit_id": "aud_f77c24a4a7424a6f",
+        "aud_a3ecf6bc4f2546ea": {
+          "ts": "2026-05-18T19:33:07.394995+00:00",
+          "audit_id": "aud_a3ecf6bc4f2546ea",
           "tenant_id": "default",
           "subject": "dev@local",
           "command": "demo.echo",
@@ -149,52 +149,11 @@
           },
           "ok": true,
           "error_kind": null,
-          "duration_ms": 1.96
+          "duration_ms": 1.2
         },
-        "aud_4846fb0961b34f2e": {
-          "ts": "2026-05-18T18:56:31.613668+00:00",
-          "audit_id": "aud_4846fb0961b34f2e",
-          "tenant_id": "default",
-          "subject": "dev@local",
-          "command": "gh.pr.list",
-          "args": {
-            "repo": "octocat/Hello-World",
-            "state": "open"
-          },
-          "ok": true,
-          "error_kind": null,
-          "duration_ms": 473.18
-        },
-        "aud_06bfb87442674250": {
-          "ts": "2026-05-18T18:56:35.327361+00:00",
-          "audit_id": "aud_06bfb87442674250",
-          "tenant_id": "default",
-          "subject": "dev@local",
-          "command": "gh.pr.view",
-          "args": {
-            "number": 9494,
-            "repo": "octocat/Hello-World"
-          },
-          "ok": true,
-          "error_kind": null,
-          "duration_ms": 289.27
-        },
-        "aud_f6b3dc6d12d04223": {
-          "ts": "2026-05-18T18:56:56.412141+00:00",
-          "audit_id": "aud_f6b3dc6d12d04223",
-          "tenant_id": "default",
-          "subject": "dev@local",
-          "command": "demo.echo",
-          "args": {
-            "message": "Hi @Roobini-192421114, thanks for your contribution! Could you please provide more details about this dashboard feature? Specifically, it would be helpful to understand:\n*   What is the primary purpose or functionality of this dashboard?\n*   Are there any specific steps to test this feature?\n*   Could you elaborate on the changes made in `dashboard.py` and how they contribute to the overall feature?\n\nThis information will help us review your pull request more effectively. Thanks!"
-          },
-          "ok": true,
-          "error_kind": null,
-          "duration_ms": 3.52
-        },
-        "aud_823102c932944473": {
-          "ts": "2026-05-18T19:05:50.064791+00:00",
-          "audit_id": "aud_823102c932944473",
+        "aud_3f495338b39840f4": {
+          "ts": "2026-05-18T19:33:07.399164+00:00",
+          "audit_id": "aud_3f495338b39840f4",
           "tenant_id": "default",
           "subject": "dev@local",
           "command": "gh.pr.list",
@@ -203,11 +162,11 @@
           },
           "ok": false,
           "error_kind": "adapter_error",
-          "duration_ms": 1.59
+          "duration_ms": 0.77
         },
-        "aud_338661801b324cd7": {
-          "ts": "2026-05-18T19:05:50.353655+00:00",
-          "audit_id": "aud_338661801b324cd7",
+        "aud_c762b61d3d444faa": {
+          "ts": "2026-05-18T19:33:07.775210+00:00",
+          "audit_id": "aud_c762b61d3d444faa",
           "tenant_id": "default",
           "subject": "dev@local",
           "command": "gh.pr.list",
@@ -218,16 +177,57 @@
           },
           "ok": true,
           "error_kind": null,
-          "duration_ms": 288.36
+          "duration_ms": 375.73
+        },
+        "aud_a02644c1b984473d": {
+          "ts": "2026-05-18T19:33:36.547465+00:00",
+          "audit_id": "aud_a02644c1b984473d",
+          "tenant_id": "default",
+          "subject": "dev@local",
+          "command": "gh.pr.list",
+          "args": {
+            "repo": "octocat/Hello-World",
+            "state": "open"
+          },
+          "ok": true,
+          "error_kind": null,
+          "duration_ms": 439.74
+        },
+        "aud_7721441aa4fc4c18": {
+          "ts": "2026-05-18T19:33:48.903508+00:00",
+          "audit_id": "aud_7721441aa4fc4c18",
+          "tenant_id": "default",
+          "subject": "dev@local",
+          "command": "gh.pr.view",
+          "args": {
+            "number": 9520,
+            "repo": "octocat/Hello-World"
+          },
+          "ok": true,
+          "error_kind": null,
+          "duration_ms": 304.6
+        },
+        "aud_002ad5c9ac7e4ca6": {
+          "ts": "2026-05-18T19:33:56.767324+00:00",
+          "audit_id": "aud_002ad5c9ac7e4ca6",
+          "tenant_id": "default",
+          "subject": "dev@local",
+          "command": "demo.echo",
+          "args": {
+            "message": "Hi there! Thanks for your contribution. This PR seems to be a very small change. Could you please provide a bit more context on what this change is intended to do? This will help us review it more effectively. Thanks!"
+          },
+          "ok": true,
+          "error_kind": null,
+          "duration_ms": 2.85
         }
       },
       "missing": [],
       "all_correlated": true
     },
     "proof_flags": {
-      "tool_call_count": 12,
-      "gax_search_count": 3,
-      "gax_doc_count": 4,
+      "tool_call_count": 10,
+      "gax_search_count": 2,
+      "gax_doc_count": 3,
       "gax_invoke_count": 5,
       "discovery_before_first_invoke": true,
       "doc_before_first_invoke": true,
@@ -235,25 +235,25 @@
       "completed": true
     },
     "completed": true,
-    "gemini_model_used": "gemini-2.5-flash",
+    "gemini_model_used": "gemini-2.5-flash-lite",
     "gemini_api_key_label": "fallback_key",
     "recovery_probe": {
       "pass": true,
       "first_invoke_ok": false,
       "first_error_kind": "adapter_error",
       "retry_invoke_ok": true,
-      "retry_audit_id": "aud_338661801b324cd7"
+      "retry_audit_id": "aud_c762b61d3d444faa"
     }
   },
   "audit_ids": [
-    "aud_823102c932944473",
-    "aud_338661801b324cd7",
-    "aud_df6972e2a2744b5a",
-    "aud_17ea138423d14fd5",
-    "aud_1ee2b3e4a9b7479a",
-    "aud_f77c24a4a7424a6f",
-    "aud_4846fb0961b34f2e",
-    "aud_06bfb87442674250",
-    "aud_f6b3dc6d12d04223"
+    "aud_6d171edc76924b3d",
+    "aud_b9b8afe214bd4f86",
+    "aud_c78e05d063554cf4",
+    "aud_a3ecf6bc4f2546ea",
+    "aud_3f495338b39840f4",
+    "aud_c762b61d3d444faa",
+    "aud_a02644c1b984473d",
+    "aud_7721441aa4fc4c18",
+    "aud_002ad5c9ac7e4ca6"
   ]
 }
