@@ -55,12 +55,27 @@ def test_search(registry: Registry) -> None:
     assert any(m.command == "gh.pr.list" for m in hits)
 
 
-def test_projection_truncation(registry: Registry, cap: str) -> None:
-    env, _ = invoke(
+def test_projection_truncation(registry: Registry, cap: str, monkeypatch) -> None:
+    # CI runners often have `gh` but no GITHUB_TOKEN — force mock adapter.
+    monkeypatch.setattr("gax.adapters.exec_adapter._gh_available", lambda: False)
+    env, code = invoke(
         registry,
         command="gh.pr.list",
         args={"repo": "octocat/Hello-World"},
         surface="model",
         capability=cap,
     )
+    assert code == 0
+    assert env["ok"] is True
     assert "items" in env["data"]
+    assert len(env["data"]["items"]) >= 1
+
+
+def test_projection_truncates_many_rows() -> None:
+    from gax.projection import project_data
+
+    data = {"items": [{"number": i, "title": f"pr-{i}"} for i in range(25)]}
+    projected, meta = project_data(data, "model")
+    assert len(projected["items"]) == 10
+    assert meta.get("truncated") is True
+    assert meta.get("row_count") == 25
