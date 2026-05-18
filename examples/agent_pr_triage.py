@@ -57,16 +57,32 @@ RUNS_DIR = Path(__file__).parent / "agent_runs"
 MAX_TURNS = 24
 
 
+def _has_gemini_credentials() -> bool:
+    return bool(os.environ.get("GEMINI_API_KEY") or os.environ.get("GEMINI_FALLBACK_KEY"))
+
+
+def _gemini_key_chain() -> list[tuple[str, str]]:
+    """(label, api_key) — primary first, then GEMINI_FALLBACK_KEY if distinct."""
+    chain: list[tuple[str, str]] = []
+    primary = os.environ.get("GEMINI_API_KEY", "").strip()
+    if primary:
+        chain.append(("primary", primary))
+    fallback = os.environ.get("GEMINI_FALLBACK_KEY", "").strip()
+    if fallback and fallback != primary:
+        chain.append(("fallback_key", fallback))
+    return chain
+
+
 def _pick_llm() -> tuple[str, str]:
     # Prefer explicit provider env, else first key found
     prefer = os.environ.get("AGENT_LLM_PROVIDER", "").lower()
-    if prefer == "gemini" and os.environ.get("GEMINI_API_KEY"):
+    if prefer == "gemini" and _has_gemini_credentials():
         return "gemini", os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
     if prefer == "openai" and os.environ.get("OPENAI_API_KEY"):
         return "openai", os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
     if prefer == "anthropic" and os.environ.get("ANTHROPIC_API_KEY"):
         return "anthropic", os.environ.get("ANTHROPIC_MODEL", "claude-3-5-haiku-latest")
-    if os.environ.get("GEMINI_API_KEY"):
+    if _has_gemini_credentials():
         return "gemini", os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
     if os.environ.get("OPENAI_API_KEY"):
         return "openai", os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
@@ -94,6 +110,10 @@ def _is_quota_exhausted(exc: BaseException) -> bool:
     return "quota" in str(exc).lower() and "exceeded" in str(exc).lower()
 
 
+def _is_retriable_gemini_error(exc: BaseException) -> bool:
+    return _is_rate_limit_error(exc) or _is_quota_exhausted(exc)
+
+
 def _gemini_fallback_model(model: str) -> str | None:
     """Free tier often blocks pro/preview; gemini-2.5-flash usually works."""
     low = model.lower()
@@ -117,10 +137,72 @@ def _gemini_tool_declarations():
     return types.Tool(function_declarations=decls)
 
 
-def _gemini_client():
+def _gemini_client(api_key: str):
     from google import genai
 
-    return genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+    return genai.Client(api_key=api_key)
+
+
+class _GeminiSession:
+    """Primary API key → model fallback → GEMINI_FALLBACK_KEY → model fallback."""
+
+    def __init__(self, model: str, transcript: JsonlLog) -> None:
+        self._transcript = transcript
+        chain = _gemini_key_chain()
+        if not chain:
+            raise ValueError("GEMINI_API_KEY or GEMINI_FALLBACK_KEY required")
+        self._key_chain = chain
+        self._key_index = 0
+        self.active_model = model
+        self.key_label = chain[0][0]
+        self.client = _gemini_client(chain[0][1])
+        self._tried_model_fallback = False
+
+    def generate(
+        self, contents: list[Any]
+    ) -> tuple[str, list[dict[str, Any]], list[Any]]:
+        while True:
+            try:
+                return _gemini_generate(self.client, self.active_model, contents)
+            except Exception as e:
+                if not _is_retriable_gemini_error(e):
+                    raise
+                fb_model = _gemini_fallback_model(self.active_model)
+                if fb_model and not self._tried_model_fallback:
+                    msg = (
+                        f"Gemini key={self.key_label!r} model {self.active_model!r} "
+                        f"unavailable; switching to model {fb_model!r} …"
+                    )
+                    print(msg, flush=True)
+                    self._transcript.write(
+                        {
+                            "type": "gemini_model_fallback",
+                            "key_label": self.key_label,
+                            "from_model": self.active_model,
+                            "to_model": fb_model,
+                            "error": str(e)[:300],
+                        }
+                    )
+                    self.active_model = fb_model
+                    self._tried_model_fallback = True
+                    continue
+                if self._key_index + 1 < len(self._key_chain):
+                    self._key_index += 1
+                    self.key_label, api_key = self._key_chain[self._key_index]
+                    self.client = _gemini_client(api_key)
+                    self._tried_model_fallback = False
+                    msg = f"Gemini switching to API key {self.key_label!r} …"
+                    print(msg, flush=True)
+                    self._transcript.write(
+                        {
+                            "type": "gemini_key_fallback",
+                            "key_label": self.key_label,
+                            "model": self.active_model,
+                            "error": str(e)[:300],
+                        }
+                    )
+                    continue
+                raise
 
 
 def _gemini_generate(
@@ -170,8 +252,7 @@ def run_agent_loop_gemini(
 ) -> dict[str, Any]:
     from google.genai import types
 
-    client = _gemini_client()
-    active_model = model
+    session = _GeminiSession(model, transcript)
     contents: list[Any] = [
         types.Content(
             role="user",
@@ -188,21 +269,12 @@ def run_agent_loop_gemini(
         transcript.write({"type": "rate_limit", "message": msg})
         print(msg, flush=True)
 
-    def _generate() -> tuple[str, list[dict[str, Any]], list[Any]]:
-        nonlocal active_model
-        try:
-            return _gemini_generate(client, active_model, contents)
-        except Exception as e:
-            fallback = _gemini_fallback_model(active_model)
-            if fallback and (_is_quota_exhausted(e) or _is_rate_limit_error(e)):
-                print(f"Gemini {active_model!r} unavailable; switching to {fallback!r} …", flush=True)
-                active_model = fallback
-                return _gemini_generate(client, active_model, contents)
-            raise
-
     while turn < max_turns:
         turn += 1
-        text, tool_calls, contents = _call_with_retry(_generate, log=_log)
+        text, tool_calls, contents = _call_with_retry(
+            lambda: session.generate(contents),
+            log=_log,
+        )
 
         if text:
             transcript.write({"type": "assistant_text", "turn": turn, "content": text})
@@ -277,7 +349,8 @@ def run_agent_loop_gemini(
         "audit_correlation": correlation,
         "proof_flags": proof,
         "completed": proof.get("completed") or bool(final_answer),
-        "gemini_model_used": active_model,
+        "gemini_model_used": session.active_model,
+        "gemini_api_key_label": session.key_label,
     }
 
 
@@ -607,6 +680,8 @@ def write_summary(
     if agent:
         if agent.get("gemini_model_used"):
             lines.append(f"- Gemini model used: **{agent.get('gemini_model_used')}**")
+        if agent.get("gemini_api_key_label"):
+            lines.append(f"- Gemini API key: **{agent.get('gemini_api_key_label')}**")
         lines.extend(
             [
                 f"- Completed: **{agent.get('completed')}**",
@@ -679,7 +754,8 @@ def main() -> int:
     if not args.governance_only:
         if not provider:
             print(
-                "ERROR: Set GEMINI_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY in .env to run the LLM agent loop.",
+                "ERROR: Set GEMINI_API_KEY (and/or GEMINI_FALLBACK_KEY), OPENAI_API_KEY, "
+                "or ANTHROPIC_API_KEY in .env to run the LLM agent loop.",
                 file=sys.stderr,
             )
             print("Governance receipts were still written.", file=sys.stderr)
