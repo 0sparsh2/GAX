@@ -1,6 +1,7 @@
 {
-  "workflow": "3-turn PR triage",
+  "workflow": "3-turn PR triage (+ optional MCP bridge)",
   "repo": "octocat/Hello-World",
+  "token_counter": "tiktoken cl100k_base",
   "bias_disclosure": "Self-assessment by GAX authors",
   "rows": [
     {
@@ -16,8 +17,14 @@
     },
     {
       "modality": "gax",
-      "tokens": 699,
+      "tokens": 700,
       "ok": true
+    },
+    {
+      "modality": "gax_mcp_bridge",
+      "tokens": 728,
+      "ok": true,
+      "audit_id": "aud_bc2f3adec97546b9"
     }
   ]
 }

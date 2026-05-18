@@ -5,6 +5,10 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/0sparsh2/GAX/actions/workflows/ci.yml"><img src="https://github.com/0sparsh2/GAX/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+</p>
+
+<p align="center">
   <a href="docs/acsp/">ACSP Protocol</a> ·
   <a href="research/">Research</a> ·
   <a href="eval/">Evaluation</a> ·

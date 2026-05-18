@@ -41,4 +41,8 @@ cd gax && pip install -e ".[dev]"
 python ../eval/run_comparison.py --live-mcp
 ```
 
-Full rows: `eval/results/comparison.json` · Case study: `eval/case_study/run_case_study.py`
+Full rows: `eval/results/comparison.json` · Case study: `eval/case_study/RESULTS.md`
+
+## CI (no secrets)
+
+PRs run pytest + mock MCP bridge + `eval/run_comparison.py --mock-only`. Offline MCP mock: `eval/mock_mcp/github_stdio_mock.py`.

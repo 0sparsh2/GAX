@@ -47,6 +47,20 @@ Live MCP / GitHub tasks require `GITHUB_TOKEN` and `--live-mcp`.
 
 Open a GitHub issue labeled `protocol` with: problem, proposed change, backward compatibility, example envelope.
 
+## CI
+
+GitHub Actions runs on every push/PR (`.github/workflows/ci.yml`):
+
+- `pytest` in `gax/`
+- MCP bridge test with **offline mock server** (`eval/mock_mcp/github_stdio_mock.py`) — no token
+- Eval harness `--mock-only` and case study
+
+## Publish eval summary as a gist
+
+```bash
+./scripts/publish-eval-gist.sh   # uses gh CLI; needs live-run-summary.md
+```
+
 ## Pull requests
 
 - One logical change per PR when possible (adapter vs eval vs docs).

@@ -3,12 +3,12 @@
 
 from __future__ import annotations
 
+import argparse
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
-
-import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 GAX_ROOT = ROOT / "gax"
@@ -25,8 +25,15 @@ from gax.executor import invoke  # noqa: E402
 from gax.registry import Registry  # noqa: E402
 
 REPO = "octocat/Hello-World"
-OUT = Path(__file__).parent / "results.json"
+OUT_JSON = Path(__file__).parent / "results.json"
+OUT_MD = Path(__file__).parent / "RESULTS.md"
 SCHEMA_43 = 44026
+
+
+def _has_token() -> bool:
+    return bool(
+        os.environ.get("GITHUB_TOKEN") or os.environ.get("GITHUB_PERSONAL_ACCESS_TOKEN")
+    )
 
 
 def _gh(argv: list[str]) -> tuple[bool, str]:
@@ -95,22 +102,72 @@ def run_gax() -> dict:
     return {"modality": "gax", "tokens": t.total_tokens(), "ok": ok}
 
 
+def run_gax_mcp_bridge() -> dict | None:
+    if not _has_token():
+        return None
+    reg = Registry()
+    cap = mint_capability(
+        commands=["mcp.github.list_pulls"],
+        scopes=["github:pull_request:read"],
+    )
+    env, code = invoke(
+        reg,
+        command="mcp.github.list_pulls",
+        args={"repo": REPO, "state": "open"},
+        surface="model",
+        capability=cap,
+    )
+    t = Transcript()
+    gax_turn(
+        t,
+        system="PR triage via MCP bridge.",
+        doc_stub="gax doc mcp.github.list_pulls",
+        command="gax mcp.github.list_pulls",
+        envelope=env,
+    )
+    return {
+        "modality": "gax_mcp_bridge",
+        "tokens": t.total_tokens(),
+        "ok": code == 0 and bool(env.get("ok")),
+        "audit_id": env.get("audit_id"),
+    }
+
+
 def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--with-bridge", action="store_true", help="Include live MCP bridge row")
+    args = parser.parse_args()
+
     rows = [run_cli(), run_mcp_naive(), run_gax()]
+    if args.with_bridge or _has_token():
+        bridge = run_gax_mcp_bridge()
+        if bridge:
+            rows.append(bridge)
+
     payload = {
-        "workflow": "3-turn PR triage",
+        "workflow": "3-turn PR triage (+ optional MCP bridge)",
         "repo": REPO,
+        "token_counter": "tiktoken cl100k_base",
         "bias_disclosure": "Self-assessment by GAX authors",
         "rows": rows,
     }
-    OUT.write_text(json.dumps(payload, indent=2))
+    OUT_JSON.write_text(json.dumps(payload, indent=2))
 
-    print("# Case study: 3-turn PR triage\n")
-    print("| modality | tokens | ok |")
-    print("|---|---:|---|")
+    lines = [
+        "# Case study results: 3-turn PR triage\n",
+        f"Repo: `{REPO}` · Counter: tiktoken cl100k_base\n",
+        "| modality | tokens | ok | notes |",
+        "|---|---:|---:|---|",
+    ]
     for r in rows:
-        print(f"| {r['modality']} | {r['tokens']} | {r['ok']} |")
-    print(f"\nWrote {OUT}")
+        lines.append(
+            f"| {r['modality']} | {r['tokens']} | {r['ok']} | {r.get('notes', '')} |"
+        )
+    lines.append(f"\nRegenerate: `python eval/case_study/run_case_study.py`\n")
+    OUT_MD.write_text("\n".join(lines) + "\n")
+
+    print(OUT_MD.read_text())
+    print(f"Wrote {OUT_JSON} and {OUT_MD}")
 
 
 if __name__ == "__main__":
