@@ -33,6 +33,15 @@ def invoke(
             kind="capability_invalid",
             message=str(e),
         )
+        log_event(
+            audit_id=env["audit_id"],
+            tenant_id="unknown",
+            subject="unknown",
+            command=command,
+            args=args,
+            ok=False,
+            error_kind="capability_invalid",
+        )
         return env, 3
 
     tenant_id = str(claims.get("tenant_id", "unknown"))

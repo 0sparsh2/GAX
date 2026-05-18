@@ -219,7 +219,17 @@ Reproducible harness: **18 tasks** (happy path, errors, policy denial, truncatio
 | mcp_live (26-tool GitHub server) | 4,483 | 0% |
 | mcp_naive_43 (Scalekit fixture) | 44,062 | 0% |
 
-*Details:* [`eval/results/comparison.md`](eval/results/comparison.md) · **Case study:** [eval/case_study/README.md](eval/case_study/README.md)
+*Details:* [`eval/results/comparison.md`](eval/results/comparison.md) · **Case study (token model):** [eval/case_study/README.md](eval/case_study/README.md)
+
+### Real LLM agent demo (operational receipts)
+
+[`examples/agent_pr_triage.py`](examples/agent_pr_triage.py) runs an **actual LLM** with only `gax_search` / `gax_doc` / `gax_invoke` — dynamic discovery, multi-step PR triage, governance proofs, and `transcript.jsonl` + `audit_id` correlation. See [examples/README.md](examples/README.md).
+
+```bash
+pip install -r examples/requirements-agent.txt
+# .env: GITHUB_TOKEN + OPENAI_API_KEY (or ANTHROPIC_API_KEY)
+python examples/agent_pr_triage.py
+```
 
 ### Run evaluation locally
 

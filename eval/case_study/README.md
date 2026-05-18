@@ -1,8 +1,10 @@
 # Case study: LangGraph-style PR triage on a real GitHub repo
 
+> **Note:** This script **simulates** agent transcripts for token counting. For a **real LLM** using GAX as the execution substrate, run [`examples/agent_pr_triage.py`](../../examples/agent_pr_triage.py) instead.
+
 ## Goal
 
-One **external** workflow outside the unit test suite: a 3-turn agent that lists PRs, views the first, and summarizes — comparing **CLI**, **naive MCP** (schema tax), and **GAX** token costs with **tiktoken** (`cl100k_base`).
+Compare **CLI**, **naive MCP** (schema tax), and **GAX** token costs with **tiktoken** (`cl100k_base`) on the same logical 3-turn workflow.
 
 ## Workflow
 

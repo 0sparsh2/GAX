@@ -9,6 +9,9 @@ build/
 venv/
 .env
 .gax/
+examples/agent_runs/*/
+!examples/agent_runs/.gitkeep
+!examples/agent_runs/README.md
 *.log
 .DS_Store
 .pytest_cache/

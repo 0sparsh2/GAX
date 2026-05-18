@@ -25,6 +25,10 @@ jobs:
         working-directory: gax
         run: pytest -q
 
+      - name: Agent governance receipts (no LLM)
+        working-directory: gax
+        run: pytest -q tests/test_agent_governance.py
+
       - name: MCP bridge (mock stdio server, no token)
         working-directory: gax
         run: pytest -q tests/test_mcp_bridge_mock.py
