@@ -1,0 +1,23 @@
+{
+  "workflow": "3-turn PR triage",
+  "repo": "octocat/Hello-World",
+  "bias_disclosure": "Self-assessment by GAX authors",
+  "rows": [
+    {
+      "modality": "cli",
+      "tokens": 162,
+      "ok": true
+    },
+    {
+      "modality": "mcp_naive_43",
+      "tokens": 44062,
+      "ok": true,
+      "notes": "includes 44026 schema tax/session (Scalekit fixture)"
+    },
+    {
+      "modality": "gax",
+      "tokens": 700,
+      "ok": true
+    }
+  ]
+}
