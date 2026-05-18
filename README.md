@@ -223,7 +223,7 @@ Reproducible harness: **18 tasks** (happy path, errors, policy denial, truncatio
 
 ### Real LLM agent demo (operational receipts)
 
-[`examples/agent_pr_triage.py`](examples/agent_pr_triage.py) runs an **actual LLM** with only `gax_search` / `gax_doc` / `gax_invoke` — dynamic discovery, multi-step PR triage, governance proofs, and `transcript.jsonl` + `audit_id` correlation. See [examples/README.md](examples/README.md).
+[`examples/agent_pr_triage.py`](examples/agent_pr_triage.py) runs an **actual LLM** with only `gax_search` / `gax_doc` / `gax_invoke` — dynamic discovery, multi-step PR triage, governance proofs, and `transcript.jsonl` + `audit_id` correlation. **Proof run:** [examples/agent_runs/SAMPLE_RUN/](examples/agent_runs/SAMPLE_RUN/). See [examples/README.md](examples/README.md).
 
 ```bash
 pip install -r examples/requirements-agent.txt
