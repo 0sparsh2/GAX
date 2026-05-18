@@ -15,7 +15,10 @@ GAX_ROOT = ROOT / "gax"
 EVAL = ROOT / "eval"
 sys.path.insert(0, str(GAX_ROOT))
 sys.path.insert(0, str(EVAL))
+from load_env import load_repo_env  # noqa: E402
 from session_transcript import Transcript, cli_turn, gax_turn, mcp_naive_turn  # noqa: E402
+
+load_repo_env(ROOT)
 from token_count import count_tokens  # noqa: E402
 from gax.caps import mint_capability  # noqa: E402
 from gax.executor import invoke  # noqa: E402

@@ -13,6 +13,11 @@ GAX = ROOT / "gax"
 EVAL = ROOT / "eval"
 OUT = EVAL / "results"
 
+sys.path.insert(0, str(EVAL))
+from load_env import load_repo_env  # noqa: E402
+
+load_repo_env(ROOT)
+
 
 def run(cmd: list[str], cwd: Path | None = None) -> tuple[int, str]:
     p = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True)

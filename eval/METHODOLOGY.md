@@ -45,7 +45,8 @@ Measure how much **agent context** CLI, naive MCP, and GAX consume when performi
 ```bash
 pip install tiktoken   # strongly recommended
 cd gax && pip install -e .
-export GITHUB_TOKEN=...   # required for live gh + mcp_bridge integration tasks
+# Option A: repo-root .env with GITHUB_TOKEN=... (gitignored; auto-loaded by harness)
+# Option B: export GITHUB_TOKEN=...
 python ../eval/run_comparison.py --live-mcp
 ```
 

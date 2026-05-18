@@ -24,6 +24,7 @@ EVAL_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(GAX_ROOT))
 sys.path.insert(0, str(EVAL_DIR))
 
+from load_env import load_repo_env  # noqa: E402
 from scoring import aggregate_by_modality, pareto_summary, primary_metrics  # noqa: E402
 from session_transcript import (  # noqa: E402
     Transcript,
@@ -536,6 +537,7 @@ def process_task(
 
 
 def main() -> None:
+    load_repo_env(ROOT)
     parser = argparse.ArgumentParser(description="CLI vs MCP vs GAX evaluation (v2)")
     parser.add_argument(
         "--live-mcp",
