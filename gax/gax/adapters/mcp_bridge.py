@@ -23,8 +23,8 @@ def _map_args(manifest: CommandManifest, args: dict[str, Any]) -> dict[str, Any]
     repo = args.get("repo")
     if isinstance(repo, str) and "/" in repo:
         owner, name = repo.split("/", 1)
-        out.setdefault("owner", owner)
-        out.setdefault("repo", name)
+        out["owner"] = owner
+        out["repo"] = name
     mapping = (manifest.raw or {}).get("mcp_arg_map") or {}
     if mapping:
         mapped: dict[str, Any] = {}
@@ -35,6 +35,48 @@ def _map_args(manifest: CommandManifest, args: dict[str, Any]) -> dict[str, Any]
             mapped.setdefault(k, v)
         out = mapped
     return out
+
+
+def _normalize_list_pulls(raw: Any) -> dict[str, Any]:
+    """Map GitHub MCP list_pull_requests output to gh.pr.list envelope shape."""
+    rows: list[Any]
+    if isinstance(raw, list):
+        rows = raw
+    elif isinstance(raw, dict):
+        if "items" in raw and isinstance(raw["items"], list):
+            rows = raw["items"]
+        elif "pull_requests" in raw:
+            rows = raw["pull_requests"]
+        else:
+            rows = [raw]
+    else:
+        rows = []
+
+    items = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        user = row.get("user") or row.get("author") or {}
+        login = user.get("login") if isinstance(user, dict) else str(user or "unknown")
+        items.append(
+            {
+                "number": row.get("number") or row.get("pull_number"),
+                "title": row.get("title", ""),
+                "state": str(row.get("state", "OPEN")).upper(),
+                "url": row.get("html_url") or row.get("url", ""),
+                "author": login,
+                "draft": bool(row.get("draft") or row.get("isDraft")),
+            }
+        )
+    return {"items": items}
+
+
+def _normalize(manifest: CommandManifest, raw: Any) -> dict[str, Any]:
+    if manifest.command == "mcp.github.list_pulls":
+        return _normalize_list_pulls(raw)
+    if isinstance(raw, dict):
+        return raw
+    return {"result": raw}
 
 
 def run(
@@ -52,12 +94,9 @@ def run(
     if "github" in manifest.command or "server-github" in " ".join(_server_cmd(cfg)):
         env.update(github_mcp_env())
 
-    client = McpStdioClient(_server_cmd(cfg), env=env, timeout=float(cfg.get("timeout", 90)))
+    client = McpStdioClient(_server_cmd(cfg), env=env, timeout=float(cfg.get("timeout", 120)))
     try:
-        result = client.call_tool(tool_name, _map_args(manifest, args))
+        raw = client.call_tool(tool_name, _map_args(manifest, args))
+        return _normalize(manifest, raw)
     finally:
         client.close()
-
-    if isinstance(result, dict):
-        return result
-    return {"result": result}

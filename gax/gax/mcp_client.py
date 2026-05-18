@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import os
 import subprocess
-import threading
 import time
 from typing import Any
 
@@ -20,13 +19,12 @@ class McpStdioClient:
     ) -> None:
         self._timeout = timeout
         self._id = 0
-        self._lock = threading.Lock()
         proc_env = {**os.environ, **(env or {})}
         self._proc = subprocess.Popen(
             server_cmd,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
             text=True,
             env=proc_env,
         )
@@ -34,9 +32,17 @@ class McpStdioClient:
         self._initialize()
 
     def _next_id(self) -> int:
-        with self._lock:
-            self._id += 1
-            return self._id
+        self._id += 1
+        return self._id
+
+    def _read_message(self) -> dict[str, Any] | None:
+        line = self._proc.stdout.readline()  # type: ignore[union-attr]
+        if not line:
+            return None
+        line = line.strip()
+        if not line:
+            return self._read_message()
+        return json.loads(line)
 
     def _request(self, method: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
         rid = self._next_id()
@@ -48,10 +54,9 @@ class McpStdioClient:
         self._proc.stdin.flush()
         deadline = time.time() + self._timeout
         while time.time() < deadline:
-            line = self._proc.stdout.readline()  # type: ignore[union-attr]
-            if not line:
+            msg = self._read_message()
+            if msg is None:
                 break
-            msg = json.loads(line)
             if msg.get("id") == rid:
                 if "error" in msg:
                     raise RuntimeError(json.dumps(msg["error"]))
@@ -86,12 +91,14 @@ class McpStdioClient:
                 return json.loads(texts[0])
             except json.JSONDecodeError:
                 return {"text": texts[0]}
-        return {"content": content}
+        if texts:
+            return {"texts": texts}
+        return result
 
     def close(self) -> None:
         try:
             self._proc.terminate()
-            self._proc.wait(timeout=3)
+            self._proc.wait(timeout=5)
         except Exception:
             self._proc.kill()
 
