@@ -223,11 +223,14 @@ Reproducible harness: **18 tasks** (happy path, errors, policy denial, truncatio
 
 ### Real LLM agent demo (operational receipts)
 
-[`examples/agent_pr_triage.py`](examples/agent_pr_triage.py) runs an **actual LLM** with only `gax_search` / `gax_doc` / `gax_invoke` — dynamic discovery, multi-step PR triage, governance proofs, and `transcript.jsonl` + `audit_id` correlation. **Proof run:** [examples/agent_runs/SAMPLE_RUN/](examples/agent_runs/SAMPLE_RUN/). See [examples/README.md](examples/README.md).
+[`examples/agent_pr_triage.py`](examples/agent_pr_triage.py) runs an **actual LLM** with only `gax_search` / `gax_doc` / `gax_invoke` — no hardcoded tool catalog. The agent discovers commands at runtime, lists and inspects a live PR on `octocat/Hello-World`, summarizes review risk, and posts a draft comment via `demo.echo`. A deterministic **governance block** (policy deny, scope mismatch, expired capability) runs first; every invoke gets an `audit_id` verifiable in `~/.gax/audit.jsonl`.
+
+**Proof run:** [examples/agent_runs/SAMPLE_RUN/](examples/agent_runs/SAMPLE_RUN/) (`20260518T185623Z` — Gemini 2.5 Flash, `discovery_before_first_invoke: true`, all audit IDs correlated). See [examples/README.md](examples/README.md).
 
 ```bash
 pip install -r examples/requirements-agent.txt
-# .env: GITHUB_TOKEN + OPENAI_API_KEY (or ANTHROPIC_API_KEY)
+# .env: GITHUB_TOKEN, GEMINI_API_KEY (or OPENAI_API_KEY / ANTHROPIC_API_KEY)
+# optional: GEMINI_FALLBACK_KEY, GEMINI_MODEL=gemini-2.5-flash
 python examples/agent_pr_triage.py
 ```
 

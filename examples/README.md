@@ -13,7 +13,7 @@
 | Governance | `governance.jsonl`: denied / scope / expiry + `audit_id` |
 | Audit correlation | `summary.md` + `grep` on `~/.gax/audit.jsonl` |
 | Multi-step workflow | Agent mission: list → pick stale PR → view → risk → draft comment |
-| Error recovery | `proof_flags.recovery_after_error` in `manifest.json` |
+| Error recovery | Pre-LLM recovery probe (`adapter_error` on missing `repo`, then retry) + `proof_flags.recovery_after_error` |
 
 ### Setup
 
@@ -41,6 +41,10 @@ python examples/agent_pr_triage.py --governance-only
 ```
 
 Outputs: `examples/agent_runs/<timestamp>/`
+
+### Committed proof run
+
+[`agent_runs/SAMPLE_RUN/`](agent_runs/SAMPLE_RUN/) — operational receipts from a live run (`20260518T185623Z`): the LLM discovers commands via `gax_search` / `gax_doc`, invokes `gh.pr.list` and `gh.pr.view` against `octocat/Hello-World`, drafts a review comment, and posts via `demo.echo`. Governance scenarios (policy deny, scope mismatch, expired capability) run without the LLM and every `audit_id` correlates to `~/.gax/audit.jsonl`. Inspect `transcript.jsonl` for the full tool chain (including API-key fallback on rate limit).
 
 ### Other examples
 

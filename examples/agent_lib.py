@@ -196,6 +196,90 @@ def mint_agent_cap() -> str:
     )
 
 
+def run_recovery_probe(
+    registry: Registry,
+    capability: str,
+    receipt: RunReceipt,
+    transcript: JsonlLog,
+    repo: str,
+) -> dict[str, Any]:
+    """
+    Deterministic invoke failure + recovery on the agent capability (real GAX, no LLM).
+    Omits required `repo` on first gh.pr.list, then retries with repo.
+    """
+    transcript.write(
+        {
+            "type": "recovery_probe_start",
+            "repo": repo,
+            "note": "Deterministic adapter_error then successful retry (before LLM loop).",
+        }
+    )
+    steps: list[tuple[str, dict[str, Any], dict[str, Any]]] = []
+    turn = 0
+
+    def _record(tool: str, arguments: dict[str, Any], result: dict[str, Any]) -> None:
+        nonlocal turn
+        turn += 1
+        aid = result.get("audit_id")
+        if aid:
+            receipt.record_audit(aid)
+        entry: dict[str, Any] = {
+            "type": "tool_call",
+            "phase": "recovery_probe",
+            "turn": turn,
+            "tool": tool,
+            "arguments": arguments,
+            "result": result,
+            "audit_id": aid,
+        }
+        transcript.write(entry)
+        steps.append((tool, arguments, result))
+        if tool == "gax_invoke":
+            env = result.get("envelope") or {}
+            transcript.write(
+                {
+                    "type": "gax_invoke_receipt",
+                    "phase": "recovery_probe",
+                    "turn": turn,
+                    "command": arguments.get("command"),
+                    "audit_id": aid,
+                    "ok": env.get("ok"),
+                    "error_kind": result.get("error_kind"),
+                    "data_keys": list((env.get("data") or {}).keys()),
+                }
+            )
+
+    _record("gax_search", {"query": "list pull requests"}, gax_search(registry, "list pull requests"))
+    _record("gax_doc", {"command": "gh.pr.list"}, gax_doc(registry, "gh.pr.list"))
+    _record(
+        "gax_invoke",
+        {"command": "gh.pr.list", "args": {"state": "open"}},
+        gax_invoke(registry, capability, "gh.pr.list", {"state": "open"}),
+    )
+    _record(
+        "gax_invoke",
+        {"command": "gh.pr.list", "args": {"repo": repo, "state": "open", "limit": 3}},
+        gax_invoke(
+            registry,
+            capability,
+            "gh.pr.list",
+            {"repo": repo, "state": "open", "limit": 3},
+        ),
+    )
+
+    failed_result = steps[2][2]
+    recovered_result = steps[3][2]
+    summary = {
+        "pass": not failed_result.get("ok") and bool(recovered_result.get("ok")),
+        "first_invoke_ok": bool(failed_result.get("ok")),
+        "first_error_kind": failed_result.get("error_kind"),
+        "retry_invoke_ok": bool(recovered_result.get("ok")),
+        "retry_audit_id": recovered_result.get("audit_id"),
+    }
+    transcript.write({"type": "recovery_probe_summary", **summary})
+    return summary
+
+
 LLM_TOOL_SPECS: list[dict[str, Any]] = [
     {
         "name": "gax_search",

@@ -49,6 +49,7 @@ from agent_lib import (  # noqa: E402
     dispatch_tool,
     mint_agent_cap,
     run_governance_receipts,
+    run_recovery_probe,
     verify_audit_ids,
 )
 from gax.registry import Registry  # noqa: E402
@@ -111,6 +112,9 @@ def _is_quota_exhausted(exc: BaseException) -> bool:
 
 
 def _is_retriable_gemini_error(exc: BaseException) -> bool:
+    msg = str(exc).lower()
+    if "503" in msg or "unavailable" in msg or "high demand" in msg:
+        return True
     return _is_rate_limit_error(exc) or _is_quota_exhausted(exc)
 
 
@@ -682,6 +686,12 @@ def write_summary(
             lines.append(f"- Gemini model used: **{agent.get('gemini_model_used')}**")
         if agent.get("gemini_api_key_label"):
             lines.append(f"- Gemini API key: **{agent.get('gemini_api_key_label')}**")
+        rp = agent.get("recovery_probe") or {}
+        if rp:
+            lines.append(
+                f"- Recovery probe (pre-LLM): **{rp.get('pass')}** "
+                f"(`{rp.get('first_error_kind')}` → retry ok={rp.get('retry_invoke_ok')})"
+            )
         lines.extend(
             [
                 f"- Completed: **{agent.get('completed')}**",
@@ -699,7 +709,11 @@ def write_summary(
         for aid in receipt.audit_ids:
             lines.append(f"- `{aid}`")
         if agent.get("final_answer"):
-            lines.extend(["", "### Final answer (excerpt)", "", "```", agent["final_answer"][:1500], "```"])
+            excerpt = agent["final_answer"]
+            max_len = 4000
+            if len(excerpt) > max_len:
+                excerpt = excerpt[:max_len] + "\n\n_(truncated — see `transcript.jsonl`.)_"
+            lines.extend(["", "### Final answer (excerpt)", "", excerpt])
     else:
         lines.append("*Agent loop skipped (set GEMINI_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY).*")
 
@@ -728,6 +742,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Real LLM agent on GAX with operational receipts")
     parser.add_argument("--repo", default=os.environ.get("AGENT_REPO", "octocat/Hello-World"))
     parser.add_argument("--governance-only", action="store_true")
+    parser.add_argument(
+        "--no-recovery-probe",
+        action="store_true",
+        help="Skip deterministic invoke failure+retry before the LLM loop",
+    )
     parser.add_argument("--max-turns", type=int, default=MAX_TURNS)
     args = parser.parse_args()
     max_turns = args.max_turns
@@ -763,6 +782,18 @@ def main() -> int:
             cap = mint_agent_cap()
             os.environ["GAX_CAP"] = cap
             transcript = JsonlLog(run_dir / "transcript.jsonl")
+            recovery_probe: dict[str, Any] | None = None
+            if not args.no_recovery_probe:
+                print(f"Recovery probe on {args.repo} (missing repo → retry) …")
+                recovery_probe = run_recovery_probe(
+                    registry, cap, receipt, transcript, args.repo
+                )
+                if not recovery_probe.get("pass"):
+                    print(
+                        "WARNING: recovery probe did not pass "
+                        f"(first_error_kind={recovery_probe.get('first_error_kind')!r})",
+                        file=sys.stderr,
+                    )
             print(f"Running agent ({provider}/{model}) on {args.repo} …")
             agent_result = run_agent_loop(
                 registry,
@@ -774,6 +805,8 @@ def main() -> int:
                 repo=args.repo,
                 max_turns=max_turns,
             )
+            if agent_result is not None and recovery_probe is not None:
+                agent_result["recovery_probe"] = recovery_probe
 
     manifest = {
         "run_id": run_id,
