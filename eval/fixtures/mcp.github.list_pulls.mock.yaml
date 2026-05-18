@@ -1,0 +1,23 @@
+command: mcp.github.list_pulls.mock
+version: "1.0.0"
+description: List PRs via mock MCP server (CI / offline)
+category: mcp
+adapter: mcp
+required_scopes:
+  - github:pull_request:read
+side_effects: read
+idempotent: true
+mcp:
+  server_command: python3
+  server_args: []
+  tool_name: list_pull_requests
+  require_github_token: false
+  timeout: 30
+input_schema:
+  type: object
+  required: [repo]
+  properties:
+    repo:
+      type: string
+output_schema:
+  type: object

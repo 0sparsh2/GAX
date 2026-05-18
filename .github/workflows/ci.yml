@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-and-eval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install -r eval/requirements.txt
+          pip install -e "./gax[dev]"
+
+      - name: Unit tests
+        working-directory: gax
+        run: pytest -q
+
+      - name: MCP bridge (mock stdio server, no token)
+        working-directory: gax
+        run: pytest -q tests/test_mcp_bridge_mock.py
+
+      - name: ACSP envelope conformance
+        working-directory: gax
+        run: pytest -q tests/test_acsp_envelope_conformance.py
+
+      - name: Eval harness (mock-only, no secrets)
+        run: python eval/run_comparison.py --mock-only
+
+      - name: Case study
+        run: python eval/case_study/run_case_study.py

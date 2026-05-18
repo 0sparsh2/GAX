@@ -15,6 +15,7 @@ tenants:
       - aws.s3.list
       - jira.issue.get
       - mcp.github.list_pulls
+      - mcp.github.list_pulls.mock
     denied_commands: []
     repo_allowlist: []  # empty = allow all repos
 

@@ -72,7 +72,9 @@ def _normalize_list_pulls(raw: Any) -> dict[str, Any]:
 
 
 def _normalize(manifest: CommandManifest, raw: Any) -> dict[str, Any]:
-    if manifest.command == "mcp.github.list_pulls":
+    if manifest.command in ("mcp.github.list_pulls", "mcp.github.list_pulls.mock"):
+        if isinstance(raw, dict) and isinstance(raw.get("result"), list):
+            raw = raw["result"]
         return _normalize_list_pulls(raw)
     if isinstance(raw, dict):
         return raw
@@ -91,7 +93,11 @@ def run(
         raise RuntimeError(f"mcp.tool_name missing in manifest {manifest.command}")
 
     env = dict(cfg.get("env") or {})
-    if "github" in manifest.command or "server-github" in " ".join(_server_cmd(cfg)):
+    cmd_line = " ".join(_server_cmd(cfg))
+    needs_github = cfg.get("require_github_token")
+    if needs_github is None:
+        needs_github = "server-github" in cmd_line or "@modelcontextprotocol/server-github" in cmd_line
+    if needs_github:
         env.update(github_mcp_env())
 
     client = McpStdioClient(_server_cmd(cfg), env=env, timeout=float(cfg.get("timeout", 120)))
