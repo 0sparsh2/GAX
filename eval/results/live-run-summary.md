@@ -1,6 +1,6 @@
 # Live eval run — GAX vs CLI vs MCP (May 2026)
 
-**Repo:** [0sparsh2/GAX](https://github.com/0sparsh2/GAX) · **Harness:** `eval/run_comparison.py --live-mcp` · **Counter:** tiktoken `cl100k_base`
+**Repo:** [0sparsh2/GAX](https://github.com/0sparsh2/GAX) · **Gist:** [live-run-summary](https://gist.github.com/0sparsh2/cea07652091fc4d47637e87d958ed340) · **Harness:** `eval/run_comparison.py --live-mcp` · **Counter:** tiktoken `cl100k_base`
 
 ## Bias disclosure
 

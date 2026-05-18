@@ -209,7 +209,7 @@ Reproducible harness: **18 tasks** (happy path, errors, policy denial, truncatio
 | `gax` | `gax doc` stub + envelope v1 |
 | `gax_mcp_bridge` | Envelope over MCP tool (schema not in prompt) |
 
-**Latest live run** ([summary](eval/results/live-run-summary.md)):
+**Latest live run** ([summary](eval/results/live-run-summary.md) · [public gist](https://gist.github.com/0sparsh2/cea07652091fc4d47637e87d958ed340)):
 
 | Modality | Median tokens | Audit-id rate |
 |----------|---------------|---------------|
