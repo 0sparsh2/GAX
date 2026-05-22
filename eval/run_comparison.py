@@ -549,6 +549,11 @@ def main() -> None:
         action="store_true",
         help="Skip modalities that require GITHUB_TOKEN / live MCP",
     )
+    parser.add_argument(
+        "--extended",
+        action="store_true",
+        help="Ablation + comparison modalities + multi-MCP catalog (see docs/ABLATIONS.md)",
+    )
     args = parser.parse_args()
 
     spec = yaml.safe_load((EVAL_DIR / "tasks.yaml").read_text())
@@ -556,22 +561,70 @@ def main() -> None:
     default_cap = _default_cap()
 
     mcp_probe: dict[str, Any] | None = None
+    mcp_catalog_probes: list[dict[str, Any]] = []
     if args.live_mcp and not args.mock_only:
         from mcp_live import probe_live_mcp
 
         mcp_probe = probe_live_mcp()
         print("Live MCP probe:", json.dumps(mcp_probe, indent=2)[:600])
 
+    if args.extended:
+        from mcp_catalog import probe_catalog_all
+
+        mcp_catalog_probes = probe_catalog_all(mock_only=args.mock_only)
+        print("MCP catalog probes:", json.dumps(mcp_catalog_probes, indent=2)[:1200])
+
     all_rows: list[dict[str, Any]] = []
     for task in spec["tasks"]:
         if args.mock_only and task.get("requires_token"):
             continue
+        cap = (
+            mint_capability(commands=list(task["cap_commands"]), scopes=["demo:echo"])
+            if task.get("cap_commands")
+            else default_cap
+        )
+        cli_row: dict[str, Any] | None = None
         for raw in process_task(
             task, registry, default_cap, live_mcp_probe=mcp_probe
         ):
             _apply_expected_outcome(task, raw)
             metrics = primary_metrics(raw)
             all_rows.append({**raw, **metrics})
+            if raw.get("modality") == "cli":
+                cli_row = raw
+
+        if args.extended:
+            from extended_eval import extended_rows_for_task
+
+            if cli_row is None:
+                cli_row = _row(
+                    task_id=task["id"],
+                    modality="cli",
+                    tokens=0,
+                    latency_ms=0,
+                    ok=False,
+                    skipped=True,
+                    notes="no cli row for extended comparisons",
+                    category=task.get("category", ""),
+                )
+
+            for raw in extended_rows_for_task(
+                task,
+                registry,
+                default_cap,
+                cap,
+                cli_row,
+                row_fn=_row,
+                gax_invoke=_gax_invoke,
+                gax_transcript_tokens=_gax_transcript_tokens,
+                schema_tokens_43=_schema_tokens("43"),
+                run_cli_task=run_cli_task,
+                run_mcp_naive=run_mcp_naive,
+                mcp_probes=mcp_catalog_probes,
+                mock_only=args.mock_only,
+            ):
+                _apply_expected_outcome(task, raw)
+                all_rows.append({**raw, **primary_metrics(raw)})
 
     primary = [primary_metrics(r) for r in all_rows]
     agg = aggregate_by_modality(primary)
@@ -584,12 +637,16 @@ def main() -> None:
         "task_count": len(spec["tasks"]),
         "token_counter": enc,
         "bias_disclosure": "Self-assessment by GAX authors; see eval/METHODOLOGY.md",
+        "extended": args.extended,
         "live_mcp_probe": mcp_probe,
+        "mcp_catalog_probes": mcp_catalog_probes if args.extended else None,
         "rows": all_rows,
         "aggregate_by_modality": agg,
         "pareto_winners_per_axis": pareto,
     }
     (OUT_DIR / "comparison.json").write_text(json.dumps(out, indent=2))
+    if args.extended:
+        _write_extended_report(out, agg, pareto)
 
     md = [
         "# Evaluation: CLI vs naive MCP vs GAX (v2)\n",
@@ -632,6 +689,74 @@ def main() -> None:
 
     print(json.dumps(agg, indent=2))
     print(f"Wrote {OUT_DIR / 'comparison.json'} and comparison.md")
+
+
+def _write_extended_report(
+    out: dict[str, Any],
+    agg: dict[str, dict[str, Any]],
+    pareto: dict[str, list[str]],
+) -> None:
+    probes = out.get("mcp_catalog_probes") or []
+    ablation_mods = [
+        "gax_ablation_no_cap",
+        "gax_ablation_no_envelope",
+        "gax_ablation_schema_preload",
+    ]
+    comparison_mods = ["programmatic_mcp", "cli_agent_spec", "cli_logged_proxy"]
+    mcp_live_mods = sorted(k for k in agg if k.startswith("mcp_live_"))
+
+    lines = [
+        "# Extended evaluation — ablations, comparisons, MCP catalog\n",
+        "\nSee [docs/ABLATIONS.md](../docs/ABLATIONS.md) and [METHODOLOGY.md](../METHODOLOGY.md).\n",
+        "\n## MCP server schema probe\n",
+        "| server | tools | schema_tokens | status |\n",
+        "|---|---:|---:|---|\n",
+    ]
+    for p in probes:
+        if p.get("skipped"):
+            st = "fixture" if p.get("schema_tokens") else "skipped"
+        elif p.get("ok"):
+            st = "ok"
+        else:
+            st = "fail"
+        lines.append(
+            f"| {p.get('id')} | {p.get('tool_count', '—')} | "
+            f"{p.get('schema_tokens', '—')} | {st} |\n"
+        )
+
+    lines.append("\n## Ablation modalities (median tokens)\n")
+    for mod in ablation_mods:
+        if mod in agg:
+            a = agg[mod]
+            lines.append(
+                f"- **{mod}**: median {a['median_tokens']} tok, "
+                f"audit {a['audit_id_rate']}, envelope {a['structured_envelope_rate']}\n"
+            )
+
+    lines.append("\n## Comparison modalities\n")
+    for mod in comparison_mods:
+        if mod in agg:
+            a = agg[mod]
+            lines.append(
+                f"- **{mod}**: median {a['median_tokens']} tok, success {a['success_rate']}\n"
+            )
+
+    lines.append("\n## Multi-MCP naive (per server)\n")
+    for mod in mcp_live_mods:
+        a = agg[mod]
+        lines.append(f"- **{mod}**: median {a['median_tokens']} tok\n")
+
+    lines.append("\n## Pareto (all modalities in this run)\n")
+    for axis, winners in pareto.items():
+        lines.append(f"- **{axis}**: {', '.join(winners)}\n")
+
+    lines.append(
+        "\n**Interpretation:** `gax_ablation_schema_preload` shows cost of naive schema tax on "
+        "GAX path; `gax_ablation_no_envelope` drops structured envelope rate; "
+        "`gax_ablation_no_cap` on `policy_denied` shows permissive cap allows invoke. "
+        "`cli_logged_proxy` adds post-hoc log tokens but not pre-invoke enforcement.\n"
+    )
+    (OUT_DIR / "extended-comparison.md").write_text("".join(lines))
 
 
 def _encoding_name() -> str:

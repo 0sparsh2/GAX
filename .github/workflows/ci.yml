@@ -40,5 +40,8 @@ jobs:
       - name: Eval harness (mock-only, no secrets)
         run: python eval/run_comparison.py --mock-only
 
+      - name: Extended eval (ablations + MCP catalog, mock-only)
+        run: python eval/run_comparison.py --mock-only --extended
+
       - name: Case study
         run: python eval/case_study/run_case_study.py

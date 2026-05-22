@@ -48,7 +48,13 @@ cd gax && pip install -e .
 # Option A: repo-root .env with GITHUB_TOKEN=... (gitignored; auto-loaded by harness)
 # Option B: export GITHUB_TOKEN=...
 python ../eval/run_comparison.py --live-mcp
+
+# Ablations + programmatic MCP / CLI Agent Spec / multi-MCP catalog
+python ../eval/run_comparison.py --extended --mock-only   # CI
+python ../eval/run_comparison.py --extended --live-mcp      # full
 ```
+
+See [docs/ABLATIONS.md](../docs/ABLATIONS.md).
 
 ## Case study (external workflow)
 

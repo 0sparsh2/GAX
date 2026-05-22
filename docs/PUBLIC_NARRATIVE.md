@@ -80,7 +80,7 @@ A logging proxy wraps **whatever** the model already ran (shell or MCP). It does
 - Offer **lazy discovery** (`search` / `doc`) without shipping the full registry.
 - Bind **OAuth → per-invoke capability** in one protocol.
 
-GAX’s delta vs **optimized MCP** (code mode, gateway filtering, programmatic tools) is similar: those patterns fix **tokens**; ACSP also standardizes **per-invoke caps + audit_id + CLI-shaped commands + one sidecar** in one spec. Comparisons to CLI Agent Spec and MCP gateways are tracked in [docs/REVIEWER_RESPONSE.md](./REVIEWER_RESPONSE.md) (planned ablations).
+GAX’s delta vs **optimized MCP** (code mode, gateway filtering, programmatic tools) is similar: those patterns fix **tokens**; ACSP also standardizes **per-invoke caps + audit_id + CLI-shaped commands + one sidecar** in one spec. Harness comparisons and ablations: [docs/ABLATIONS.md](./ABLATIONS.md) (`eval/run_comparison.py --extended`). Reviewer checklist: [docs/REVIEWER_RESPONSE.md](./REVIEWER_RESPONSE.md).
 
 ---
 

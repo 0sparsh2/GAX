@@ -1,0 +1,42 @@
+# Popular MCP servers for schema-size comparison (eval/mcp_catalog.py)
+servers:
+  - id: mock_github
+    label: Mock GitHub MCP (CI-safe)
+    cmd: ["python", "eval/mock_mcp/github_stdio_mock.py"]
+    requires_token: false
+    fixture_tool_count: 1
+    bridge_gax_command: mcp.github.list_pulls
+
+  - id: mock_filesystem
+    label: Mock Filesystem MCP (CI-safe)
+    cmd: ["python", "eval/mock_mcp/filesystem_stdio_mock.py"]
+    requires_token: false
+    fixture_tool_count: 3
+    bridge_gax_command: null
+
+  - id: github
+    label: "@modelcontextprotocol/server-github"
+    cmd: ["npx", "-y", "@modelcontextprotocol/server-github"]
+    requires_token: true
+    env: github_token
+    fixture_schema_tokens: 44026
+    fixture_tool_count: 43
+    bridge_gax_command: mcp.github.list_pulls
+
+  - id: filesystem
+    label: "@modelcontextprotocol/server-filesystem"
+    cmd: ["npx", "-y", "@modelcontextprotocol/server-filesystem", "/tmp"]
+    requires_token: false
+    bridge_gax_command: null
+
+  - id: fetch
+    label: "@modelcontextprotocol/server-fetch"
+    cmd: ["npx", "-y", "@modelcontextprotocol/server-fetch"]
+    requires_token: false
+    bridge_gax_command: null
+
+  - id: memory
+    label: "@modelcontextprotocol/server-memory"
+    cmd: ["npx", "-y", "@modelcontextprotocol/server-memory"]
+    requires_token: false
+    bridge_gax_command: null

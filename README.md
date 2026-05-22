@@ -227,7 +227,7 @@ Reproducible harness: **18 tasks** (happy path, errors, policy denial, truncatio
 | mcp_live (26-tool GitHub server) | 4,483 | 0% |
 | mcp_naive_43 (Scalekit fixture) | 44,062 | 0% |
 
-*Details:* [`eval/results/comparison.md`](eval/results/comparison.md) · **Case study (token model):** [eval/case_study/README.md](eval/case_study/README.md)
+*Details:* [`eval/results/comparison.md`](eval/results/comparison.md) · **Extended (ablations + MCP catalog):** [`docs/ABLATIONS.md`](docs/ABLATIONS.md) · **Case study (token model):** [eval/case_study/README.md](eval/case_study/README.md)
 
 ### Real LLM agent demo (operational receipts)
 
