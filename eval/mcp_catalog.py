@@ -41,7 +41,7 @@ def _server_env(server: dict[str, Any]) -> dict[str, str] | None:
     return {}
 
 
-def probe_server(server: dict[str, Any], *, timeout: float = 90.0) -> dict[str, Any]:
+def probe_server(server: dict[str, Any], *, timeout: float = 120.0) -> dict[str, Any]:
     sid = server["id"]
     if server.get("requires_token"):
         if not (
@@ -68,8 +68,9 @@ def probe_server(server: dict[str, Any], *, timeout: float = 90.0) -> dict[str, 
     from gax.mcp_client import McpStdioClient
 
     cmd = list(server["cmd"])
-    client = McpStdioClient(cmd, env=env if env else None, timeout=timeout)
+    client = None
     try:
+        client = McpStdioClient(cmd, env=env if env else None, timeout=timeout)
         tools = client.list_tools()
         return {
             "id": sid,
@@ -91,7 +92,8 @@ def probe_server(server: dict[str, Any], *, timeout: float = 90.0) -> dict[str, 
             "error": str(e),
         }
     finally:
-        client.close()
+        if client is not None:
+            client.close()
 
 
 def probe_catalog_all(*, mock_only: bool = False) -> list[dict[str, Any]]:
