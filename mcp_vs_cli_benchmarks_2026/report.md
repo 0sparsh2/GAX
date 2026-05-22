@@ -110,14 +110,17 @@ MCP: OAuth, per-user scopes, audit. CLI: ambient tokens, shell risk. **GAX:** de
 | Optimized MCP | Near CLI | High | High |
 | **GAX** | Near CLI (eval) | **Strong** | **Strong** |
 
-**Local eval** (`eval/run_comparison.py`, weighted composite):
+**Local eval** (`eval/run_comparison.py`) — **separate metrics, no weighted composite** ([eval/METHODOLOGY.md](../eval/METHODOLOGY.md)):
 
-| Modality | Mean score |
-|----------|------------|
-| **gax** | **0.986** |
-| gax_plan | 0.984 |
-| cli | 0.678 |
-| mcp_naive_43 | 0.561 |
+| Modality | Median tokens (live run) | Audit-id rate |
+|----------|--------------------------|---------------|
+| **cli** | **104** | 0% |
+| **gax** | 137 | 80% |
+| **gax_mcp_bridge** | 732 | 100% |
+| **mcp_live** | 4,483 | 0% |
+| **mcp_naive_43** | 44,062 | 0% |
+
+**Pareto:** CLI wins tokens; GAX / bridge win governance structure in harness. **Not** “GAX wins overall.” Agent receipts: [examples/agent_runs/SAMPLE_RUN/](../examples/agent_runs/SAMPLE_RUN/). Narrative: [docs/PUBLIC_NARRATIVE.md](../docs/PUBLIC_NARRATIVE.md).
 
 Run with live MCP: `python eval/run_comparison.py --live-mcp` (requires `GITHUB_TOKEN`).
 

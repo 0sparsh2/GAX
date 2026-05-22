@@ -1,6 +1,6 @@
 # Live eval run — GAX vs CLI vs MCP (May 2026)
 
-**Repo:** [0sparsh2/GAX](https://github.com/0sparsh2/GAX) · **Gist:** [live-run-summary](https://gist.github.com/0sparsh2/cea07652091fc4d47637e87d958ed340) · **Harness:** `eval/run_comparison.py --live-mcp` · **Counter:** tiktoken `cl100k_base`
+**Repo:** [0sparsh2/GAX](https://github.com/0sparsh2/GAX) · **Gist:** [live-run-summary](https://gist.github.com/0sparsh2/cea07652091fc4d47637e87d958ed340) · **Narrative:** [docs/PUBLIC_NARRATIVE.md](../../docs/PUBLIC_NARRATIVE.md) · **Harness:** `eval/run_comparison.py --live-mcp` · **Counter:** tiktoken `cl100k_base`
 
 ## Bias disclosure
 
@@ -31,6 +31,15 @@ This is a **self-assessment** by the GAX authors. We report separate metrics (no
 2. **Governance axis:** GAX and `gax_mcp_bridge` emit `audit_id` + envelope v1; CLI and raw MCP transcripts do not.
 3. **MCP bridge:** Same backend as MCP, but the agent sees a short `gax` command + envelope — not the full tool schema. Bridge tasks passed with `ok: true` in this run.
 4. **Not a single winner:** CLI wins lowest tokens; GAX wins audit/structure without paying naive schema tax.
+5. **Harness ≠ agent benchmark:** Transcripts are simulated ([`eval/session_transcript.py`](../session_transcript.py)). Real LLM proof: [`examples/agent_runs/SAMPLE_RUN/`](../../examples/agent_runs/SAMPLE_RUN/) (`20260518T193305Z`).
+
+## External benchmarks (not replicated here)
+
+| Claim | Source |
+|-------|--------|
+| 4×–32× tokens (naive MCP vs CLI) | [Scalekit](https://www.scalekit.com/blog/mcp-vs-cli-use) |
+| 28% MCP **run** failures (7/25 `ConnectTimeout`) | Scalekit — infrastructure, not our eval |
+| Optimized MCP token reductions | Anthropic, Cloudflare (see [benchmark report](../../mcp_vs_cli_benchmarks_2026/report.md)) |
 
 ## Reproduce
 

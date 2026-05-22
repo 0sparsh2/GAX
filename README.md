@@ -10,6 +10,7 @@
 
 <p align="center">
   <a href="docs/acsp/">ACSP Protocol</a> ·
+  <a href="docs/PUBLIC_NARRATIVE.md">Narrative</a> ·
   <a href="research/">Research</a> ·
   <a href="eval/">Evaluation</a> ·
   <a href="mcp_vs_cli_benchmarks_2026/report.md">Benchmarks</a>
@@ -20,6 +21,7 @@
 ## Table of contents
 
 - [What is GAX?](#what-is-gax)
+- [Public narrative](#public-narrative)
 - [Why GAX exists](#why-gax-exists)
 - [The problem: MCP vs CLI](#the-problem-mcp-vs-cli)
 - [The solution](#the-solution)
@@ -56,6 +58,12 @@ GAX is **not** “MCP or CLI.” It is a **third surface**: one runtime, registe
 
 ---
 
+## Public narrative
+
+**Start here for reviewers and posts:** [docs/PUBLIC_NARRATIVE.md](docs/PUBLIC_NARRATIVE.md) — problem, three planes, **what is borrowed vs measured in-repo**, why not `gh` + a logging proxy, links to eval gist and [SAMPLE_RUN](examples/agent_runs/SAMPLE_RUN/). Reviewer checklist: [docs/REVIEWER_RESPONSE.md](docs/REVIEWER_RESPONSE.md).
+
+---
+
 ## Why GAX exists
 
 AI agents need to act on GitHub, Kubernetes, SaaS APIs, and internal systems. Two dominant patterns exist today:
@@ -65,11 +73,11 @@ AI agents need to act on GitHub, Kubernetes, SaaS APIs, and internal systems. Tw
 | **Raw CLI** (`gh`, `kubectl`, `aws`) | Token-efficient, composable, models already know shells | Ambient credentials, weak audit, no per-user OAuth at scale |
 | **MCP** (Model Context Protocol) | Typed tools, OAuth, multi-tenant governance | Naive setups inject **full tool schemas** every turn (44k–150k+ tokens) |
 
-Independent benchmarks ([Scalekit](https://www.scalekit.com/blog/mcp-vs-cli-use), [Anthropic](https://www.anthropic.com/engineering/code-execution-with-mcp), [Cloudflare Code Mode](https://blog.cloudflare.com/code-mode-mcp/)) show:
+**External benchmarks** ([Scalekit](https://www.scalekit.com/blog/mcp-vs-cli-use), [Anthropic](https://www.anthropic.com/engineering/code-execution-with-mcp), [Cloudflare Code Mode](https://blog.cloudflare.com/code-mode-mcp/)) — synthesized in [mcp_vs_cli_benchmarks_2026/report.md](mcp_vs_cli_benchmarks_2026/report.md); **we did not independently replicate** Scalekit’s 75-trial suite:
 
-- **4×–32×** more tokens for naive MCP vs CLI on the same GitHub tasks  
-- **~28%** MCP run failures (infrastructure timeouts) in one 75-run study  
-- Optimized MCP (lazy discovery, code mode) **closes the token gap** but does not standardize caps, per-invoke audit, or shell ergonomics in one product
+- **4×–32×** more tokens for naive MCP vs CLI on the same GitHub tasks (Scalekit, Claude Sonnet 4)  
+- **~28%** MCP **run** failures: **7/25** MCP runs hit **`ConnectTimeout`** to remote Copilot MCP; CLI **25/25** run completion — not “28% task failure when connected”  
+- Optimized MCP (lazy discovery, code mode, gateway filtering) **closes much of the token gap** but does not standardize per-invoke caps, uniform envelopes, and a single sidecar runtime in one protocol
 
 **GAX exists to combine:**
 

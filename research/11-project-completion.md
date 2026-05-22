@@ -6,25 +6,39 @@
 |------|----------|
 | GAX reference impl | `gax/` v0.4.0 |
 | Research hub | `research/` |
-| Benchmark deep-research | `mcp_vs_cli_benchmarks_2026/report.md` |
-| ACSP specification site | `docs/acsp/` |
-| Evaluation | `eval/run_comparison.py`, `eval/run_full.py` |
+| Benchmark deep-research | `mcp_vs_cli_benchmarks_2026/report.md` (synthesis, not new 75-trial study) |
+| ACSP specification | `docs/acsp/ACSP-1.0.md` |
+| Public narrative | `docs/PUBLIC_NARRATIVE.md` |
+| Evaluation | `eval/run_comparison.py`, `eval/METHODOLOGY.md` |
+| Real LLM agent proof | `examples/agent_runs/SAMPLE_RUN/` |
 | Migration research | `gax_implementation_migration_2026/report.md` |
 
-## Evaluation conclusion
+## Evaluation conclusion (current — no weighted composite)
 
-Weighted composite (tokens 30%, reliability 25%, governance 25%, structure 20%):
+Per [eval/METHODOLOGY.md](../eval/METHODOLOGY.md) and [eval/results/live-run-summary.md](../eval/results/live-run-summary.md):
 
-- **gax** and **gax_mcp_bridge** lead (~0.98)
-- **cli** mid (~0.68) — good tokens, weak governance
-- **mcp_naive_43** low (~0.56) — schema tax
+| Axis | Leader in our harness |
+|------|------------------------|
+| **Lowest median tokens** | `cli` (~104) |
+| **Audit-id + structured envelope** | `gax`, `gax_mcp_bridge`, `gax_plan` |
+| **Naive MCP schema tax** | `mcp_naive_43` ~44k tokens/session (fixture) |
 
-**Claim:** GAX is the best **overall** agent surface for governed, token-efficient, structured automation. CLI remains valid for ungoverned local-only use; naive MCP is not cost-competitive.
+**We do not claim “GAX wins overall.”** We claim GAX is a **third surface** when you need CLI-shaped invocations, MCP-class governance, and envelope v1 in one protocol — without naive MCP schema preload.
+
+**Deprecated:** Earlier docs that cited weighted composite (~0.986 gax vs ~0.68 cli) are **obsolete**; do not use in submissions.
+
+## Evidence types
+
+1. **External synthesis** — Scalekit, Anthropic, Cloudflare ([benchmark report](../mcp_vs_cli_benchmarks_2026/report.md)).
+2. **Harness** — 18 tasks, simulated transcripts, separate metrics, optional `--live-mcp`.
+3. **Agent receipts** — `SAMPLE_RUN`: real LLM, governance, audit correlation.
 
 ## Reproduce
 
 ```bash
 cd gax && python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
-python ../eval/run_full.py
+python ../eval/run_comparison.py --live-mcp   # optional GITHUB_TOKEN
+python ../examples/agent_pr_triage.py       # optional LLM keys
+pytest tests/test_acsp_envelope_conformance.py -q
 ```

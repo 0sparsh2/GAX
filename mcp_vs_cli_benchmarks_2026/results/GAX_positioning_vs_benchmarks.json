@@ -1,23 +1,27 @@
 {
   "name": "GAX positioning vs benchmarks",
   "category": "Synthesis",
-  "summary": "Benchmarks support GAX as a third surface: CLI-shaped invocations, MCP-class governance, optimized-MCP-class lazy discovery. Naive MCP loses on tokens (4x-32x) and reliability (28% timeouts in Scalekit). Optimized MCP (programmatic, Code Mode, gateway filter) closes the token gap but does not standardize caps, audit_id per invoke, or shell ergonomics in one protocol. Repo eval (eval/run_comparison.py) ranks gax composite ~0.99 vs cli ~0.68 vs mcp_naive_43 ~0.56 on weighted tokens/reliability/governance/structure.",
+  "summary": "External benchmarks (Scalekit, Anthropic, Cloudflare) motivate the problem; local eval (eval/run_comparison.py) reports separate metrics without a weighted composite. CLI wins median tokens in harness; GAX wins audit-id and structured-envelope rates. Optimized MCP closes much of the token gap but does not standardize per-invoke caps, uniform envelope v1, and sidecar enforcement in one protocol (ACSP). Real LLM proof: examples/agent_runs/SAMPLE_RUN/.",
   "key_metrics": {
-    "eval_gax_composite": 0.986,
-    "eval_cli_composite": 0.678,
-    "eval_mcp_naive_43_composite": 0.561,
-    "eval_gax_plan_composite": 0.984,
+    "external_token_ratio_range": "4x to 32x MCP over CLI (Scalekit)",
+    "external_mcp_run_failure_rate": 0.28,
+    "external_mcp_failed_runs": "7/25 ConnectTimeout (Scalekit)",
+    "eval_cli_median_tokens": 104,
+    "eval_gax_median_tokens": 137,
+    "eval_gax_audit_id_rate": 0.8,
+    "eval_mcp_naive_43_median_tokens": 44062,
     "gax_discovery_commands": ["gax search", "gax doc", "gax schema"],
-    "gax_version": "0.3.0"
+    "gax_version": "0.4.0",
+    "deprecated_weighted_composite": "removed — see eval/METHODOLOGY.md"
   },
-  "methodology_notes": "Synthesis across Phase 1 sources and local eval harness (token heuristic chars/4, MCP schema from fixtures). Live MCP in eval optional via --live-mcp. Phase 3: publish with provider token APIs.",
+  "methodology_notes": "Phase 1 sources are literature synthesis. Repo eval uses tiktoken, simulated transcripts (eval/session_transcript.py), Pareto winners per axis. No team-chosen composite score. Live MCP optional via --live-mcp.",
   "primary_sources": [
-    {"title": "GAX eval results", "url": "file://eval/results/comparison.json"},
+    {"title": "GAX eval live-run-summary", "url": "file://eval/results/live-run-summary.md"},
+    {"title": "GAX PUBLIC_NARRATIVE", "url": "file://docs/PUBLIC_NARRATIVE.md"},
     {"title": "phase1-findings", "url": "file://mcp_vs_cli_benchmarks_2026/phase1-findings.md"},
-    {"title": "research/02-gax-proposal", "url": "file://research/02-gax-proposal.md"}
+    {"title": "Scalekit MCP vs CLI", "url": "https://www.scalekit.com/blog/mcp-vs-cli-use"}
   ],
   "confidence_level": "medium",
-  "implications_for_gax": "Continue: MCP bridge implementation, OpenAPI manifest generator, Phase 3 vault/SPIFFE. Message for stakeholders: GAX is best on composite agent metrics; CLI remains valid for ungoverned local speed; naive MCP is not cost-competitive.",
-  "corrections_to_repo_docs": "research/10-evaluation: link comparison.json after each eval run.",
-  "uncertain": ["eval uses simulated MCP schema tax for most runs"]
+  "implications_for_gax": "Message: third surface for governed agents; cite external benchmarks for naive MCP economics; cite harness + SAMPLE_RUN for first-party evidence. Planned: ablations, CLI Agent Spec comparison, provider-native token APIs.",
+  "corrections_to_repo_docs": "research/11 and report.md aligned May 2026 — no composite winner language."
 }

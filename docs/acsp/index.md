@@ -7,6 +7,7 @@
 | Doc | Description |
 |-----|-------------|
 | **[ACSP-1.0.md](./ACSP-1.0.md)** | **Implementation-agnostic protocol spec** |
+| [CONFORMANCE.md](./CONFORMANCE.md) | Teaser conformance tests (reference impl) |
 | [protocol.md](./protocol.md) | Normative overview: planes, envelope, capabilities |
 | [envelope-v1.md](./envelope-v1.md) | Response envelope schema |
 | [discovery.md](./discovery.md) | Lazy `search` / `doc` / `schema` |
@@ -20,4 +21,4 @@
 
 ## Why ACSP / GAX
 
-Benchmarks show naive MCP is **4×–32×** more token-expensive than CLI; optimized MCP closes the gap. ACSP adds **CLI ergonomics + cap-per-invoke + audit** in one surface without hybrid agent prompts.
+See [PUBLIC_NARRATIVE.md](../PUBLIC_NARRATIVE.md): external benchmarks (Scalekit, Anthropic, Cloudflare) vs our harness vs `SAMPLE_RUN` agent receipts. ACSP adds **CLI ergonomics + cap-per-invoke + audit** in one sidecar without naive MCP schema preload.
