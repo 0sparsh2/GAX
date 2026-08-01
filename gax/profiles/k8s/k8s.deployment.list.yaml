@@ -1,0 +1,17 @@
+command: k8s.deployment.list
+version: "1.0.0"
+description: List deployments in a namespace
+category: kubernetes
+adapter: k8s
+required_scopes:
+  - k8s:deployments:read
+side_effects: read
+idempotent: true
+input_schema:
+  type: object
+  properties:
+    namespace:
+      type: string
+      description: Kubernetes namespace
+output_schema:
+  type: object

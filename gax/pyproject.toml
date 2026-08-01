@@ -3,11 +3,38 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "gax"
+# Distribution name on PyPI. The import name and the CLI stay `gax` —
+# `pip install gax-cli` gives you `import gax`, `gax`, `gaxd`, and `gax-mcp`.
+name = "gax-cli"
 version = "0.4.0"
-description = "Governed Agent eXecution — CLI ergonomics with embedded governance"
+description = "Governed execution layer for agent shell commands — capability-gated, audited, MCP-compatible"
 readme = "README.md"
 requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Sparsh Nagpal" }]
+keywords = [
+  "ai-agents",
+  "mcp",
+  "model-context-protocol",
+  "agent-governance",
+  "capability-security",
+  "audit",
+  "llm-tools",
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Intended Audience :: System Administrators",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Security",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Topic :: System :: Systems Administration",
+]
 dependencies = [
   "click>=8.1",
   "pyyaml>=6.0",
@@ -16,6 +43,12 @@ dependencies = [
   "httpx>=0.27",
 ]
 
+[project.urls]
+Homepage = "https://github.com/0sparsh2/GAX"
+Repository = "https://github.com/0sparsh2/GAX"
+Documentation = "https://github.com/0sparsh2/GAX/blob/main/docs/QUICKSTART.md"
+Issues = "https://github.com/0sparsh2/GAX/issues"
+
 [project.optional-dependencies]
 dev = ["pytest>=8.0"]
 keyring = ["keyring>=25.0"]
@@ -23,10 +56,28 @@ keyring = ["keyring>=25.0"]
 [project.scripts]
 gax = "gax.cli:main"
 gaxd = "gax.daemon:main"
+gax-mcp = "gax.mcp_server:main"
+
+[tool.setuptools]
+# Only the package's own data; without this setuptools also sweeps the
+# repo-root manifests/ and schemas/ into the wheel root, where they would
+# collide with other distributions in site-packages.
+include-package-data = false
 
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["gax*"]
 
+# Bundled data lives inside the package for wheels (gax/manifests, gax/config,
+# gax/schemas). The repo keeps the editable copies one level up; gax/paths.py
+# prefers the in-package copy and falls back to the repo layout, so `pip install
+# gax` and `pip install -e .` both work. Without this a wheel ships no policy.yaml
+# and every tenant allowlist silently disappears.
 [tool.setuptools.package-data]
-gax = ["../manifests/*.yaml", "../schemas/*.json"]
+gax = [
+  "manifests/*.yaml",
+  "schemas/*.json",
+  "config/*.yaml",
+  "config/*.rego",
+  "profiles/*/*.yaml",
+]

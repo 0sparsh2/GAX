@@ -1,0 +1,22 @@
+command: k8s.pod.describe
+version: "1.0.0"
+description: Describe a pod (status, events, conditions)
+category: kubernetes
+adapter: k8s
+required_scopes:
+  - k8s:pods:read
+side_effects: read
+idempotent: true
+input_schema:
+  type: object
+  properties:
+    namespace:
+      type: string
+      description: Kubernetes namespace
+    pod:
+      type: string
+      description: Pod name
+  required:
+    - pod
+output_schema:
+  type: object

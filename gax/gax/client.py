@@ -15,8 +15,8 @@ def base_url(host: str | None = None, port: int | None = None) -> str:
     return f"http://{h}:{p}"
 
 
-def capability_header() -> dict[str, str]:
-    cap = os.environ.get("GAX_CAP", "").strip()
+def capability_header(capability: str | None = None) -> dict[str, str]:
+    cap = (capability or os.environ.get("GAX_CAP", "")).strip()
     if not cap:
         return {}
     return {"GAX-Capability": cap}
@@ -29,10 +29,11 @@ def remote_invoke(
     surface: str = "model",
     host: str | None = None,
     port: int | None = None,
+    capability: str | None = None,
 ) -> tuple[dict[str, Any], int]:
     url = base_url(host, port) + "/invoke"
     body = {"command": command, "args": args, "surface": surface}
-    r = httpx.post(url, json=body, headers=capability_header(), timeout=120.0)
+    r = httpx.post(url, json=body, headers=capability_header(capability), timeout=120.0)
     data = r.json()
     env = data.get("envelope", data)
     exit_code = int(data.get("exit_code", 1 if not env.get("ok") else 0))

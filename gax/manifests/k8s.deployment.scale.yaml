@@ -1,0 +1,35 @@
+command: k8s.deployment.scale
+version: "1.0.0"
+description: Scale a deployment to N replicas. Mutating; scaling to 0 takes a service down.
+category: kubernetes
+adapter: k8s
+required_scopes:
+  - k8s:deployments:write
+side_effects: write
+idempotent: true
+input_schema:
+  type: object
+  properties:
+    namespace:
+      type: string
+      description: Kubernetes namespace (DNS-1123)
+    deployment:
+      type: string
+      description: Deployment name (DNS-1123)
+    replicas:
+      type: integer
+      description: Desired replica count (>= 0)
+    dry_run:
+      type: boolean
+      description: Validate server-side without scaling (kubectl --dry-run=server)
+  required:
+    - deployment
+    - replicas
+output_schema:
+  type: object
+  properties:
+    scaled: { type: boolean }
+    deployment: { type: string }
+    namespace: { type: string }
+    replicas: { type: integer }
+    dry_run: { type: boolean }

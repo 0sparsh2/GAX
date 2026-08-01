@@ -1,7 +1,7 @@
 # GAX — Governed Agent eXecution
 
 <p align="center">
-  <strong>CLI ergonomics for AI agents · MCP-class governance · structured envelopes</strong>
+  <strong>Your MCP gateway can't see <code>bash</code>. GAX governs both.</strong>
 </p>
 
 <p align="center">
@@ -9,11 +9,12 @@
 </p>
 
 <p align="center">
-  <a href="docs/acsp/">ACSP Protocol</a> ·
+  <a href="docs/QUICKSTART.md">Quickstart</a> ·
+  <a href="docs/PLAN-2026H2.md">Plan</a> ·
   <a href="docs/PUBLIC_NARRATIVE.md">Narrative</a> ·
+  <a href="docs/acsp/">Envelope spec</a> ·
   <a href="research/">Research</a> ·
-  <a href="eval/">Evaluation</a> ·
-  <a href="mcp_vs_cli_benchmarks_2026/report.md">Benchmarks</a>
+  <a href="eval/">Evaluation</a>
 </p>
 
 ---
@@ -21,10 +22,9 @@
 ## Table of contents
 
 - [What is GAX?](#what-is-gax)
-- [Public narrative](#public-narrative)
-- [Why GAX exists](#why-gax-exists)
-- [The problem: MCP vs CLI](#the-problem-mcp-vs-cli)
-- [The solution](#the-solution)
+- [The gap GAX fills](#the-gap-gax-fills)
+- [How it enforces](#how-it-enforces)
+- [About the token argument](#about-the-token-argument)
 - [Architecture](#architecture)
 - [How it works](#how-it-works)
 - [Evaluation](#evaluation)
@@ -42,76 +42,47 @@
 
 ## What is GAX?
 
-**GAX** (Governed Agent eXecution) is an open protocol and reference implementation for how AI agents should call external tools. It gives agents a **command-line-shaped surface** (`gax gh.pr.list --repo org/api`) while moving **OAuth, policy, audit, and tenancy** into a **sidecar** the model never sees.
+**GAX** (Governed Agent eXecution) is a **governed execution layer for agent shell commands**. Agents get a command-line-shaped surface (`gax gh.pr.list --repo org/api`); **OAuth, policy, audit, and tenancy** live in a sidecar the model never sees.
 
-The formal protocol name is **ACSP** (Agent Capability Shell Protocol). This repository contains:
+The enforcement guarantee: **an agent can only name commands that already exist in the registry, every invoke carries a capability token checked before any adapter runs, and every invoke produces an `audit_id`.**
+
+GAX **complements MCP** rather than competing with it. MCP servers become adapters behind stable GAX command names, so one policy file, one capability model, and one audit trail cover both your MCP calls and your shell calls.
 
 | Component | Path | Description |
 |-----------|------|-------------|
 | **Reference implementation** | [`gax/`](gax/) | Python package: `gax` CLI + `gaxd` daemon (v0.4) |
-| **ACSP specification** | [`docs/acsp/`](docs/acsp/) | [ACSP-1.0](docs/acsp/ACSP-1.0.md) (implementation-agnostic) + envelope, discovery |
+| **Envelope spec** | [`docs/acsp/`](docs/acsp/) | Envelope v1, discovery, conformance tests |
 | **Research hub** | [`research/`](research/) | MCP vs CLI analysis, diagrams, comparisons |
-| **Evaluation harness** | [`eval/`](eval/) | Reproducible CLI / MCP / GAX benchmarks |
-| **Deep research** | [`mcp_vs_cli_benchmarks_2026/`](mcp_vs_cli_benchmarks_2026/) | Cited benchmark synthesis |
-
-GAX is **not** “MCP or CLI.” It is a **third surface**: one runtime, registered commands, capability tokens on every invoke, and lazy discovery so you do not pay a 40k+ token schema tax up front.
+| **Evaluation harness** | [`eval/`](eval/) | Reproducible CLI / MCP / GAX measurements |
+| **2026 H2 plan** | [`docs/PLAN-2026H2.md`](docs/PLAN-2026H2.md) | Repositioning + eval-integrity work |
 
 ---
 
-## Public narrative
+## The gap GAX fills
 
-**Start here for reviewers and posts:** [docs/PUBLIC_NARRATIVE.md](docs/PUBLIC_NARRATIVE.md) — problem, three planes, **what is borrowed vs measured in-repo**, why not `gh` + a logging proxy, links to eval gist and [SAMPLE_RUN](examples/agent_runs/SAMPLE_RUN/). Reviewer checklist: [docs/REVIEWER_RESPONSE.md](docs/REVIEWER_RESPONSE.md).
+MCP won the tool-calling standards war — [donated to the Linux Foundation's Agentic AI Foundation](https://chatforest.com/guides/mcp-ecosystem-2026-state-of-the-standard/) in Dec 2025, 97M downloads, 6,400+ registered servers. A [funded gateway category](https://www.truefoundry.com/blog/best-mcp-gateways) (Docker, Cloudflare, Kong, Bifrost, Lunar, MintMCP, TrueFoundry) now ships policy enforcement, audit, and OAuth for MCP traffic.
 
----
+**Three things that stack does not cover:**
 
-## Why GAX exists
+**1. The shell is ungoverned.** Every gateway above governs *MCP traffic*. But agents act overwhelmingly through `bash` — Claude Code's own architecture is file access + bash + MCP, and [the dominant setup pattern](https://okhlopkov.com/claude-code-setup-mcp-hooks-skills-2026/) mixes shell, skills, hooks, and MCP servers. An MCP gateway sees **none** of the shell half. [NVIDIA OpenShell](https://www.tigera.io/blog/nvidia-openshell-secures-the-agent-who-governs-the-fleet/) (GTC 2026) validates the problem but operates at the syscall layer, with no notion of *which registered command, under what capability, producing what audit record*.
 
-AI agents need to act on GitHub, Kubernetes, SaaS APIs, and internal systems. Two dominant patterns exist today:
+**2. Governance is the acknowledged gap in the standard.** The [MCP 2026 roadmap names enterprise governance, audit trails, and SSO-integrated auth](https://blog.gitguardian.com/mcp-governance-framework/) as priorities it does not yet fully address. The ecosystem outgrew its security model: [30+ CVEs in Jan–Feb 2026](https://chatforest.com/guides/mcp-ecosystem-2026-state-of-the-standard/), including Asana's cross-tenant data leak, Smithery's path traversal exposing 3,243 apps, and tool-poisoning attacks.
 
-| Approach | Strength | Weakness |
-|----------|----------|----------|
-| **Raw CLI** (`gh`, `kubectl`, `aws`) | Token-efficient, composable, models already know shells | Ambient credentials, weak audit, no per-user OAuth at scale |
-| **MCP** (Model Context Protocol) | Typed tools, OAuth, multi-tenant governance | Naive setups inject **full tool schemas** every turn (44k–150k+ tokens) |
+**3. Tool poisoning has no purchase here.** Because the model can only invoke commands that already exist in [`gax/manifests/`](gax/manifests/), a poisoned tool *description* cannot introduce a new action. The action surface is fixed at deploy time, not negotiated at runtime.
 
-**External benchmarks** ([Scalekit](https://www.scalekit.com/blog/mcp-vs-cli-use), [Anthropic](https://www.anthropic.com/engineering/code-execution-with-mcp), [Cloudflare Code Mode](https://blog.cloudflare.com/code-mode-mcp/)) — synthesized in [mcp_vs_cli_benchmarks_2026/report.md](mcp_vs_cli_benchmarks_2026/report.md); **we did not independently replicate** Scalekit’s 75-trial suite:
-
-- **4×–32×** more tokens for naive MCP vs CLI on the same GitHub tasks (Scalekit, Claude Sonnet 4)  
-- **~28%** MCP **run** failures: **7/25** MCP runs hit **`ConnectTimeout`** to remote Copilot MCP; CLI **25/25** run completion — not “28% task failure when connected”  
-- Optimized MCP (lazy discovery, code mode, gateway filtering) **closes much of the token gap** but does not standardize per-invoke caps, uniform envelopes, and a single sidecar runtime in one protocol
-
-**GAX exists to combine:**
-
-- CLI-level **token economics** (lazy `gax search` / `gax doc`, not full schema preload)  
-- MCP-level **governance** (OAuth device flow, capability tokens, policy, audit)  
-- Automation-grade **structured output** (Envelope v1 with `audit_id`, schema URI, optional `next` hints)
+| | MCP gateway | Shell sandbox | **GAX** |
+|---|:---:|:---:|:---:|
+| Governs MCP calls | ✅ | ❌ | ✅ |
+| Governs shell commands | ❌ | ⚠️ syscall-level | ✅ registered commands |
+| Capability checked pre-invoke | ✅ | ❌ | ✅ |
+| One audit trail across both | ❌ | ❌ | ✅ |
+| Immune to tool-description poisoning | ❌ | n/a | ✅ |
 
 ---
 
-## The problem: MCP vs CLI
+## How it enforces
 
-```text
-Naive MCP agent context:
-┌─────────────────────────────────────────────┐
-│  System prompt                              │
-│  + 43 GitHub MCP tool schemas  (~44k tok)   │  ← paid every session
-│  + user message                             │
-│  + tool results                             │
-└─────────────────────────────────────────────┘
-
-CLI agent context:
-┌─────────────────────────────────────────────┐
-│  System prompt + short shell rules          │
-│  + gh pr list --repo org/api   (~1–3k tok)  │
-└─────────────────────────────────────────────┘
-```
-
-**Hybrid** (use CLI locally + MCP in production) works but doubles operational complexity: two auth models, two output shapes, two discovery stories.
-
----
-
-## The solution
-
-GAX **splits three planes**:
+GAX splits three planes:
 
 | Plane | Visible to the model? | Responsibility |
 |-------|------------------------|----------------|
@@ -119,15 +90,62 @@ GAX **splits three planes**:
 | **Control** | No | OAuth, vault, policy, capability mint/revoke |
 | **Data** | Filtered | Envelope v1 JSON; `surface=model` truncates for the LLM |
 
+**Trust boundary:** the model proposes *which registered command + args*; `gaxd` **enforces before any adapter runs** ([`executor.py`](gax/gax/executor.py)).
+
 **Five invariants:**
 
-1. **Lazy discovery** — `gax search`, `gax doc`, `gax schema` (~80–250 tokens each), never full registry in context  
-2. **Capability per invoke** — JWT or macaroon (`GAX_CAP` / `GAX-Capability` header); fail closed  
-3. **Uniform envelope** — every response: `ok`, `cmd`, `audit_id`, `data`, `meta`, optional `next`  
-4. **No arbitrary shell** — only registered commands (policy + allowlists)  
-5. **Composable plans** — `gax plan run workflow.yaml` (sequential + parallel steps, one envelope out)
+1. **No arbitrary shell** — only registered commands (policy + allowlists). *This is the core guarantee.*
+2. **Capability per invoke** — JWT or macaroon (`GAX_CAP` / `GAX-Capability` header); **fail closed**, with a **danger ceiling** (`--max-side-effect read|write|destructive`) so an allowlist edit cannot silently promote a read-only token into one that deletes things
+3. **Uniform envelope** — every response: `ok`, `cmd`, `audit_id`, `data`, `meta`, optional `next` — so errors and audit correlation are the same shape across shell, MCP, and HTTP backends
+4. **Lazy discovery** — `gax search` / `gax doc` / `gax schema`, never the full registry in context
+5. **Composable plans** — `gax plan run workflow.yaml` (sequential + parallel), one envelope out
 
-MCP servers and existing CLIs become **adapters** behind stable GAX command names—the agent never sees MCP tool schemas.
+Fail-closed matters because the emerging enterprise best practice is *"if the audit write fails, the tool call should fail."* Capability checks, scope checks, and policy all run **before** the adapter — see the governance receipts in [SAMPLE_RUN](examples/agent_runs/SAMPLE_RUN/) (`policy_denied`, `scope_mismatch`, `expired_cap`, each with a correlated `audit_id`).
+
+### See it stop something dangerous
+
+```bash
+export GAX_K8S_MOCK=1   # no cluster needed
+export GAX_CAP="$(gax auth cap-mint --command k8s.pod.delete \
+  --scope k8s:pods:write --max-side-effect read --raw)"
+
+gax k8s.pod.delete --namespace prod --pod web-1
+```
+
+```json
+{
+  "ok": false,
+  "error": {
+    "kind": "policy_denied",
+    "message": "side_effects 'destructive' exceeds capability ceiling 'read': k8s.pod.delete"
+  },
+  "audit_id": "aud_cef808f0fadd41e7"
+}
+```
+
+The command **was** on that token's allowlist. It was refused anyway, before `kubectl` was
+ever spawned, because the token's danger ceiling is `read` — **two independent things must
+be wrong before something gets deleted.** The denial is audited with its arguments.
+
+Covered by [26 adversarial tests](gax/tests/test_side_effect_ceiling.py) that attack the
+check (expired token + destructive, scope mismatch, allowlisted-but-over-ceiling, wildcard
+capability, shell metacharacters in pod names) rather than confirm the happy path.
+Full walkthrough: [QUICKSTART](docs/QUICKSTART.md).
+
+---
+
+## About the token argument
+
+**Earlier versions of this README led with token economics. That argument has largely expired, and we'd rather say so than have you discover it.**
+
+When GAX started, naive MCP setups injected 44k+ tokens of tool schemas per session, and lazy discovery was a real differentiator. In 2026 the model vendors shipped the fix themselves:
+
+- Anthropic's [Tool Search Tool](https://platform.claude.com/docs/en/agents-and-tools/tool-use/tool-search-tool) (`defer_loading: true`) — **~85% token reduction**, plus measured *accuracy* gains (Opus 4.5: 79.5% → 88.1% on MCP evals). OpenAI shipped defer-loading too.
+- [Code Mode](https://www.getmaxim.ai/articles/code-execution-with-mcp-how-code-mode-cuts-agent-token-costs-by-90/) — up to **92.8% lower input tokens** at 500+ tools, 100% pass rate.
+
+GAX's lazy discovery is now a platform feature, not a differentiator. **We don't claim a token advantage over a well-configured modern MCP setup.** On like-for-like tasks our own harness measures GAX at roughly **3.5× the tokens of raw CLI** — governance is not free, and we'd rather publish that number than a flattering one.
+
+What survives is the enforcement layer: registered commands, capability-per-invoke, one audit trail spanning shell *and* MCP. Those are orthogonal to how tool schemas get loaded.
 
 ---
 
@@ -207,27 +225,38 @@ MCP servers and existing CLIs become **adapters** behind stable GAX command name
 
 Reproducible harness: **18 tasks** (happy path, errors, policy denial, truncation, multi-turn, plan failure, MCP bridge). Token counts use **tiktoken** (`cl100k_base`), not hardcoded estimates.
 
-**Bias disclosure:** GAX is our implementation. We report **separate metrics** (median tokens, success rate, audit-id rate, structured-envelope rate) — no team-chosen weighted composite. See [eval/METHODOLOGY.md](eval/METHODOLOGY.md).
+**Bias disclosure:** GAX is our implementation. We report **separate metrics** — no team-chosen weighted composite. See [eval/METHODOLOGY.md](eval/METHODOLOGY.md).
 
-| Modality | What it measures |
-|----------|------------------|
-| `cli` | Shell command + stdout in agent transcript |
-| `mcp_naive_43` | Same work + ~44k schema tax (Scalekit fixture) |
-| `mcp_live` | Optional real `tools/list` size (`--live-mcp`) |
-| `gax` | `gax doc` stub + envelope v1 |
-| `gax_mcp_bridge` | Envelope over MCP tool (schema not in prompt) |
+**Known defects, being fixed** ([tracked in the plan](docs/PLAN-2026H2.md#track-b--eval-integrity)) — we found these in our own review and are publishing them before the fix lands:
 
-**Latest live run** ([summary](eval/results/live-run-summary.md) · [public gist](https://gist.github.com/0sparsh2/cea07652091fc4d47637e87d958ed340)):
+| # | Defect | Status |
+|---|--------|--------|
+| W1 | `cli` median was over 7 tasks, `gax` over 15; only 6 overlap — published ratio 1.3× understated GAX cost | **Fixed** — paired comparison; true ratio ~3.5× |
+| W2 | Expected-failure rows rewritten to `ok=True` (32/150) made every modality report `success_rate: 1.0` | **Fixed** — split into `completion` / `expected_outcome` / `fail_closed` |
+| W3 | Mock MCP (1 tool) tabled beside live MCP (26 tools) | Queued |
+| W4 | `mcp_naive_43` is a borrowed constant + arithmetic, not a measurement | Queued |
 
-| Modality | Median tokens | Audit-id rate |
-|----------|---------------|---------------|
-| cli | 104 | 0% |
-| gax | 137 | 80% |
-| gax_mcp_bridge | 732 | 100% |
-| mcp_live (26-tool GitHub server) | 4,483 | 0% |
-| mcp_naive_43 (Scalekit fixture) | 44,062 | 0% |
+| Modality | What it measures | Derivation |
+|----------|------------------|------------|
+| `cli` | Shell command + stdout in agent transcript | measured |
+| `gax` | `gax doc` stub + envelope v1 | measured |
+| `gax_mcp_bridge` | Envelope over MCP tool (schema not in prompt) | measured |
+| `mcp_live` | Real `tools/list` size (`--live-mcp`) | measured |
+| `mcp_naive_43` | Same work + ~44k schema tax | **modeled from Scalekit fixture** |
 
-*Details:* [`eval/results/comparison.md`](eval/results/comparison.md) · **Extended (ablations + MCP catalog):** [`docs/ABLATIONS.md`](docs/ABLATIONS.md) · **Case study (token model):** [eval/case_study/README.md](eval/case_study/README.md)
+**Paired comparison** (the 6 tasks where both `cli` and `gax` produce a real row) — this is the honest like-for-like number:
+
+| | median tokens |
+|---|---:|
+| cli | 80 |
+| gax | 250 |
+| **median ratio** | **~3.5×** (range 1.3×–5.9×) |
+
+Per-task ratios and the excluded-task list are in [`eval/results/comparison.md`](eval/results/comparison.md). Live `gh` calls vary run to run, so expect ~3–3.5×; every paired task costs GAX more than CLI.
+
+Governance properties are **by design, verified by test** — not experimental outcomes: `cli` emits no `audit_id` (0%) and `gax` emits one on every invoke (100%) because that is what each architecture *is*.
+
+*Details:* [`eval/results/comparison.md`](eval/results/comparison.md) · **Extended (ablations + MCP catalog):** [`docs/ABLATIONS.md`](docs/ABLATIONS.md) · **Case study:** [eval/case_study/README.md](eval/case_study/README.md)
 
 ### Real LLM agent demo (operational receipts)
 
@@ -293,7 +322,35 @@ output_schema:
 
 Restart `gaxd` or use `gax --local`.
 
-### MCP bridge
+### Use GAX from any MCP client
+
+GAX ships as an MCP server, so Claude Code, Cursor, or any MCP client gets governed
+shell execution with **zero GAX-specific integration**:
+
+```bash
+claude mcp add gax -- gax-mcp
+# or, in .mcp.json / client config:
+#   { "mcpServers": { "gax": { "command": "gax-mcp" } } }
+```
+
+It publishes exactly **three tools** — `gax_search`, `gax_doc`, `gax_invoke` — and keeps
+the command registry behind them. A naive MCP server publishes one tool per capability,
+so a 43-command registry costs ~44k tokens of schema before the first turn. GAX's surface
+is **constant-size regardless of how many commands you register**, which is the same shape
+as Anthropic's tool-search / `defer_loading` pattern — it composes with the platform fix
+rather than competing with it.
+
+The governance boundary is unchanged: `gax_invoke` calls the same executor as the CLI, so
+capability, scope, and policy checks run **before** any adapter, and every call returns an
+`audit_id`. A client cannot reach an unregistered command, and cannot bypass the capability
+check by rephrasing — the model only ever proposes a command name plus args.
+
+```bash
+eval "$(gax auth cap-mint --command demo.echo --scope demo:echo --export)"
+gax-mcp   # stdio JSON-RPC; normally launched by the client
+```
+
+### MCP bridge (the other direction)
 
 Expose a single MCP tool without loading all tool schemas into the agent:
 
@@ -334,13 +391,30 @@ pip install -e ".[dev]"
 pip install -e ".[keyring]"
 ```
 
-Verify:
+Then one command sets everything up — `~/.gax`, a 30-day **read-only** dev capability,
+the sidecar, and a set of real commands:
 
 ```bash
-gax --help
-gaxd --help
-pytest -q
+gax init --profile k8s --profile github
+gax k8s.pod.logs --pod web-1     # works immediately; no exports needed
+gax doctor                       # diagnose config, capability, sidecar, backends
 ```
+
+**Profiles** ship working commands so your first task isn't authoring YAML:
+
+| Profile | Commands |
+|---------|----------|
+| `k8s` | `pod.list` `pod.logs` `pod.describe` `deployment.list` `service.list` · `deployment.restart` (write) · `pod.delete` `namespace.delete` (destructive) |
+| `github` | `pr.list` `pr.view` `issue.list` `issue.view` `run.list` · `pr.comment` (write) · `pr.merge` (destructive) |
+
+`gax profile list` shows them by danger level; `gax profile add <name>` installs into
+`~/.gax/manifests/`, which survives package upgrades. **Installing grants nothing** —
+`init` only adds a profile's *read* commands to your capability, so the write and
+destructive ones stay refused until you mint for them deliberately.
+
+Measured in a clean virtualenv with a fresh `$HOME`: install → 22 registered commands →
+governed invoke → destructive refused → `doctor` all green in **~1 second**. Full
+walkthrough: [QUICKSTART](docs/QUICKSTART.md).
 
 ---
 
@@ -543,7 +617,13 @@ python ../deep-research/scripts/validate_json.py \
 | **2** Ecosystem | Mixed | MCP bridge (prototype); kubectl/aws/jira (stub) |
 | **3** Enterprise | Mostly stub | Vault/SPIFFE/OPA hooks; compliance export (prototype) |
 
-**Post-MVP:** MCP connection pooling · real kubectl/aws/jira exec adapters · provider-native token APIs · hosted SSO gateway
+**Next up** — see [docs/PLAN-2026H2.md](docs/PLAN-2026H2.md):
+
+1. ~~**GAX as an MCP server**~~ — **shipped**: `claude mcp add gax -- gax-mcp` ([above](#use-gax-from-any-mcp-client))
+2. **Eval integrity** — W1/W2 done; W3 (mock/live split) and W4 (derivation labels) queued
+3. **Real OPA** — policy-as-code is table stakes for the regulated-CI/CD wedge; Vault and SPIFFE stay out of the pitch until they're genuine
+
+**Explicitly not doing:** competing on breadth of integrations. Composio, StackOne, and Docker's 200-image catalog win that permanently. GAX competes on depth of the enforcement guarantee for a narrow, high-stakes surface.
 
 Full checklist: [research/06-implementation-roadmap.md](research/06-implementation-roadmap.md)
 

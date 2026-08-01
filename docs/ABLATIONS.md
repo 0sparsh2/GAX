@@ -38,7 +38,7 @@ Outputs:
 | `cli_agent_spec` | [CLI Agent Spec](https://github.com/cli-agent-spec/cli-agent-spec)–style structured `cli-agent-result/v1` |
 | `cli_logged_proxy` | Raw `gh` + **post-hoc** synthetic audit log line (not pre-invoke enforcement) |
 
-Answers reviewer question: **“Why not gh + logging proxy?”** — compare `cli`, `cli_logged_proxy`, and `gax` on tokens, `audit_id_rate`, and `structured_envelope_rate`.
+Answers reviewer question: **“Why not gh + logging proxy?”** — compare `cli`, `cli_logged_proxy`, and `gax`. The decisive axis is **`fail_closed_rate`**, not audit rate: a proxy can synthesize an `audit_id` after the fact, but it logs a command that *already ran*. Only `gax*` modalities are scored on `fail_closed` at all, because only they have a pre-invoke enforcement step.
 
 ## Multi-MCP catalog
 
@@ -59,8 +59,9 @@ Per-task rows: `mcp_live_<server_id>` with measured `tools/list` token cost (or 
 
 ## How to read results
 
-- **Tokens:** Expect `gax_ablation_schema_preload` ≈ `mcp_naive_43`; `programmatic_mcp` ≪ naive MCP.
-- **Governance:** `gax` / bridge keep `audit_id_rate`; `cli_logged_proxy` does not enforce caps (synthetic post-hoc id only).
+- **Tokens:** use the **paired** table in `comparison.md`. Per-modality medians run over different task subsets and are not head-to-head.
+- **Governance:** `gax` / bridge enforce pre-invoke (`fail_closed_rate`); `cli_logged_proxy` does not — its `audit_id` is synthetic and post-hoc.
+- **`gax_ablation_schema_preload` is arithmetic, not an ablation** (`gax` + a 44k constant); it is queued for removal under W4.
 - **Policy:** On task `policy_denied`, `gax` fails closed; `gax_ablation_no_cap` succeeds — shows cap value.
 
 No weighted composite. See [eval/METHODOLOGY.md](../eval/METHODOLOGY.md).

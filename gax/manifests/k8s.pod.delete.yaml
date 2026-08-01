@@ -1,0 +1,30 @@
+command: k8s.pod.delete
+version: "1.0.0"
+description: Delete a pod in a namespace. Destructive; requires a capability with a destructive ceiling.
+category: kubernetes
+adapter: k8s
+required_scopes:
+  - k8s:pods:write
+side_effects: destructive
+idempotent: false
+input_schema:
+  type: object
+  properties:
+    namespace:
+      type: string
+      description: Kubernetes namespace (DNS-1123)
+    pod:
+      type: string
+      description: Pod name to delete (DNS-1123)
+    dry_run:
+      type: boolean
+      description: Validate server-side without deleting (kubectl --dry-run=server)
+  required:
+    - pod
+output_schema:
+  type: object
+  properties:
+    deleted: { type: boolean }
+    pod: { type: string }
+    namespace: { type: string }
+    dry_run: { type: boolean }

@@ -21,20 +21,67 @@ def _print_json(obj: object) -> None:
     click.echo(json.dumps(obj, indent=2))
 
 
+def _capability() -> str | None:
+    """
+    Capability for this invocation: explicit env wins, else the one `gax init`
+    saved. Falling back to the saved file is what makes the first run work
+    without the user having to export anything.
+    """
+    from gax.onboarding import read_saved_cap
+
+    return os.environ.get("GAX_CAP", "").strip() or read_saved_cap()
+
+
+def _hint(message: str, fix: str) -> None:
+    """First-run errors should say what to do, not just what failed."""
+    click.echo(f"\n  {message}\n  → {fix}\n", err=True)
+
+
 def _run_local(command: str, args: dict, surface: str) -> int:
-    env, code = invoke(_REGISTRY, command=command, args=args, surface=surface)
+    cap = _capability()
+    if not cap:
+        _print_json(
+            {
+                "ok": False,
+                "error": {
+                    "kind": "capability_invalid",
+                    "message": "no capability token found",
+                },
+            }
+        )
+        _hint(
+            "No capability token.",
+            'Run "gax init", then: eval "$(gax init --print-export)"',
+        )
+        return 3
+    env, code = invoke(
+        _REGISTRY, command=command, args=args, surface=surface, capability=cap
+    )
     _print_json(env)
     return code
 
 
 def _run_remote(command: str, args: dict, surface: str, host: str, port: int) -> int:
     try:
-        env, code = remote_invoke(command, args, surface=surface, host=host, port=port)
+        env, code = remote_invoke(
+            command, args, surface=surface, host=host, port=port, capability=_capability()
+        )
     except Exception as e:
         click.echo(json.dumps({"ok": False, "error": str(e)}), err=True)
+        if _is_connection_error(e):
+            _hint(
+                f"gaxd is not running on {host}:{port}.",
+                'Run "gax init" (starts it), or "gaxd start --background", '
+                'or use "gax --local <command>" to run without the sidecar.',
+            )
         return 1
     _print_json(env)
     return code
+
+
+def _is_connection_error(e: Exception) -> bool:
+    text = str(e).lower()
+    return "connect" in text or "refused" in text or "errno 61" in text
 
 
 @click.group()
@@ -47,6 +94,163 @@ def main(ctx: click.Context, local: bool, host: str, port: int) -> None:
     ctx.obj["local"] = local
     ctx.obj["host"] = host
     ctx.obj["port"] = port
+
+
+@main.command("init")
+@click.option("--force", is_flag=True, help="Re-mint the dev capability even if valid")
+@click.option("--no-daemon", is_flag=True, help="Set up but do not start gaxd")
+@click.option(
+    "--profile",
+    "profiles_",
+    multiple=True,
+    help="Install a command profile (repeatable): k8s, github",
+)
+@click.option(
+    "--print-export",
+    is_flag=True,
+    help='Print only: export GAX_CAP="..."  (use with eval)',
+)
+@click.pass_context
+def init_cmd(
+    ctx: click.Context,
+    force: bool,
+    no_daemon: bool,
+    profiles_: tuple[str, ...],
+    print_export: bool,
+) -> None:
+    """Set up ~/.gax, mint a dev capability, and start the sidecar."""
+    from gax.onboarding import run_init
+
+    host, port = ctx.obj["host"], ctx.obj["port"]
+
+    if print_export:
+        # Quiet path for eval "$(gax init --print-export)" — no daemon side effects.
+        report = run_init(host=host, port=port, start_daemon=False, force=force)
+        click.echo(f'export GAX_CAP="{report["capability"]}"')
+        return
+
+    report = run_init(
+        host=host,
+        port=port,
+        start_daemon=not no_daemon,
+        force=force,
+        profiles=list(profiles_),
+    )
+
+    click.echo("\nGAX is ready.\n")
+    for step in report["steps"]:
+        click.echo(f"  ✓ {step}")
+
+    if not report["daemon_running"] and not no_daemon:
+        click.echo(
+            "\n  ! gaxd did not start — commands still work with: gax --local <cmd>"
+        )
+
+    click.echo("\nTry it:\n")
+    click.echo("  gax demo.echo --message hello")
+    click.echo("  gax search 'pull requests'")
+    click.echo("\nConnect an agent (Claude Code, Cursor, any MCP client):\n")
+    click.echo("  claude mcp add gax -- gax-mcp")
+    click.echo("\nFor scripts and other shells:\n")
+    click.echo('  eval "$(gax init --print-export)"')
+    click.echo(
+        "\nThe dev capability is read-only. To run destructive commands, mint one"
+        "\nexplicitly:\n"
+    )
+    click.echo(
+        "  gax auth cap-mint --command k8s.pod.delete --scope k8s:pods:write \\\n"
+        "    --max-side-effect destructive --raw"
+    )
+    click.echo("\nCheck setup any time with: gax doctor\n")
+
+
+@main.group("profile")
+def profile_group() -> None:
+    """Bundled command sets (k8s, github)."""
+
+
+@profile_group.command("list")
+def profile_list() -> None:
+    """Show available profiles and what they register."""
+    from gax.profiles import available_profiles, installed_commands
+
+    profiles = available_profiles()
+    if not profiles:
+        click.echo("No profiles bundled with this install.")
+        return
+
+    present = installed_commands()
+    click.echo("")
+    for name, p in profiles.items():
+        have = sum(1 for c in p.commands if c.command in present)
+        mark = "installed" if have == len(p.commands) else (
+            f"{have}/{len(p.commands)} installed" if have else "available"
+        )
+        click.echo(f"  {name:<10} {len(p.commands)} commands ({p.summary})  [{mark}]")
+        for c in p.commands:
+            flag = {"read": " ", "write": "~", "destructive": "!"}.get(c.side_effects, "?")
+            click.echo(f"      {flag} {c.command:<28} {c.description[:44]}")
+        click.echo("")
+    click.echo("  Legend:   read    ~ write    ! destructive\n")
+    click.echo("  Install:  gax profile add <name>\n")
+
+
+@profile_group.command("add")
+@click.argument("name")
+@click.option("--force", is_flag=True, help="Overwrite manifests already installed")
+def profile_add(name: str, force: bool) -> None:
+    """Install a profile's commands into ~/.gax/manifests/."""
+    from gax.profiles import available_profiles, install_profile
+
+    try:
+        result = install_profile(name, force=force)
+    except KeyError:
+        names = ", ".join(available_profiles()) or "(none)"
+        raise click.ClickException(f"unknown profile '{name}'; available: {names}")
+
+    click.echo(f"\n  Installed profile '{name}' → {result['target']}")
+    click.echo(f"  {len(result['installed'])} command(s) added: {result['summary']}")
+    if result["skipped"]:
+        click.echo(
+            f"  {len(result['skipped'])} already present (use --force to overwrite)"
+        )
+    click.echo(
+        "\n  Installing a profile grants nothing on its own — invoking still needs a"
+        "\n  capability naming the command, holding its scope, and reaching its ceiling."
+    )
+    click.echo("\n  Mint one for the read-only commands:\n")
+    click.echo(f"    gax init --profile {name} --force")
+    click.echo("\n  Or for a specific destructive command:\n")
+    destructive = [
+        c for c in (available_profiles()[name].commands) if c.side_effects == "destructive"
+    ]
+    example = destructive[0] if destructive else available_profiles()[name].commands[0]
+    click.echo(
+        f"    gax auth cap-mint --command {example.command} \\\n"
+        f"      --scope {(example.required_scopes or ['<scope>'])[0]} \\\n"
+        f"      --max-side-effect {example.side_effects} --raw"
+    )
+    click.echo("\n  Restart gaxd to pick up new commands: gaxd stop && gaxd start --background\n")
+
+
+@main.command("doctor")
+@click.pass_context
+def doctor_cmd(ctx: click.Context) -> None:
+    """Diagnose setup: config, capability, sidecar, backends."""
+    from gax.onboarding import run_doctor
+
+    checks = run_doctor(host=ctx.obj["host"], port=ctx.obj["port"])
+    click.echo("")
+    for c in checks:
+        click.echo(f"  {c.symbol} {c.name:<18} {c.detail}")
+        if not c.ok and c.fix:
+            click.echo(f"      → {c.fix}")
+    failures = [c for c in checks if not c.ok]
+    click.echo("")
+    if failures:
+        click.echo(f"  {len(failures)} issue(s) found.\n")
+        sys.exit(1)
+    click.echo("  All checks passed.\n")
 
 
 @main.group()
@@ -147,7 +351,15 @@ def auth_status(tenant: str | None) -> None:
 @click.option("--scope", "scopes", multiple=True, help="Scopes (repeatable)")
 @click.option("--ttl", default=3600, type=int, help="TTL seconds")
 @click.option("--macaroon", is_flag=True, help="Emit macaroon-style cap instead of JWT")
-@click.option("--export", is_flag=True, help="Print export GAX_CAP=... line")
+@click.option("--export", is_flag=True, help="Print export GAX_CAP=... line (use with eval)")
+@click.option("--raw", is_flag=True, help="Print the bare token, no quotes or prefix")
+@click.option(
+    "--max-side-effect",
+    type=click.Choice(["read", "write", "destructive"]),
+    default="read",
+    show_default=True,
+    help="Danger ceiling. A command above this is refused even if allowlisted.",
+)
 def cap_mint(
     tenant: str | None,
     commands: tuple[str, ...],
@@ -155,6 +367,8 @@ def cap_mint(
     ttl: int,
     macaroon: bool,
     export: bool,
+    raw: bool,
+    max_side_effect: str,
 ) -> None:
     from gax.paths import CONFIG_PATH
 
@@ -179,8 +393,9 @@ def cap_mint(
             commands=cmd_list,
             scopes=scope_list,
             ttl_seconds=ttl,
+            max_side_effect=max_side_effect,
         )
-    if export:
+    if export and not raw:
         click.echo(f'export GAX_CAP="{token}"')
     else:
         click.echo(token)
@@ -432,45 +647,72 @@ def compliance_export(fmt: str, out: str | None) -> None:
 
 
 # Dynamic command aliases: gax gh.pr.list ...
+_JSON_TO_CLICK = {
+    "integer": int,
+    "number": float,
+    "boolean": bool,
+    "string": str,
+}
+
+
+def _options_from_schema(schema: dict) -> list:
+    """
+    Build click options from a manifest's input_schema.
+
+    Derived rather than hardcoded: a new manifest gets working CLI flags with no
+    change here. Booleans become `--flag/--no-flag` so `--dry-run` reads naturally.
+    """
+    props = (schema or {}).get("properties") or {}
+    required = set((schema or {}).get("required") or [])
+    opts = []
+    for name, spec in props.items():
+        flag = "--" + name.replace("_", "-")
+        jtype = (spec or {}).get("type", "string")
+        help_text = (spec or {}).get("description", "")
+        if required:
+            help_text = (help_text + (" [required]" if name in required else "")).strip()
+        if jtype == "boolean":
+            opts.append(
+                click.option(
+                    f"{flag}/--no-{name.replace('_', '-')}",
+                    name,
+                    default=None,
+                    help=help_text,
+                )
+            )
+        else:
+            opts.append(
+                click.option(
+                    flag,
+                    name,
+                    type=_JSON_TO_CLICK.get(jtype, str),
+                    default=None,
+                    help=help_text,
+                )
+            )
+    return opts
+
+
 def _register_command_aliases() -> None:
     for m in _REGISTRY.list_commands():
 
-        def make_callback(cmd_name: str):
-            @click.command(name=cmd_name, context_settings={"ignore_unknown_options": True})
-            @click.option("--surface", default="model", type=click.Choice(["model", "human", "full"]))
-            @click.option("--repo", default=None)
-            @click.option("--number", type=int, default=None)
-            @click.option("--limit", type=int, default=None)
-            @click.option("--state", default=None)
-            @click.option("--message", default=None)
+        def make_callback(cmd_name: str, schema: dict, description: str):
             @click.pass_context
-            def cmd(
-                ctx: click.Context,
-                surface: str,
-                repo: str | None,
-                number: int | None,
-                limit: int | None,
-                state: str | None,
-                message: str | None,
-            ) -> None:
-                args: dict = {}
-                if repo:
-                    args["repo"] = repo
-                if number is not None:
-                    args["number"] = number
-                if limit is not None:
-                    args["limit"] = limit
-                if state:
-                    args["state"] = state
-                if message:
-                    args["message"] = message
+            def cmd(ctx: click.Context, surface: str, **kwargs) -> None:
+                # Drop unset options so adapters see only what the user passed.
+                args = {k: v for k, v in kwargs.items() if v is not None}
                 if ctx.obj.get("local"):
                     sys.exit(_run_local(cmd_name, args, surface))
                 sys.exit(_run_remote(cmd_name, args, surface, ctx.obj["host"], ctx.obj["port"]))
 
-            return cmd
+            cmd = click.option(
+                "--surface", default="model", type=click.Choice(["model", "human", "full"])
+            )(cmd)
+            for opt in reversed(_options_from_schema(schema)):
+                cmd = opt(cmd)
+            return click.command(name=cmd_name, help=description or None)(cmd)
 
-        main.add_command(make_callback(m.command))
+        main.add_command(make_callback(m.command, m.input_schema, m.description))
 
 
 _register_command_aliases()

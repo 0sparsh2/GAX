@@ -5,9 +5,10 @@ from typing import Any
 
 import yaml
 
+from gax.paths import CONFIG_DIR
 from gax.registry import CommandManifest
 
-POLICY_PATH = Path(__file__).resolve().parent.parent / "config" / "policy.yaml"
+POLICY_PATH = CONFIG_DIR / "policy.yaml"
 
 
 class PolicyDenied(Exception):
@@ -37,8 +38,17 @@ def check_policy_bundle(
         "default", {}
     )
 
-    if defaults.get("deny_destructive") and manifest.side_effects == "destructive":
-        raise PolicyDenied(f"destructive command blocked: {manifest.command}")
+    # Tenant-level kill switch for destructive commands. The per-capability ceiling
+    # (gax.side_effects) is the primary control; this is the blunt org-wide override
+    # for tenants that must never run destructive commands regardless of who asks.
+    # Tenant setting wins over the global default so a tenant can opt in explicitly.
+    deny_destructive = tenant_rules.get(
+        "deny_destructive", defaults.get("deny_destructive")
+    )
+    if deny_destructive and manifest.side_effects == "destructive":
+        raise PolicyDenied(
+            f"destructive commands disabled for tenant '{tenant_id}': {manifest.command}"
+        )
 
     denied = set(tenant_rules.get("denied_commands") or [])
     if manifest.command in denied:

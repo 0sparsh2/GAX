@@ -1,0 +1,22 @@
+command: k8s.namespace.delete
+version: "1.0.0"
+description: Delete a namespace and everything in it. Irreversible.
+category: kubernetes
+adapter: k8s
+required_scopes:
+  - k8s:namespaces:write
+side_effects: destructive
+idempotent: false
+input_schema:
+  type: object
+  properties:
+    namespace:
+      type: string
+      description: Namespace to delete
+    dry_run:
+      type: boolean
+      description: Validate server-side without deleting
+  required:
+    - namespace
+output_schema:
+  type: object

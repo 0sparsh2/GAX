@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import signal
@@ -41,7 +42,23 @@ class GaxdHandler(BaseHTTPRequestHandler):
         qs = parse_qs(parsed.query)
 
         if path == "/health":
-            self._json_response(200, {"ok": True, "service": "gaxd", "commands": len(_REGISTRY.list_commands())})
+            # Expose a fingerprint of the signing secret (never the secret) so a
+            # client can tell it is talking to a daemon that shares its config.
+            # A daemon started against a different ~/.gax will reject every
+            # capability with "Signature verification failed", which is otherwise
+            # very hard to diagnose.
+            from gax.caps import jwt_secret
+
+            fp = hashlib.sha256(jwt_secret().encode()).hexdigest()[:12]
+            self._json_response(
+                200,
+                {
+                    "ok": True,
+                    "service": "gaxd",
+                    "commands": len(_REGISTRY.list_commands()),
+                    "config_fingerprint": fp,
+                },
+            )
             return
 
         if path == "/commands":

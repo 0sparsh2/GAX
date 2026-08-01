@@ -25,7 +25,12 @@ sys.path.insert(0, str(GAX_ROOT))
 sys.path.insert(0, str(EVAL_DIR))
 
 from load_env import load_repo_env  # noqa: E402
-from scoring import aggregate_by_modality, pareto_summary, primary_metrics  # noqa: E402
+from scoring import (  # noqa: E402
+    aggregate_by_modality,
+    paired_matrix,
+    pareto_summary,
+    primary_metrics,
+)
 from session_transcript import (  # noqa: E402
     Transcript,
     cli_turn,
@@ -454,7 +459,16 @@ def run_plan_task(
 
 
 def _apply_expected_outcome(task: dict[str, Any], row: dict[str, Any]) -> None:
-    """Mark success when failure was the intended outcome (error-category tasks)."""
+    """
+    Mark success when failure was the intended outcome (error-category tasks).
+
+    This rewrites `ok`, so it preserves the un-rewritten result in `ok_raw` and
+    records why. Without that, `success_rate` reports 1.0 for every modality and
+    measures nothing (see W2 in docs/PLAN-2026H2.md). `expected_failure` marks rows
+    where blocking was the point, so `fail_closed_rate` can be scoped to them.
+    """
+    row.setdefault("ok_raw", bool(row.get("ok")))
+
     expect = task.get("expect_ok") or {}
     mod = row["modality"]
     key = mod
@@ -472,15 +486,21 @@ def _apply_expected_outcome(task: dict[str, Any], row: dict[str, Any]) -> None:
     wanted = expect.get(key, expect.get(mod))
     if wanted is None:
         return
+
+    row["expected_failure"] = wanted is False
+
     got_ok = bool(row.get("ok"))
     if wanted == got_ok:
         row["ok"] = True
-        row["expected_outcome"] = True
+        row["adjusted"] = got_ok is False
+        if got_ok is False:
+            row["adjustment_reason"] = "expected failure occurred"
     elif not wanted and not got_ok:
         ek = task.get("expect_error_kind")
         if ek and row.get("error_kind") == ek:
             row["ok"] = True
-            row["expected_outcome"] = True
+            row["adjusted"] = True
+            row["adjustment_reason"] = f"expected error_kind={ek}"
 
 
 def process_task(
@@ -629,6 +649,7 @@ def main() -> None:
     primary = [primary_metrics(r) for r in all_rows]
     agg = aggregate_by_modality(primary)
     pareto = pareto_summary(agg)
+    paired = paired_matrix(primary)
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     enc = _encoding_name()
@@ -637,10 +658,16 @@ def main() -> None:
         "task_count": len(spec["tasks"]),
         "token_counter": enc,
         "bias_disclosure": "Self-assessment by GAX authors; see eval/METHODOLOGY.md",
+        "token_comparison_note": (
+            "Use paired_by_modality_pair for token comparisons. "
+            "aggregate_by_modality medians run over each modality's own task "
+            "subset and are NOT like-for-like."
+        ),
         "extended": args.extended,
         "live_mcp_probe": mcp_probe,
         "mcp_catalog_probes": mcp_catalog_probes if args.extended else None,
         "rows": all_rows,
+        "paired_by_modality_pair": paired,
         "aggregate_by_modality": agg,
         "pareto_winners_per_axis": pareto,
     }
@@ -660,27 +687,92 @@ def main() -> None:
         )
     md.append(
         "\nPublishable summary: [live-run-summary.md](./live-run-summary.md)\n"
-        "\n## Aggregate by modality\n",
+    )
+
+    # --- Paired token comparison (W1): the only like-for-like token numbers ---
+    md.append(
+        "\n## Token comparison (paired)\n"
+        "\nRestricted to tasks where **both** modalities produced a real row. "
+        "This is the like-for-like number; the aggregate table further down runs "
+        "each modality over its own task subset and must not be read as a "
+        "head-to-head token comparison.\n\n"
+    )
+    if paired:
+        md.append("| pair | n paired | median A | median B | median ratio | range |\n")
+        md.append("|---|---:|---:|---:|---:|---|\n")
+        for _, p in sorted(paired.items()):
+            a, b = p["modality_a"], p["modality_b"]
+            rng = p.get("ratio_range")
+            rng_s = f"{rng[0]}×–{rng[1]}×" if rng else "—"
+            md.append(
+                f"| {a} → {b} | {p['n_paired']} | {p[f'median_tokens_{a}']} | "
+                f"{p[f'median_tokens_{b}']} | **{p['median_ratio']}×** | {rng_s} |\n"
+            )
+        cg = paired.get("cli_vs_gax")
+        if cg and cg.get("per_task"):
+            md.append("\n### cli → gax, per task\n\n")
+            md.append("| task | cli tokens | gax tokens | ratio |\n|---|---:|---:|---:|\n")
+            for r in cg["per_task"]:
+                md.append(
+                    f"| {r['task_id']} | {r['cli_tokens']} | {r['gax_tokens']} | "
+                    f"{r['ratio']}× |\n"
+                )
+            if cg.get("excluded"):
+                names = ", ".join(f"`{e['task_id']}`" for e in cg["excluded"])
+                md.append(
+                    f"\n*Excluded as not comparable ({len(cg['excluded'])}):* {names}\n"
+                )
+    else:
+        md.append("*No modality pair had overlapping tasks in this run.*\n")
+
+    md.append(
+        "\n## Aggregate by modality\n"
+        "\n> **Not a head-to-head comparison.** Each modality runs a different "
+        "subset of the suite, so `median_tokens` below is a per-modality "
+        "distribution, not a cross-modality ranking. See the paired table above.\n\n"
     )
     md.extend(
         [
-            "| modality | n | success_rate | median_tokens | audit_id_rate | structured_envelope_rate |\n",
-            "|---|---:|---:|---:|---:|---:|\n",
+            "| modality | n | completion | expected_outcome | fail_closed | median_tokens | derivation |\n",
+            "|---|---:|---:|---:|---:|---:|---|\n",
         ]
     )
     for mod, a in sorted(agg.items()):
+        fc = a["fail_closed_rate"]
+        fc_s = f"{fc} (n={a['fail_closed_n']})" if fc is not None else "—"
         md.append(
-            f"| {mod} | {a['n']} | {a['success_rate']} | {a['median_tokens']} | "
-            f"{a['audit_id_rate']} | {a['structured_envelope_rate']} |\n"
+            f"| {mod} | {a['n']} | {a['completion_rate']} | "
+            f"{a['expected_outcome_rate']} | {fc_s} | {a['median_tokens']} | "
+            f"{a['derivation']} |\n"
         )
+
+    md.append(
+        "\n## By-design properties\n"
+        "\nThese are **architectural constants verified by test**, not measured "
+        "outcomes: `cli` emits no `audit_id` and `gax` emits one on every invoke "
+        "because that is what each design *is*.\n\n"
+        "| modality | audit_id_rate | structured_envelope_rate |\n|---|---:|---:|\n"
+    )
+    for mod, a in sorted(agg.items()):
+        bd = a["by_design_properties"]
+        md.append(
+            f"| {mod} | {bd['audit_id_rate']} | {bd['structured_envelope_rate']} |\n"
+        )
+
     md.append("\n## Pareto winners (per axis, ties allowed)\n")
+    md.append("\n*Token axis deliberately omitted — see paired table.*\n\n")
     for axis, winners in pareto.items():
         md.append(f"- **{axis}**: {', '.join(winners)}\n")
-    md.append("\n## Per-run sample\n| task | category | modality | success | tokens | latency_ms |\n")
+    md.append(
+        "\n## Per-run sample\n"
+        "\n`completed` is the un-rewritten result: `False` here can still be the "
+        "*expected* outcome for error-category tasks.\n\n"
+        "| task | category | modality | completed | tokens | latency_ms |\n"
+    )
     md.append("|---|---|---|---:|---:|---:|\n")
     for r in all_rows[:40]:
         md.append(
-            f"| {r['task_id']} | {r.get('category','')} | {r['modality']} | {r.get('success', r['ok'])} | "
+            f"| {r['task_id']} | {r.get('category','')} | {r['modality']} | {r.get('ok_raw', r['ok'])} | "
             f"{r['tokens']} | {r['latency_ms']} |\n"
         )
     if len(all_rows) > 40:
@@ -730,7 +822,8 @@ def _write_extended_report(
             a = agg[mod]
             lines.append(
                 f"- **{mod}**: median {a['median_tokens']} tok, "
-                f"audit {a['audit_id_rate']}, envelope {a['structured_envelope_rate']}\n"
+                f"audit {a['by_design_properties']['audit_id_rate']}, "
+                f"envelope {a['by_design_properties']['structured_envelope_rate']}\n"
             )
 
     lines.append("\n## Comparison modalities\n")
@@ -738,7 +831,8 @@ def _write_extended_report(
         if mod in agg:
             a = agg[mod]
             lines.append(
-                f"- **{mod}**: median {a['median_tokens']} tok, success {a['success_rate']}\n"
+                f"- **{mod}**: median {a['median_tokens']} tok, "
+                f"completion {a['completion_rate']}\n"
             )
 
     lines.append("\n## Multi-MCP naive (per server)\n")

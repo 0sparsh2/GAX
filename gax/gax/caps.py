@@ -8,6 +8,8 @@ from typing import Any
 import jwt
 
 from gax.paths import CONFIG_PATH, ensure_gax_home
+from gax.side_effects import DEFAULT_CEILING
+from gax.side_effects import normalize as normalize_side_effect
 
 DEFAULT_SECRET = "gax-dev-secret-change-in-production"
 DEFAULT_TENANT = "default"
@@ -38,7 +40,15 @@ def mint_capability(
     scopes: list[str] | None = None,
     ttl_seconds: int = 3600,
     budget: dict[str, int] | None = None,
+    max_side_effect: str | None = None,
 ) -> str:
+    """
+    Mint a capability token.
+
+    `max_side_effect` is the danger ceiling (`read` | `write` | `destructive`).
+    It defaults to `read`, so a token minted without thinking about danger cannot
+    invoke a write or destructive command even if that command is in `commands`.
+    """
     cfg = _load_config()
     now = datetime.now(timezone.utc)
     payload: dict[str, Any] = {
@@ -49,6 +59,7 @@ def mint_capability(
         "scopes": scopes or ["*"],
         "commands": commands or ["*"],
         "budget": budget or {"max_calls": 1000, "max_rows": 10_000},
+        "max_side_effect": normalize_side_effect(max_side_effect or DEFAULT_CEILING),
     }
     return jwt.encode(payload, jwt_secret(), algorithm="HS256")
 

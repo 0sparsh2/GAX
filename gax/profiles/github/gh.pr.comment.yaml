@@ -1,0 +1,30 @@
+command: gh.pr.comment
+version: "1.0.0"
+description: Post a comment on a pull request
+category: github
+adapter: exec
+required_scopes:
+  - github:pull_request:write
+side_effects: write
+idempotent: false
+input_schema:
+  type: object
+  properties:
+    repo:
+      type: string
+      description: owner/name
+    number:
+      type: integer
+      description: PR number
+    body:
+      type: string
+      description: Comment body
+    dry_run:
+      type: boolean
+      description: Validate without posting
+  required:
+    - repo
+    - number
+    - body
+output_schema:
+  type: object

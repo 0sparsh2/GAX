@@ -2,20 +2,54 @@
 version: 1
 
 defaults:
+  # Org-wide kill switch for destructive commands. A tenant may override it.
+  # This is the blunt control; the per-capability `max_side_effect` ceiling
+  # (gax/side_effects.py) is the primary, fine-grained one.
   deny_destructive: true
   max_rows_per_invoke: 500
 
 tenants:
   default:
+    # Local/dev tenant. Opt in to destructive commands here; each invoke still
+    # needs a capability minted with `--max-side-effect destructive`.
+    deny_destructive: false
+    # "*" means "any registered command", NOT "any action" — the registry is
+    # still a closed set, and the per-capability allowlist + scopes + ceiling are
+    # the real controls. A wildcard here keeps installed profiles usable without
+    # editing policy; production tenants should enumerate instead (see below).
     allowed_commands:
-      - demo.echo
+      - "*"
+    denied_commands: []
+    repo_allowlist: []  # empty = allow all repos
+
+  # Template for a production tenant: enumerate exactly what may run, and keep
+  # the destructive kill switch on unless a specific need is documented.
+  production:
+    deny_destructive: true
+    allowed_commands:
       - gh.pr.list
       - gh.pr.view
-      - kubectl.get.pods
-      - aws.s3.list
-      - jira.issue.get
-      - mcp.github.list_pulls
-      - mcp.github.list_pulls.mock
+      - k8s.pod.list
+      - k8s.pod.logs
+    denied_commands: []
+    repo_allowlist: []
+
+  # Example: a tenant that must never run destructive commands, regardless of
+  # what capability a caller presents.
+  readonly-tenant:
+    deny_destructive: true
+    allowed_commands:
+      - "*"
+    denied_commands: []
+    repo_allowlist: []
+  capguard:
+    allowed_commands:
+      - demo.echo
+      - gitlab.mr.search
+      - gitlab.mr.get
+      - gitlab.mr.diffs
+      - gitlab.mr.pipelines
+      - gitlab.note.draft
     denied_commands: []
     repo_allowlist: []  # empty = allow all repos
 

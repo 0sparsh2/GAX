@@ -10,9 +10,9 @@ from typing import Any
 import httpx
 import yaml
 
-from gax.paths import GAX_HOME, ensure_gax_home
+from gax.paths import CONFIG_DIR, GAX_HOME, ensure_gax_home
 
-PROVIDERS_PATH = Path(__file__).resolve().parent.parent / "config" / "oauth_providers.yaml"
+PROVIDERS_PATH = CONFIG_DIR / "oauth_providers.yaml"
 
 
 @dataclass

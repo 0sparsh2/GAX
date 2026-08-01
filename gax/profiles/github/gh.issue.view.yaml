@@ -1,0 +1,23 @@
+command: gh.issue.view
+version: "1.0.0"
+description: View a single issue
+category: github
+adapter: exec
+required_scopes:
+  - github:issues:read
+side_effects: read
+idempotent: true
+input_schema:
+  type: object
+  properties:
+    repo:
+      type: string
+      description: owner/name
+    number:
+      type: integer
+      description: Issue number
+  required:
+    - repo
+    - number
+output_schema:
+  type: object

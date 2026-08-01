@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from gax.adapters import exec_adapter, http_adapter, mock_adapter, mcp_bridge
+from gax.adapters import exec_adapter, http_adapter, k8s_adapter, mock_adapter, mcp_bridge
 from gax.registry import CommandManifest
 
 
@@ -12,6 +12,8 @@ def run_adapter(
     *,
     tenant_id: str | None = None,
 ) -> dict[str, Any]:
+    if manifest.adapter == "k8s":
+        return k8s_adapter.run(manifest, args, tenant_id=tenant_id)
     if manifest.adapter == "exec":
         return exec_adapter.run(manifest, args, tenant_id=tenant_id)
     if manifest.adapter == "mock":

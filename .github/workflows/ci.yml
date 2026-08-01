@@ -33,6 +33,104 @@ jobs:
         working-directory: gax
         run: pytest -q tests/test_mcp_bridge_mock.py
 
+      - name: MCP server conformance + governance boundary
+        working-directory: gax
+        run: pytest -q tests/test_mcp_server.py
+
+      - name: Side-effect ceiling (adversarial)
+        working-directory: gax
+        run: pytest -q tests/test_side_effect_ceiling.py
+
+      - name: Onboarding (gax init / doctor)
+        working-directory: gax
+        run: pytest -q tests/test_onboarding.py
+
+      - name: Profiles (installing grants nothing)
+        working-directory: gax
+        run: pytest -q tests/test_profiles.py
+
+      # Catches packaging bugs invisible to `pip install -e .`: a wheel that
+      # ships no config/policy.yaml silently drops every tenant allowlist.
+      - name: Wheel install — clean env first-run path
+        run: |
+          cd gax
+          pip install -q build
+          python sync_package_data.py
+          python -m build --wheel -o /tmp/dist
+          python verify_wheel.py /tmp/dist/*.whl
+          python -m venv /tmp/freshenv
+          /tmp/freshenv/bin/pip install -q /tmp/dist/*.whl
+          export HOME=/tmp/freshhome && mkdir -p "$HOME"
+          export GAX_K8S_MOCK=1
+          /tmp/freshenv/bin/python - <<'PY'
+          from gax.policy_bundle import POLICY_PATH, load_policy
+          from gax.registry import Registry
+          assert POLICY_PATH.exists(), f"wheel is missing {POLICY_PATH}"
+          tenants = (load_policy().get("tenants") or {})
+          assert "default" in tenants, f"policy lost tenants: {list(tenants)}"
+          assert len(Registry().list_commands()) > 0, "wheel shipped no manifests"
+          print("wheel data ok:", len(tenants), "tenants")
+          PY
+          /tmp/freshenv/bin/gax init --no-daemon --profile k8s --profile github
+          /tmp/freshenv/bin/gax --local demo.echo --message ci > /tmp/first.json
+          /tmp/freshenv/bin/gax --local k8s.pod.logs \
+            --namespace prod --pod web-1 > /tmp/profile_read.json
+          /tmp/freshenv/bin/gax --local k8s.namespace.delete \
+            --namespace prod > /tmp/denied.json || true
+          /tmp/freshenv/bin/python - <<'PY'
+          import json
+          ok = json.load(open("/tmp/first.json"))
+          assert ok["ok"] is True, ok          # works with no exported capability
+          assert ok["audit_id"].startswith("aud_")
+
+          # A profile's read command is usable straight after init...
+          read = json.load(open("/tmp/profile_read.json"))
+          assert read["ok"] is True, read
+
+          # ...while its destructive one is not. Installing grants nothing.
+          denied = json.load(open("/tmp/denied.json"))
+          assert denied["ok"] is False, denied
+          assert denied["error"]["kind"] == "policy_denied", denied
+          assert denied["audit_id"].startswith("aud_"), denied
+          print("clean-env first run ok:", ok["audit_id"])
+          PY
+
+      - name: Destructive command refused by read-only capability (e2e)
+        env:
+          GAX_K8S_MOCK: "1"
+        run: |
+          CAP=$(gax auth cap-mint --command k8s.pod.delete \
+            --scope k8s:pods:write --max-side-effect read --raw)
+          GAX_CAP="$CAP" gax --local k8s.pod.delete \
+            --namespace prod --pod web-1 > /tmp/deny.json || true
+          python - <<'PY'
+          import json
+          env = json.load(open("/tmp/deny.json"))
+          assert env["ok"] is False, env
+          assert env["error"]["kind"] == "policy_denied", env
+          assert "exceeds capability ceiling" in env["error"]["message"], env
+          assert env["audit_id"].startswith("aud_"), env
+          print("destructive refused by read cap:", env["audit_id"])
+          PY
+
+      - name: MCP server end-to-end (stdio subprocess)
+        run: |
+          eval "$(gax auth cap-mint --command demo.echo --scope demo:echo --export)"
+          printf '%s\n%s\n' \
+            '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' \
+            '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"gax_invoke","arguments":{"command":"demo.echo","args":{"message":"ci"}}}}' \
+            | gax-mcp > /tmp/mcp_out.jsonl
+          python - <<'PY'
+          import json
+          lines = [json.loads(l) for l in open("/tmp/mcp_out.jsonl") if l.strip()]
+          tools = [t["name"] for t in lines[0]["result"]["tools"]]
+          assert tools == ["gax_search", "gax_doc", "gax_invoke"], tools
+          env = json.loads(lines[1]["result"]["content"][0]["text"])
+          assert env["ok"] is True, env
+          assert env["audit_id"].startswith("aud_"), env
+          print("gax-mcp e2e ok:", env["audit_id"])
+          PY
+
       - name: ACSP envelope conformance
         working-directory: gax
         run: pytest -q tests/test_acsp_envelope_conformance.py

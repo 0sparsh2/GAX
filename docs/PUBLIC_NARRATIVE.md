@@ -6,14 +6,23 @@ One-page story for README visitors, reviewers, and posts. **Bias disclosure:** G
 
 ## 1. The problem
 
-Agents need to call GitHub, Kubernetes, SaaS APIs, and internal tools. Two common patterns fail in different ways:
+**The token problem GAX was founded on has largely been solved upstream — by the model
+vendors.** Anthropic's [Tool Search Tool](https://platform.claude.com/docs/en/agents-and-tools/tool-use/tool-search-tool)
+(`defer_loading: true`) cuts ~85% of schema tokens and *improves* accuracy; OpenAI
+shipped defer-loading; [Code Mode](https://www.getmaxim.ai/articles/code-execution-with-mcp-how-code-mode-cuts-agent-token-costs-by-90/)
+reaches 92.8% reductions at 500+ tools. Lazy discovery is now a platform feature, not a
+differentiator. We say this up front because a reader who knows it will otherwise stop
+reading.
 
-| Pattern | Wins on | Loses on |
-|---------|---------|----------|
-| **Raw CLI** (`gh`, `kubectl`) | Token-efficient invocations, composability | Ambient credentials, weak per-invoke audit, no standard envelope |
-| **Naive MCP** | Typed tools, OAuth stories | Full tool schemas in context every session (44k+ tokens), remote connect flakiness |
+**What remains unsolved is enforcement, and it is getting worse:**
 
-**Hybrid** (CLI locally + MCP in prod) doubles auth models, output shapes, and discovery paths.
+| Gap | Evidence |
+|-----|----------|
+| **The shell is ungoverned** | Every MCP gateway (Docker, Cloudflare, Kong, Bifrost, Lunar) governs *MCP traffic*. Agents act overwhelmingly through `bash` — an MCP gateway sees none of it. [NVIDIA OpenShell](https://www.tigera.io/blog/nvidia-openshell-secures-the-agent-who-governs-the-fleet/) works at the syscall layer, with no notion of registered command + capability + audit record. |
+| **Governance is the standard's own gap** | The [MCP 2026 roadmap](https://blog.gitguardian.com/mcp-governance-framework/) names enterprise governance, audit trails, and SSO auth as priorities it does not yet address. |
+| **The ecosystem outgrew its security model** | [30+ CVEs in Jan–Feb 2026](https://chatforest.com/guides/mcp-ecosystem-2026-state-of-the-standard/): Asana cross-tenant leak, Smithery path traversal (3,243 apps), tool poisoning. |
+
+**Hybrid** (CLI locally + MCP in prod) doubles auth models, output shapes, and discovery paths — and leaves the shell half unaudited in both.
 
 ---
 
@@ -50,17 +59,29 @@ We use these to motivate the problem; **we do not claim we reproduced Scalekit�
 
 - **18 tasks**, **tiktoken** `cl100k_base`, **no weighted composite** — see [eval/METHODOLOGY.md](../eval/METHODOLOGY.md).
 - Transcripts are **simulated** for token comparison ([eval/session_transcript.py](../eval/session_transcript.py)); not full multi-model agent trials per modality.
-- **Pareto per axis** (example live run):
 
-| Modality | Median tokens | Audit-id rate | Structured envelope |
-|----------|---------------|---------------|---------------------|
-| **cli** | **104** (lowest) | 0% | 0% |
-| **gax** | 137 | 80% | 80% |
-| **gax_mcp_bridge** | 732 | 100% | 100% |
-| **mcp_live** (26 tools) | 4,483 | 0% | 0% |
-| **mcp_naive_43** (fixture) | 44,062 | 0% | 0% |
+**We corrected two defects in our own aggregation** (details in [METHODOLOGY](../eval/METHODOLOGY.md), plan in [PLAN-2026H2](./PLAN-2026H2.md)):
 
-**Honest conclusion:** CLI wins **tokens**; GAX wins **governance + structure** without naive schema tax. There is **no single “GAX wins overall”** score.
+- Earlier versions published **cli 104 vs gax 137 (~1.3×)**. Those medians ran over
+  *different task subsets* — `cli` skips every mock/discovery task, which dragged the
+  GAX median down. **The paired, like-for-like figure is ~3.5×.**
+- `success_rate` read 1.0 for every modality because expected failures were rewritten
+  to `ok=True`. It is now split into `completion` / `expected_outcome` / `fail_closed`.
+
+**Paired token comparison** — only tasks where both modalities produced a real row:
+
+| Pair | n paired | median A | median B | median ratio |
+|------|---------:|---------:|---------:|-------------:|
+| **cli → gax** | 6 | 80 | 250 | **~3.5×** (range 1.3–5.9×) |
+| **cli → gax_mcp_bridge** | 1 | 114 | 456 | ~4.0× |
+
+Governance properties are **by design, verified by test** — not measured outcomes:
+`cli` emits no `audit_id`; `gax` emits one on every invoke.
+
+**Honest conclusion:** CLI wins **tokens by roughly 3.5×** on like-for-like tasks.
+GAX buys **pre-invoke enforcement, uniform envelopes, and audit correlation** for that
+cost. There is **no single “GAX wins overall”** score, and the token gap is larger than
+we previously published.
 
 Publishable table: [eval/results/live-run-summary.md](../eval/results/live-run-summary.md) · [Gist](https://gist.github.com/0sparsh2/cea07652091fc4d47637e87d958ed340)
 

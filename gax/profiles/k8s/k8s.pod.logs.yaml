@@ -1,0 +1,28 @@
+command: k8s.pod.logs
+version: "1.0.0"
+description: Fetch recent logs for a pod
+category: kubernetes
+adapter: k8s
+required_scopes:
+  - k8s:pods:read
+side_effects: read
+idempotent: true
+input_schema:
+  type: object
+  properties:
+    namespace:
+      type: string
+      description: Kubernetes namespace
+    pod:
+      type: string
+      description: Pod name
+    tail:
+      type: integer
+      description: Number of lines from the end (default 100)
+    container:
+      type: string
+      description: Container name when the pod has several
+  required:
+    - pod
+output_schema:
+  type: object

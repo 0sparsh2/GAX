@@ -1,0 +1,25 @@
+command: k8s.deployment.restart
+version: "1.0.0"
+description: Roll a deployment (restarts every pod)
+category: kubernetes
+adapter: k8s
+required_scopes:
+  - k8s:deployments:write
+side_effects: write
+idempotent: true
+input_schema:
+  type: object
+  properties:
+    namespace:
+      type: string
+      description: Kubernetes namespace
+    deployment:
+      type: string
+      description: Deployment name
+    dry_run:
+      type: boolean
+      description: Validate server-side without restarting
+  required:
+    - deployment
+output_schema:
+  type: object

@@ -1,0 +1,119 @@
+name: Release
+
+# Publishes to PyPI via Trusted Publishing (OIDC) — no API token is stored
+# anywhere. See docs/RELEASING.md for the one-time PyPI setup.
+#
+#   TestPyPI dry run:  workflow_dispatch (default)
+#   Real release:      push a tag, e.g. `git tag v0.4.0 && git push origin v0.4.0`
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Where to publish
+        type: choice
+        options: [testpypi, pypi]
+        default: testpypi
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and verify wheel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Tests must pass before anything is built
+        run: |
+          pip install -e "./gax[dev]"
+          cd gax && pytest -q
+
+      - name: Build
+        run: |
+          cd gax
+          pip install -q build
+          # Required: copies manifests/config/profiles into the package. Skipping
+          # it produces a wheel with no policy.yaml, which installs cleanly and
+          # then silently drops every tenant allowlist.
+          python sync_package_data.py
+          python -m build --outdir ../dist
+
+      - name: Verify wheel is complete
+        run: python gax/verify_wheel.py dist/*.whl
+
+      - name: Verify metadata renders on PyPI
+        run: |
+          pip install -q twine
+          twine check dist/*
+
+      # Install the built artifact in a clean venv and exercise the guarantee.
+      # A wheel that imports but cannot enforce policy is worse than a broken one.
+      - name: Smoke test the artifact
+        run: |
+          python -m venv /tmp/smoke
+          /tmp/smoke/bin/pip install -q dist/*.whl
+          export HOME=/tmp/smokehome && mkdir -p "$HOME"
+          export GAX_K8S_MOCK=1
+          /tmp/smoke/bin/gax init --no-daemon --profile k8s
+          /tmp/smoke/bin/gax --local demo.echo --message ci > /tmp/ok.json
+          /tmp/smoke/bin/gax --local k8s.namespace.delete --namespace prod > /tmp/denied.json || true
+          /tmp/smoke/bin/python - <<'PY'
+          import json
+          from gax.policy_bundle import load_policy
+          assert (load_policy().get("tenants") or {}), "wheel shipped an empty policy"
+
+          ok = json.load(open("/tmp/ok.json"))
+          assert ok["ok"] is True and ok["audit_id"].startswith("aud_"), ok
+
+          denied = json.load(open("/tmp/denied.json"))
+          assert denied["ok"] is False, denied
+          assert denied["error"]["kind"] == "policy_denied", denied
+          print("artifact smoke test ok")
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish-testpypi:
+    name: Publish to TestPyPI
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && inputs.target == 'testpypi'
+    runs-on: ubuntu-latest
+    environment: testpypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+
+  publish-pypi:
+    name: Publish to PyPI
+    needs: build
+    if: github.event_name == 'push' || inputs.target == 'pypi'
+    runs-on: ubuntu-latest
+    # Add a required reviewer to this environment in repo settings for a
+    # manual approval gate — a PyPI version number can never be reused.
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1

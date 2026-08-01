@@ -9,9 +9,10 @@ from pathlib import Path
 from typing import Any
 
 from gax.policy_bundle import PolicyDenied, check_policy_bundle
+from gax.paths import CONFIG_DIR
 from gax.registry import CommandManifest
 
-REGO_PATH = Path(__file__).resolve().parent.parent / "config" / "policy.rego"
+REGO_PATH = CONFIG_DIR / "policy.rego"
 
 
 def check_opa_or_yaml(

@@ -1,0 +1,25 @@
+command: gh.issue.list
+version: "1.0.0"
+description: List issues in a repository
+category: github
+adapter: exec
+required_scopes:
+  - github:issues:read
+side_effects: read
+idempotent: true
+input_schema:
+  type: object
+  properties:
+    repo:
+      type: string
+      description: owner/name
+    limit:
+      type: integer
+      description: Max results (default 30)
+    state:
+      type: string
+      description: open | closed | all
+  required:
+    - repo
+output_schema:
+  type: object

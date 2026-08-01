@@ -8,9 +8,40 @@ Measure how much **agent context** CLI, naive MCP, and GAX consume when performi
 
 - **GAX is our protocol and reference implementation.** We do not claim a neutral third-party score.
 - We **do not** publish a single weighted “composite” score chosen by the GAX team (e.g. 30/25/25/20) as the headline result.
-- Primary results are **separate metrics**: median tokens (tiktoken), success rate, audit-id rate, structured-envelope rate.
 - **Pareto winners** per axis are reported without declaring an overall champion unless all axes align (they usually do not).
 - External benchmarks (Scalekit, Anthropic, Cloudflare) remain the independent references for MCP vs CLI economics.
+
+### Two defects we found in our own aggregation (fixed)
+
+An internal review found the aggregation quietly doing favorable work that this
+document disclaimed. Both are fixed; both have regression tests in
+`gax/tests/test_eval_scoring.py`.
+
+**W1 — token medians compared different task sets.** Each modality runs its own
+subset (`cli` has no equivalent for mock/discovery tasks), so a global median per
+modality is not like-for-like. The 9 gax-only tasks are cheap mocks and discovery
+stubs that dragged the GAX median down, publishing a **1.3×** ratio where the
+paired figure is **~3.5×**.
+
+→ **Token comparisons now use `paired_by_modality_pair`**, restricted to tasks where
+both modalities produced a real row, reporting per-task ratios plus the median and
+an explicit excluded-task list. `aggregate_by_modality` medians remain for
+per-modality distribution only and are labelled as not head-to-head.
+
+**W2 — `success_rate` reported 1.0 for everything.** Expected failures were rewritten
+to `ok=True` (32 of 150 rows), so the metric measured nothing.
+
+→ **Success is now three orthogonal axes**:
+
+| Metric | Definition |
+|--------|------------|
+| `completion_rate` | Operation ran to a successful result on its own terms (uses un-rewritten `ok_raw`) |
+| `expected_outcome_rate` | Result matched the task's declared expectation, including expected failures |
+| `fail_closed_rate` | Enforcement fired *before* the adapter ran. Scoped to rows meant to be blocked; `None` for modalities with no enforcement layer, so raw `cli` is not scored 0.0 for a test it never sat |
+
+`audit_id_rate` and `structured_envelope_rate` are **architectural constants, not
+measurements** — CLI is 0% and GAX ~100% because that is what each design *is*. They
+now live under `by_design_properties`, away from measured results.
 
 ## Token counting
 
@@ -34,11 +65,9 @@ Measure how much **agent context** CLI, naive MCP, and GAX consume when performi
 
 ## Success criteria
 
-| Metric | Definition |
-|--------|------------|
-| `success` | Operation completed as intended (`ok` and not `skipped`) |
-| `has_audit_id` | GAX envelope includes `audit_id` |
-| `structured_envelope` | Valid envelope v1 with `data` object |
+See the three decomposed axes under [Bias disclosure](#two-defects-we-found-in-our-own-aggregation-fixed).
+Every row also carries `ok_raw` (un-rewritten result), `adjusted`, and
+`adjustment_reason`, so any expected-failure rewrite is auditable rather than silent.
 
 ## Running
 

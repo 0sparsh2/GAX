@@ -1,0 +1,29 @@
+command: gh.pr.merge
+version: "1.0.0"
+description: Merge a pull request. Irreversible on a shared branch.
+category: github
+adapter: exec
+required_scopes:
+  - github:pull_request:write
+side_effects: destructive
+idempotent: false
+input_schema:
+  type: object
+  properties:
+    repo:
+      type: string
+      description: owner/name
+    number:
+      type: integer
+      description: PR number
+    method:
+      type: string
+      description: merge | squash | rebase (default squash)
+    dry_run:
+      type: boolean
+      description: Validate without merging
+  required:
+    - repo
+    - number
+output_schema:
+  type: object

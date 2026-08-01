@@ -6,7 +6,7 @@ from typing import Any
 
 import yaml
 
-from gax.paths import MANIFESTS_DIR
+from gax.paths import MANIFESTS_DIR, USER_MANIFESTS_DIR
 
 
 @dataclass
@@ -34,16 +34,34 @@ class CommandManifest:
 
 
 class Registry:
+    """
+    Command registry.
+
+    Loads from two places, in order: the manifests bundled with the package, then
+    `~/.gax/manifests/`. The user directory wins on conflict, so installing a
+    profile or hand-editing a command survives a package upgrade instead of being
+    overwritten by it.
+    """
+
     def __init__(self, manifests_dir: Path | None = None) -> None:
         self._dir = manifests_dir or MANIFESTS_DIR
+        # An explicit dir (tests, alternate deployments) means exactly that dir.
+        self._extra_dirs: list[Path] = [] if manifests_dir else [USER_MANIFESTS_DIR]
         self._commands: dict[str, CommandManifest] = {}
         self.reload()
 
+    @property
+    def source_dirs(self) -> list[Path]:
+        return [self._dir, *self._extra_dirs]
+
     def reload(self) -> None:
         self._commands.clear()
-        if not self._dir.exists():
-            return
-        for path in sorted(self._dir.glob("*.yaml")):
+        for directory in self.source_dirs:
+            if directory.exists():
+                self._load_dir(directory)
+
+    def _load_dir(self, directory: Path) -> None:
+        for path in sorted(directory.glob("*.yaml")):
             data = yaml.safe_load(path.read_text()) or {}
             cmd = data.get("command")
             if not cmd:

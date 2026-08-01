@@ -1,0 +1,22 @@
+command: gh.run.list
+version: "1.0.0"
+description: List recent GitHub Actions runs
+category: github
+adapter: exec
+required_scopes:
+  - github:actions:read
+side_effects: read
+idempotent: true
+input_schema:
+  type: object
+  properties:
+    repo:
+      type: string
+      description: owner/name
+    limit:
+      type: integer
+      description: Max results (default 20)
+  required:
+    - repo
+output_schema:
+  type: object
