@@ -34,9 +34,13 @@ def run(
     if not _gh_available():
         return mock_adapter.run(manifest, args)
 
-    handler = _HANDLERS.get(manifest.command)
-    if handler is None:
+    name = _HANDLERS.get(manifest.command)
+    if name is None:
         raise RuntimeError(f"exec adapter has no handler for {manifest.command}")
+    # Resolve the handler by name at call time rather than capturing the function
+    # object in the table. Binding at import makes monkeypatching a handler
+    # silently ineffective — the table would keep calling the original.
+    handler = globals()[name]
     if manifest.command in _MUTATING:
         return handler(args, tenant_id=tenant_id, dry_run=bool(args.get("dry_run")))
     return handler(args, tenant_id=tenant_id)
@@ -241,15 +245,17 @@ def _gh_pr_merge(
 
 
 # Table-driven so a new gh manifest needs one entry, not an if-branch.
-# Mutating commands receive dry_run; read-only ones cannot accept one they'd ignore.
+# Values are function *names*, resolved at call time in run() — see the comment
+# there. Mutating commands receive dry_run; read-only ones cannot accept one
+# they would silently ignore.
 _HANDLERS = {
-    "gh.pr.list": _gh_pr_list,
-    "gh.pr.view": _gh_pr_view,
-    "gh.issue.list": _gh_issue_list,
-    "gh.issue.view": _gh_issue_view,
-    "gh.run.list": _gh_run_list,
-    "gh.pr.comment": _gh_pr_comment,
-    "gh.pr.merge": _gh_pr_merge,
+    "gh.pr.list": "_gh_pr_list",
+    "gh.pr.view": "_gh_pr_view",
+    "gh.issue.list": "_gh_issue_list",
+    "gh.issue.view": "_gh_issue_view",
+    "gh.run.list": "_gh_run_list",
+    "gh.pr.comment": "_gh_pr_comment",
+    "gh.pr.merge": "_gh_pr_merge",
 }
 
 _MUTATING = {"gh.pr.comment", "gh.pr.merge"}

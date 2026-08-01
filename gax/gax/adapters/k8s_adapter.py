@@ -92,12 +92,15 @@ def run(
 ) -> dict[str, Any]:
     dry_run = bool(args.get("dry_run"))
 
-    handler = _HANDLERS.get(manifest.command)
-    if handler is None:
+    name = _HANDLERS.get(manifest.command)
+    if name is None:
         raise RuntimeError(f"k8s adapter has no handler for {manifest.command}")
+    # Resolved by name at call time so monkeypatching a handler actually takes
+    # effect; a table of function objects binds at import and silently ignores it.
+    handler = globals()[name]
     if manifest.command in _MUTATING:
-        return handler(args, dry_run=dry_run)  # type: ignore[call-arg]
-    return handler(args)  # type: ignore[call-arg]
+        return handler(args, dry_run=dry_run)
+    return handler(args)
 
 
 def _pod_list(args: dict[str, Any]) -> dict[str, Any]:
@@ -316,15 +319,15 @@ def _deployment_scale(args: dict[str, Any], *, dry_run: bool) -> dict[str, Any]:
 # Dispatch table. Mutating commands receive `dry_run`; read-only ones do not —
 # so a read command can never silently accept a dry_run it would ignore.
 _HANDLERS = {
-    "k8s.pod.list": _pod_list,
-    "k8s.pod.logs": _pod_logs,
-    "k8s.pod.describe": _pod_describe,
-    "k8s.deployment.list": _deployment_list,
-    "k8s.service.list": _service_list,
-    "k8s.pod.delete": _pod_delete,
-    "k8s.deployment.scale": _deployment_scale,
-    "k8s.deployment.restart": _deployment_restart,
-    "k8s.namespace.delete": _namespace_delete,
+    "k8s.pod.list": "_pod_list",
+    "k8s.pod.logs": "_pod_logs",
+    "k8s.pod.describe": "_pod_describe",
+    "k8s.deployment.list": "_deployment_list",
+    "k8s.service.list": "_service_list",
+    "k8s.pod.delete": "_pod_delete",
+    "k8s.deployment.scale": "_deployment_scale",
+    "k8s.deployment.restart": "_deployment_restart",
+    "k8s.namespace.delete": "_namespace_delete",
 }
 
 _MUTATING = {

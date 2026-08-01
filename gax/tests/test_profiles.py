@@ -80,6 +80,13 @@ def test_profile_commands_have_adapter_handlers(profiles, name):
     for cmd in profiles.get_profile(name).commands:
         assert cmd.command in tables, f"{cmd.command} has no adapter handler"
 
+    # Handlers are referenced by name and resolved at call time; a stale entry
+    # would only surface when a user invoked the command.
+    for module in (k8s_adapter, exec_adapter):
+        for command, fn_name in module._HANDLERS.items():
+            assert isinstance(fn_name, str), f"{command} maps to a function object"
+            assert fn_name in vars(module), f"{command} → {fn_name} does not exist"
+
 
 @pytest.mark.parametrize("name", ["k8s", "github"])
 def test_mutating_commands_offer_dry_run(profiles, name):
