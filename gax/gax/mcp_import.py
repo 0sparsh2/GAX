@@ -45,6 +45,24 @@ _READ_PREFIXES = (
 # Exact-match, not substring: `tree` is safe, `prune_tree` is not.
 _READ_EXACT = frozenset({"directorytree", "tree", "stat", "ls", "pwd", "whoami"})
 
+# Any of these anywhere in a tool name forces `destructive`, and is checked before
+# the read verbs. This is the safety net for vendor-namespaced names: without it,
+# `firecrawl_monitor_delete` could be classified read because some other word in
+# it looked safe. Over-inclusive on purpose — a false `destructive` costs a human
+# one review; a false `read` hands an agent uninspected capability.
+_WRITE_WORDS = frozenset({
+    "create", "update", "delete", "remove", "write", "put", "post", "patch",
+    "set", "add", "insert", "upsert", "drop", "truncate", "purge", "prune",
+    "destroy", "kill", "stop", "start", "restart", "run", "exec", "execute",
+    "invoke", "call", "send", "publish", "deploy", "apply", "install",
+    "uninstall", "move", "rename", "copy", "upload", "edit", "modify",
+    "merge", "push", "commit", "revert", "reset", "scale", "toggle",
+    "trigger", "interact", "crawl", "scrape", "extract", "agent",
+    "replace", "clear", "flush", "archive", "restore", "rollback",
+    "cancel", "approve", "reject", "close", "open", "lock", "unlock",
+    "grant", "revoke", "enable", "disable", "subscribe", "unsubscribe",
+})
+
 _SEPARATORS = re.compile(r"[-_\s.]+")
 
 _SAFE_NAME = re.compile(r"[^a-z0-9_]+")
@@ -63,9 +81,17 @@ def infer_side_effects(tool_name: str) -> str:
         return "destructive"
     if "".join(words) in _READ_EXACT:
         return "read"
-    # Match the leading *word*, not a bare prefix: `getter_delete` must not read
-    # as `get`, and `list` must not match `listen`.
-    if words[0] in _READ_PREFIXES:
+
+    # Any mutating verb anywhere disqualifies, checked first. `firecrawl_monitor_delete`
+    # contains a read verb (`monitor` is not one, but `list` appears in siblings) and
+    # must never be classified read on the strength of another word.
+    if any(w in _WRITE_WORDS for w in words):
+        return "destructive"
+
+    # Vendors namespace their tools (`firecrawl_search`, `firecrawl_monitor_list`),
+    # so the leading word is often the product name rather than a verb. Accept a
+    # read verb anywhere, having already excluded mutating verbs above.
+    if any(w in _READ_PREFIXES for w in words):
         return "read"
     return "destructive"
 

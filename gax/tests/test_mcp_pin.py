@@ -210,6 +210,46 @@ def test_empty_or_odd_names_fail_closed():
         assert infer_side_effects(name) == "destructive", repr(name)
 
 
+@pytest.mark.parametrize(
+    "name",
+    [
+        # Real names from firecrawl-mcp, which namespaces every tool with the
+        # vendor prefix — the leading word is not a verb.
+        "firecrawl_search",
+        "firecrawl_monitor_list",
+        "firecrawl_monitor_get",
+        "firecrawl_research_read_paper",
+        "firecrawl_research_search_papers",
+        "firecrawl_developer_search",
+    ],
+)
+def test_vendor_namespaced_read_tools(name):
+    assert infer_side_effects(name) == "read", name
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        # A read verb elsewhere in the name must never rescue a mutating one.
+        "firecrawl_monitor_delete",
+        "firecrawl_monitor_create",
+        "firecrawl_monitor_update",
+        "firecrawl_scrape",
+        "firecrawl_crawl",
+        "get_and_delete_user",
+        "list_then_purge",
+        "search_and_replace",
+    ],
+)
+def test_mutating_verb_anywhere_wins(name):
+    """
+    Read verbs are matched anywhere to cope with vendor prefixes, so a mutating
+    verb anywhere must take precedence — otherwise `get_and_delete_user` would
+    classify as read.
+    """
+    assert infer_side_effects(name) == "destructive", name
+
+
 def test_command_ids_are_namespaced_by_server():
     """Two servers may both advertise `search`; they must not collide."""
     a = command_id("filesystem", "search")
