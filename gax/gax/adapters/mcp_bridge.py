@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from gax.mcp_client import McpStdioClient, github_mcp_env
+from gax.mcp_pin import PinMismatch, find_tool, verify_pin
 from gax.registry import CommandManifest
 
 
@@ -102,7 +103,39 @@ def run(
 
     client = McpStdioClient(_server_cmd(cfg), env=env, timeout=float(cfg.get("timeout", 120)))
     try:
+        _enforce_pin(manifest, client, tool_name)
         raw = client.call_tool(tool_name, _map_args(manifest, args))
         return _normalize(manifest, raw)
     finally:
         client.close()
+
+
+def _enforce_pin(manifest: CommandManifest, client: McpStdioClient, tool_name: str) -> None:
+    """
+    Verify the live tool still matches the contract recorded at import, before
+    calling it.
+
+    Manifests written by hand predate pinning and have no `mcp_pin`; those keep
+    working. Manifests produced by `gax mcp import` always carry one, and for
+    those a mismatch fails closed — the tool call never happens. This is the
+    difference between GAX and a proxy: a proxy forwards whatever the server now
+    advertises.
+    """
+    expected = (manifest.raw or {}).get("mcp_pin")
+    if not expected:
+        return  # hand-written manifest; nothing was pinned to compare against
+
+    live = find_tool(client.list_tools(), tool_name)
+    if live is None:
+        raise PinMismatch(
+            tool=tool_name,
+            expected=str(expected),
+            actual="(tool absent)",
+            changed=["tool no longer advertised by server"],
+        )
+
+    # Compare against exactly what was hashed at import. The manifest's own
+    # `description` is truncated for display, so diffing against that would
+    # mislabel an honest long description as tampered.
+    imported = (manifest.raw or {}).get("mcp_pinned_tool")
+    verify_pin(live, str(expected), expected_tool=imported)

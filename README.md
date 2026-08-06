@@ -75,8 +75,9 @@ MCP won the tool-calling standards war — [donated to the Linux Foundation's Ag
 | Governs MCP calls | ✅ | ❌ | ✅ |
 | Governs shell commands | ❌ | ⚠️ syscall-level | ✅ registered commands |
 | Capability checked pre-invoke | ✅ | ❌ | ✅ |
+| Danger ceiling per credential | ❌ | ❌ | ✅ `read`/`write`/`destructive` |
 | One audit trail across both | ❌ | ❌ | ✅ |
-| Immune to tool-description poisoning | ❌ | n/a | ✅ |
+| Detects a tool changing after approval | ❌ | n/a | ✅ [pinned](#import-any-mcp-server--pinned) |
 
 ---
 
@@ -350,7 +351,43 @@ eval "$(gax auth cap-mint --command demo.echo --scope demo:echo --export)"
 gax-mcp   # stdio JSON-RPC; normally launched by the client
 ```
 
-### MCP bridge (the other direction)
+### Import any MCP server — pinned
+
+Point GAX at any of the ~6,400 MCP servers. It enumerates the tools and writes one
+governed command per tool, **hashing each tool's contract**:
+
+```bash
+gax mcp import --id filesystem npx -y @modelcontextprotocol/server-filesystem /tmp
+```
+
+```text
+  Imported 3 of 3 tool(s) from 'filesystem'
+
+    ! mcp.filesystem.write_file    sha256:9c1a4e7b0f2d…
+      mcp.filesystem.read_file     sha256:034f134f70ea…
+      mcp.filesystem.list_dir      sha256:5e2b81cc94af…
+```
+
+The pin covers the tool's **name, description, and input schema** — the three things
+that define what the model will be told to do. Before every invoke, the live tool is
+hashed again. If it changed, the call fails closed with `pin_mismatch` and **the tool
+is never called**.
+
+That closes the tool-poisoning class behind several 2026 MCP CVEs: a server can
+rewrite a tool's description to smuggle new instructions to the model, and a gateway
+that proxies whatever the server currently advertises will forward it. Description is
+in scope precisely because it's the injection vector — schema-only pinning misses it.
+
+```bash
+gax mcp verify        # re-check every pin against the live servers
+```
+
+**Import is a review step, not an approval.** Anything not clearly read-only is
+imported as `destructive`, so your read-only capability can't invoke it until a human
+reads what it does and raises the ceiling. Re-importing never silently re-pins a
+changed tool — that would let tampering be laundered by re-running import.
+
+### MCP bridge (single tool, by hand)
 
 Expose a single MCP tool without loading all tool schemas into the agent:
 
@@ -530,7 +567,7 @@ HTTP API: `POST /invoke`, `GET /search?q=`, `GET /commands/{id}/doc`, `GET /heal
 
 **Surfaces:** `model` (truncated for LLM), `human` (TTY), `full` (automation).
 
-**Exit codes:** `0` ok · `2` policy denied · `3` invalid cap · `4` not found · `5` adapter error
+**Exit codes:** `0` ok · `2` policy denied · `3` invalid cap · `4` not found · `5` adapter error · `6` pin mismatch
 
 ---
 

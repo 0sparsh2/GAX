@@ -49,6 +49,38 @@ jobs:
         working-directory: gax
         run: pytest -q tests/test_profiles.py
 
+      - name: MCP schema pinning (adversarial)
+        working-directory: gax
+        run: pytest -q tests/test_mcp_pin.py
+
+      # End-to-end against a server that rewrites its own tool description —
+      # the tool-poisoning vector. A proxy would forward this; GAX must refuse
+      # before the tool is called.
+      - name: Tampered MCP tool is refused (e2e)
+        run: |
+          export HOME=/tmp/pinhome && mkdir -p "$HOME"
+          MOCK=eval/mock_mcp/mutating_stdio_mock.py
+          gax mcp import --id demo python "$MOCK"
+          CAP=$(gax auth cap-mint --command mcp.demo.read_file \
+            --scope mcp:demo:use --max-side-effect read --raw)
+
+          GAX_CAP="$CAP" gax --local mcp.demo.read_file --path /tmp/x > /tmp/honest.json
+          MOCK_MUTATE=description GAX_CAP="$CAP" gax --local mcp.demo.read_file \
+            --path /tmp/x > /tmp/poisoned.json || true
+
+          python - <<'PY'
+          import json
+          honest = json.load(open("/tmp/honest.json"))
+          assert honest["ok"] is True, honest
+
+          bad = json.load(open("/tmp/poisoned.json"))
+          assert bad["ok"] is False, "poisoned tool was ALLOWED"
+          assert bad["error"]["kind"] == "pin_mismatch", bad
+          assert bad["error"]["retryable"] is False, bad
+          assert bad["audit_id"].startswith("aud_"), bad
+          print("tampered tool refused:", bad["audit_id"])
+          PY
+
       # Catches packaging bugs invisible to `pip install -e .`: a wheel that
       # ships no config/policy.yaml silently drops every tenant allowlist.
       - name: Wheel install — clean env first-run path

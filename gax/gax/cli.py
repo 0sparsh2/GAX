@@ -233,6 +233,125 @@ def profile_add(name: str, force: bool) -> None:
     click.echo("\n  Restart gaxd to pick up new commands: gaxd stop && gaxd start --background\n")
 
 
+@main.group("mcp")
+def mcp_group() -> None:
+    """Import and verify MCP servers as pinned GAX commands."""
+
+
+@mcp_group.command(
+    "import",
+    # Server args routinely start with a dash (`npx -y ...`); without this click
+    # tries to parse them as GAX options and the command is unusable for the most
+    # common invocation there is.
+    context_settings={"ignore_unknown_options": True, "allow_interspersed_args": False},
+)
+@click.argument("server_command")
+@click.argument("server_args", nargs=-1, type=click.UNPROCESSED)
+@click.option("--id", "server_id", required=True, help="Short name, e.g. 'filesystem'")
+@click.option("--only", multiple=True, help="Import just these tools (repeatable)")
+@click.option("--force", is_flag=True, help="Overwrite manifests already imported")
+@click.option("--dry-run", is_flag=True, help="Show what would be imported")
+def mcp_import(
+    server_command: str,
+    server_args: tuple[str, ...],
+    server_id: str,
+    only: tuple[str, ...],
+    force: bool,
+    dry_run: bool,
+) -> None:
+    """
+    Import an MCP server's tools as pinned commands.
+
+    Example: gax mcp import --id filesystem npx -y @modelcontextprotocol/server-filesystem /tmp
+    """
+    from gax.mcp_import import import_server
+
+    try:
+        report = import_server(
+            server_id=server_id,
+            server_command=server_command,
+            server_args=list(server_args),
+            only=list(only) or None,
+            force=force,
+            dry_run=dry_run,
+        )
+    except Exception as e:
+        raise click.ClickException(f"import failed: {e}")
+
+    verb = "Would import" if dry_run else "Imported"
+    click.echo(f"\n  {verb} {len(report['written'])} of {report['tool_count']} tool(s) "
+               f"from '{server_id}'")
+    if not dry_run:
+        click.echo(f"  → {report['target']}\n")
+    else:
+        click.echo("")
+
+    for row in report["written"]:
+        flag = {"read": " ", "write": "~", "destructive": "!"}.get(row["side_effects"], "?")
+        click.echo(f"    {flag} {row['command']:<44} {row['pin'][:19]}…")
+
+    if report["skipped"]:
+        click.echo(
+            f"\n  {len(report['skipped'])} already imported "
+            "(use --force to re-pin)"
+        )
+
+    click.echo(
+        "\n  Every tool is pinned: its name, description, and input schema are"
+        "\n  hashed now and re-checked before each invoke. If the server changes"
+        "\n  what a tool does, the call fails closed with `pin_mismatch`."
+    )
+    click.echo(
+        "\n  Imported tools default to `destructive` unless clearly read-only, so"
+        "\n  your read-only capability cannot invoke them yet. Review each one,"
+        "\n  then set `side_effects` in its manifest and mint a capability for it."
+    )
+    click.echo("\n  Re-check pins any time: gax mcp verify\n")
+
+
+@mcp_group.command("verify")
+@click.option("--server", default=None, help="Only commands imported from this server id")
+def mcp_verify(server: str | None) -> None:
+    """Re-check every imported pin against the live servers."""
+    import yaml
+
+    from gax.mcp_import import verify_manifest_pins
+    from gax.paths import USER_MANIFESTS_DIR
+
+    manifests = []
+    if USER_MANIFESTS_DIR.exists():
+        for path in sorted(USER_MANIFESTS_DIR.glob("*.yaml")):
+            data = yaml.safe_load(path.read_text()) or {}
+            if not data.get("mcp_pin"):
+                continue
+            if server and data.get("mcp_pin_imported_from") != server:
+                continue
+            manifests.append(data)
+
+    if not manifests:
+        click.echo("\n  No pinned MCP commands found. Import one: gax mcp import --help\n")
+        return
+
+    results = verify_manifest_pins(manifests)
+    symbols = {"ok": "✓", "mismatch": "✗", "missing": "✗", "unpinned": "!", "unreachable": "?"}
+    click.echo("")
+    for r in results:
+        click.echo(f"  {symbols.get(r['status'], '?')} {r['command']:<44} {r['status']}")
+        if r["status"] in ("mismatch", "missing"):
+            click.echo(f"      {r['detail']}")
+
+    bad = [r for r in results if r["status"] in ("mismatch", "missing")]
+    click.echo("")
+    if bad:
+        click.echo(
+            f"  {len(bad)} tool(s) changed since import. These fail closed on invoke.\n"
+            "  Review the change, then re-pin deliberately:\n"
+            "    gax mcp import --id <server> --force <command> <args...>\n"
+        )
+        sys.exit(1)
+    click.echo(f"  All {len(results)} pin(s) verified.\n")
+
+
 @main.command("doctor")
 @click.pass_context
 def doctor_cmd(ctx: click.Context) -> None:

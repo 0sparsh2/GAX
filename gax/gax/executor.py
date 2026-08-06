@@ -7,6 +7,7 @@ from gax.adapters.base import run_adapter
 from gax.audit import log_event
 from gax.caps import decode_capability
 from gax.envelope import fail_envelope, make_envelope, timed_meta
+from gax.mcp_pin import PinMismatch
 from gax.policy import PolicyDenied, check_invoke
 from gax.projection import project_data
 from gax.registry import Registry
@@ -91,6 +92,29 @@ def invoke(
 
     try:
         raw = run_adapter(manifest, args, tenant_id=tenant_id)
+    except PinMismatch as e:
+        # A tampered tool is a security event, not a backend failure. It gets its
+        # own error kind so agents stop rather than retry, and so auditors can
+        # find these without grepping messages. Not retryable by definition.
+        env = fail_envelope(
+            cmd=cmd_label,
+            surface=surface,
+            kind="pin_mismatch",
+            message=str(e),
+            retryable=False,
+            audit_id=audit_id,
+        )
+        log_event(
+            audit_id=audit_id,
+            tenant_id=tenant_id,
+            subject=subject,
+            command=command,
+            args=args,
+            ok=False,
+            error_kind="pin_mismatch",
+            duration_ms=timed_meta(start)["duration_ms"],
+        )
+        return env, 6
     except Exception as e:
         env = fail_envelope(
             cmd=cmd_label,
