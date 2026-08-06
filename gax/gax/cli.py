@@ -319,17 +319,28 @@ def mcp_verify(server: str | None) -> None:
     from gax.paths import USER_MANIFESTS_DIR
 
     manifests = []
-    if USER_MANIFESTS_DIR.exists():
-        for path in sorted(USER_MANIFESTS_DIR.glob("*.yaml")):
-            data = yaml.safe_load(path.read_text()) or {}
-            if not data.get("mcp_pin"):
-                continue
-            if server and data.get("mcp_pin_imported_from") != server:
-                continue
-            manifests.append(data)
+    unpinned: list[str] = []
+    for m in _REGISTRY.list_commands():
+        if m.adapter != "mcp":
+            continue
+        data = m.raw or {}
+        if not data.get("mcp_pin"):
+            unpinned.append(m.command)
+            continue
+        if server and data.get("mcp_pin_imported_from") != server:
+            continue
+        manifests.append(data)
 
     if not manifests:
         click.echo("\n  No pinned MCP commands found. Import one: gax mcp import --help\n")
+        if unpinned:
+            click.echo(
+                f"  {len(unpinned)} unpinned MCP command(s) present — these are not"
+                "\n  verified against their server:\n"
+            )
+            for cmd in unpinned:
+                click.echo(f"    ! {cmd}")
+            click.echo("")
         return
 
     results = verify_manifest_pins(manifests)
@@ -340,8 +351,18 @@ def mcp_verify(server: str | None) -> None:
         if r["status"] in ("mismatch", "missing"):
             click.echo(f"      {r['detail']}")
 
+    # Hand-written manifests predate pinning and are skipped above. Say so
+    # explicitly — "All N verified" would otherwise imply full coverage.
+    for cmd in unpinned:
+        click.echo(f"  ! {cmd:<44} unpinned (not verified)")
+
     bad = [r for r in results if r["status"] in ("mismatch", "missing")]
     click.echo("")
+    if unpinned:
+        click.echo(
+            f"  {len(unpinned)} command(s) have no pin — hand-written manifests are"
+            "\n  not checked against their server. Re-import to pin them.\n"
+        )
     if bad:
         click.echo(
             f"  {len(bad)} tool(s) changed since import. These fail closed on invoke.\n"

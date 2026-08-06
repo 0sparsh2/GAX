@@ -32,15 +32,20 @@ from gax.paths import USER_MANIFESTS_DIR
 
 # Tool-name prefixes that are read-only with high confidence. Anything else is
 # imported as destructive and must be downgraded deliberately.
+# Stored without a separator; `_normalize_tool_name` strips separators before
+# matching, so `get_env`, `get-env`, and `getEnv` are all recognized. Real servers
+# use all three conventions — @modelcontextprotocol/server-everything advertises
+# `get-env`, and matching only `get_` silently classified it destructive.
 _READ_PREFIXES = (
-    "get_", "list_", "read_", "search_", "find_", "fetch_", "query_",
-    "describe_", "show_", "view_", "count_", "check_",
+    "get", "list", "read", "search", "find", "fetch", "query",
+    "describe", "show", "view", "count", "check",
 )
 
-# Exact names that are unambiguously read-only but do not start with a read prefix.
-# Kept as an exact-match allowlist rather than substring matching: `tree` is safe,
-# but a substring rule would also match something like `prune_tree`.
-_READ_EXACT = frozenset({"directory_tree", "tree", "stat", "ls", "pwd", "whoami"})
+# Exact names that are unambiguously read-only but do not start with a read verb.
+# Exact-match, not substring: `tree` is safe, `prune_tree` is not.
+_READ_EXACT = frozenset({"directorytree", "tree", "stat", "ls", "pwd", "whoami"})
+
+_SEPARATORS = re.compile(r"[-_\s.]+")
 
 _SAFE_NAME = re.compile(r"[^a-z0-9_]+")
 
@@ -53,10 +58,25 @@ def infer_side_effects(tool_name: str) -> str:
     `destructive`. Erring toward danger means an import can never silently widen
     what an existing capability may do.
     """
-    name = tool_name.lower()
-    if name in _READ_EXACT or name.startswith(_READ_PREFIXES):
+    words = _tool_words(tool_name)
+    if not words:
+        return "destructive"
+    if "".join(words) in _READ_EXACT:
+        return "read"
+    # Match the leading *word*, not a bare prefix: `getter_delete` must not read
+    # as `get`, and `list` must not match `listen`.
+    if words[0] in _READ_PREFIXES:
         return "read"
     return "destructive"
+
+
+def _tool_words(tool_name: str) -> list[str]:
+    """
+    Split a tool name into lowercase words across the conventions servers use:
+    `get_env`, `get-env`, and `getEnv` all yield ['get', 'env'].
+    """
+    spaced = re.sub(r"(?<=[a-z0-9])(?=[A-Z])", " ", str(tool_name))
+    return [w for w in _SEPARATORS.split(spaced.lower()) if w]
 
 
 def command_id(server_id: str, tool_name: str) -> str:

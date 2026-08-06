@@ -183,6 +183,33 @@ def test_exact_allowlist_does_not_leak_via_substring():
     assert infer_side_effects("delete_tree") == "destructive"
 
 
+@pytest.mark.parametrize("name", ["get_env", "get-env", "getEnv", "GET-ENV"])
+def test_read_detection_across_naming_conventions(name):
+    """
+    Servers use snake_case, kebab-case and camelCase interchangeably.
+    `@modelcontextprotocol/server-everything` advertises `get-env`, which an
+    underscore-only rule classified destructive — found by importing it.
+    """
+    assert infer_side_effects(name) == "read", name
+
+
+@pytest.mark.parametrize(
+    "name",
+    ["getter_delete", "listen_socket", "readymade_wipe", "searcher_purge"],
+)
+def test_read_verbs_match_whole_words_only(name):
+    """
+    Matching a bare prefix would let `getter_delete` and `listen_socket` read as
+    safe. Classification is on the leading word, not a string prefix.
+    """
+    assert infer_side_effects(name) == "destructive", name
+
+
+def test_empty_or_odd_names_fail_closed():
+    for name in ("", "   ", "___", "-"):
+        assert infer_side_effects(name) == "destructive", repr(name)
+
+
 def test_command_ids_are_namespaced_by_server():
     """Two servers may both advertise `search`; they must not collide."""
     a = command_id("filesystem", "search")
