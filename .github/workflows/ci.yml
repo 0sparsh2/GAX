@@ -49,6 +49,13 @@ jobs:
         working-directory: gax
         run: pytest -q tests/test_profiles.py
 
+      - name: Command search (Jev reranker offline, fallback, egress)
+        working-directory: gax
+        run: pytest -q tests/test_search.py
+
+      - name: Search quality eval (local backends)
+        run: python eval/run_search_eval.py --backend keyword --backend bm25
+
       - name: MCP schema pinning (adversarial)
         working-directory: gax
         run: pytest -q tests/test_mcp_pin.py

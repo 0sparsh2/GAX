@@ -39,6 +39,9 @@ PROTOCOL_VERSION = "2024-11-05"
 SERVER_NAME = "gax"
 SERVER_VERSION = "0.4"
 
+# Below this, a reranker's distribution is spread across several commands.
+LOW_CONFIDENCE = 0.5
+
 # JSON-RPC 2.0 reserved codes.
 PARSE_ERROR = -32700
 INVALID_REQUEST = -32600
@@ -138,18 +141,31 @@ class GaxMcpServer:
     def tool_search(self, args: dict[str, Any]) -> dict[str, Any]:
         query = str(args.get("query", ""))
         limit = int(args.get("limit") or 5)
-        hits = self._registry.search(query, limit=limit)
-        return {
+        result = self._registry.search_scored(query, limit=limit)
+        out: dict[str, Any] = {
             "query": query,
             "results": [
                 {
-                    "command": m.command,
-                    "description": m.description,
-                    "category": m.category,
+                    "command": h.manifest.command,
+                    "description": h.manifest.description,
+                    "category": h.manifest.category,
                 }
-                for m in hits
+                for h in result.hits
             ],
         }
+        # Only rerankers with a calibrated distribution report confidence. Below
+        # the threshold the query was genuinely ambiguous — asking the user is
+        # cheaper than invoking the wrong command and recovering.
+        if result.confidence is not None:
+            out["confidence"] = round(result.confidence, 3)
+            if result.confidence < LOW_CONFIDENCE:
+                out["hint"] = (
+                    "Low confidence: several commands fit. Ask the user which "
+                    "they mean, or call gax_doc on the top candidates."
+                )
+        if not result.hits:
+            out["hint"] = "No match. Rephrase with the resource and action, e.g. 'delete pod'."
+        return out
 
     def tool_doc(self, args: dict[str, Any]) -> dict[str, Any]:
         command = str(args.get("command", ""))

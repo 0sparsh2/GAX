@@ -387,6 +387,38 @@ imported as `destructive`, so your read-only capability can't invoke it until a 
 reads what it does and raises the ceiling. Re-importing never silently re-pins a
 changed tool — that would let tampering be laundered by re-running import.
 
+### Smarter command search (Jev, optional)
+
+`gax_search` is how an agent finds a command in its own words. Every miss costs a
+round trip — search, junk, rephrase — re-sending the whole context each time, so
+selection quality is where GAX can still save tokens.
+
+Measured on [30 queries](eval/search_queries.yaml) (literal, synonym, intent):
+
+| Backend | literal | synonym | intent | all (hit@1) |
+|---|---:|---:|---:|---:|
+| `keyword` (default) | 1.00 | 0.40 | 0.20 | 0.53 |
+| `bm25` | 1.00 | 0.20 | 0.10 | 0.43 |
+| `jev` | — | — | — | *needs an API key to measure* |
+
+Lexical matching caps out near 50% once the agent stops using the manifest's exact
+words ("remove a pod", "what broke in CI"). [Jev](https://docs.typesafe.ai/api) is a
+selection model: it picks one option from a set you give it, with calibrated
+probabilities, so it cannot invent a command name. GAX sends it the query and
+candidate descriptions as a single `choice` question:
+
+```bash
+export GAX_SEARCH=jev TYPESAFE_API_KEY=...
+python eval/run_search_eval.py --backend keyword --backend jev   # measure before relying on it
+```
+
+**Opt-in by design.** It sends the query and command descriptions to
+api.typesafe.ai — never arguments, capabilities, or audit data. A key alone does not
+turn it on. Any failure falls back to the default search, so an outage is never
+worse than not enabling it. Search only orders names: whatever it ranks, invoking
+still passes every capability and policy check. Low-confidence results tell the
+agent to ask the user rather than guess.
+
 ### MCP bridge (single tool, by hand)
 
 Expose a single MCP tool without loading all tool schemas into the agent:

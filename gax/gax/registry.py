@@ -88,24 +88,13 @@ class Registry:
         return list(self._commands.values())
 
     def search(self, query: str, limit: int = 5) -> list[CommandManifest]:
-        q = query.lower().strip()
-        if not q:
-            return self.list_commands()[:limit]
-        scored: list[tuple[int, CommandManifest]] = []
-        for m in self._commands.values():
-            hay = f"{m.command} {m.description} {m.category}".lower()
-            score = 0
-            if q in m.command.lower():
-                score += 10
-            if q in m.description.lower():
-                score += 5
-            for word in q.split():
-                if word in hay:
-                    score += 2
-            if score > 0:
-                scored.append((score, m))
-        scored.sort(key=lambda x: (-x[0], x[1].command))
-        return [m for _, m in scored[:limit]]
+        return [h.manifest for h in self.search_scored(query, limit).hits]
+
+    def search_scored(self, query: str, limit: int = 5):
+        """Ranked hits plus backend metadata (confidence, fallback). See gax.search."""
+        from gax.search import get_searcher
+
+        return get_searcher().search(query, self.list_commands(), limit)
 
     def doc_stub(self, command: str) -> dict[str, Any] | None:
         m = self.get(command)

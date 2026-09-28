@@ -1,0 +1,44 @@
+# Command-selection eval for `gax_search`.
+#
+# Each query lists every command that is an acceptable answer. Three buckets:
+#   literal  — shares words with the manifest; any search should get these
+#   synonym  — same meaning, different words ("remove" for "delete")
+#   intent   — describes a goal, not a command ("what broke in CI")
+#
+# A miss here costs an agent a round trip: search, junk, rephrase, search
+# again, re-sending the whole context each turn. That is where selection
+# quality turns into tokens.
+queries:
+  # --- literal ---
+  - {q: "pod logs",                        expect: [k8s.pod.logs],                        bucket: literal}
+  - {q: "list pull requests",              expect: [gh.pr.list, mcp.github.list_pulls],   bucket: literal}
+  - {q: "merge a pull request",            expect: [gh.pr.merge],                         bucket: literal}
+  - {q: "restart deployment",              expect: [k8s.deployment.restart],              bucket: literal}
+  - {q: "list services",                   expect: [k8s.service.list],                    bucket: literal}
+  - {q: "delete namespace",                expect: [k8s.namespace.delete],                bucket: literal}
+  - {q: "scale deployment replicas",       expect: [k8s.deployment.scale],                bucket: literal}
+  - {q: "list s3 buckets",                 expect: [aws.s3.list],                         bucket: literal}
+  - {q: "get jira issue",                  expect: [jira.issue.get],                      bucket: literal}
+  - {q: "view issue",                      expect: [gh.issue.view, jira.issue.get],       bucket: literal}
+  # --- synonym ---
+  - {q: "remove a pod",                    expect: [k8s.pod.delete],                      bucket: synonym}
+  - {q: "show container output",           expect: [k8s.pod.logs],                        bucket: synonym}
+  - {q: "reply on a PR",                   expect: [gh.pr.comment],                       bucket: synonym}
+  - {q: "bounce the api service pods",     expect: [k8s.deployment.restart, k8s.pod.delete], bucket: synonym}
+  - {q: "open tickets in the repo",        expect: [gh.issue.list],                       bucket: synonym}
+  - {q: "wipe the staging environment",    expect: [k8s.namespace.delete],                bucket: synonym}
+  - {q: "add more instances of the web app", expect: [k8s.deployment.scale],              bucket: synonym}
+  - {q: "storage buckets on amazon",       expect: [aws.s3.list],                         bucket: synonym}
+  - {q: "code review requests",            expect: [gh.pr.list, mcp.github.list_pulls],   bucket: synonym}
+  - {q: "land this change",                expect: [gh.pr.merge],                         bucket: synonym}
+  # --- intent ---
+  - {q: "what broke in CI",                expect: [gh.run.list],                         bucket: intent}
+  - {q: "why is my pod crashlooping",      expect: [k8s.pod.describe, k8s.pod.logs],      bucket: intent}
+  - {q: "is the build green",              expect: [gh.run.list],                         bucket: intent}
+  - {q: "what is running in production",   expect: [k8s.deployment.list, kubectl.get.pods], bucket: intent}
+  - {q: "leave feedback on a code change", expect: [gh.pr.comment],                       bucket: intent}
+  - {q: "turn the service off for now",    expect: [k8s.deployment.scale],                bucket: intent}
+  - {q: "which bugs are reported",         expect: [gh.issue.list],                       bucket: intent}
+  - {q: "check why the container failed",  expect: [k8s.pod.describe, k8s.pod.logs],      bucket: intent}
+  - {q: "what changes are waiting for review", expect: [gh.pr.list, mcp.github.list_pulls], bucket: intent}
+  - {q: "free up the cluster from old test envs", expect: [k8s.namespace.delete],         bucket: intent}
