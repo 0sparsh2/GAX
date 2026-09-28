@@ -42,3 +42,11 @@ queries:
   - {q: "check why the container failed",  expect: [k8s.pod.describe, k8s.pod.logs],      bucket: intent}
   - {q: "what changes are waiting for review", expect: [gh.pr.list, mcp.github.list_pulls], bucket: intent}
   - {q: "free up the cluster from old test envs", expect: [k8s.namespace.delete],         bucket: intent}
+  # --- out_of_scope --- nothing in the registry does this; correct answer is
+  # an empty result. A plausible wrong command here wastes a turn at best.
+  - {q: "book a flight to Paris",          expect: [], bucket: out_of_scope}
+  - {q: "what's the weather tomorrow",     expect: [], bucket: out_of_scope}
+  - {q: "send an email to my boss",        expect: [], bucket: out_of_scope}
+  - {q: "transfer $500 to savings",        expect: [], bucket: out_of_scope}
+  - {q: "order a pizza",                   expect: [], bucket: out_of_scope}
+  - {q: "translate this to French",        expect: [], bucket: out_of_scope}

@@ -47,9 +47,19 @@ DEFAULT_BACKEND = "keyword"
 JEV_URL = "https://api.typesafe.ai/v1/systemone"
 JEV_MODEL = "jev-latest"
 JEV_MAX_OPTIONS = 255  # hard API limit per choice question
-JEV_CANDIDATES = 64  # sent to Jev when the registry is larger than this
+# Commands sent per query. Measured at 87 commands: sending all of them was both
+# more accurate (30/30 vs 29/30) and no slower (p50 267 vs 257 ms) than
+# prefiltering to 64. Cost scales ~57 input tokens per command. One slot is
+# reserved for the "none" option. Override with GAX_JEV_CANDIDATES.
+JEV_CANDIDATES = JEV_MAX_OPTIONS - 1
 JEV_TIMEOUT_S = 3.0
 JEV_DESC_CHARS = 400
+NONE_KEY = "none"
+# Honour "none" only when Jev is sure. Measured: six out-of-scope queries chose
+# none at 0.90-1.00; the one false none on a real query ("wipe the staging
+# environment") was 0.51. Below this, return the ranked commands instead — a
+# false "nothing fits" strands the agent, a low-confidence list does not.
+NONE_MIN_CONFIDENCE = 0.7
 
 
 @dataclass
@@ -66,6 +76,10 @@ class SearchResult:
     # agent ask for clarification instead of guessing on an ambiguous query.
     confidence: float | None = None
     fallback_reason: str | None = None
+    # Remote token usage, when a backend calls a model (for cost accounting).
+    usage: dict[str, int] | None = None
+    # The reranker judged that no registered command fits the request.
+    no_match: bool = False
 
 
 class Searcher(Protocol):
@@ -192,13 +206,15 @@ class JevRerank:
         *,
         url: str = JEV_URL,
         timeout: float = JEV_TIMEOUT_S,
-        candidates: int = JEV_CANDIDATES,
+        candidates: int | None = None,
         transport: Any = None,
     ) -> None:
-        self.api_key = api_key or os.environ.get("TYPESAFE_API_KEY", "")
+        self.api_key = api_key or jev_api_key()
         self.url = url
         self.timeout = timeout
-        self.candidates = min(candidates, JEV_MAX_OPTIONS)
+        if candidates is None:
+            candidates = int(os.environ.get("GAX_JEV_CANDIDATES") or JEV_CANDIDATES)
+        self.candidates = max(1, min(candidates, JEV_MAX_OPTIONS - 1))
         self._transport = transport  # injectable for tests
         self._bm25 = BM25Search()  # prefilter for large registries only
         self._fallback = KeywordSearch()  # best local ranker; see DEFAULT_BACKEND
@@ -218,6 +234,14 @@ class JevRerank:
         criteria = {
             k: f"{m.command}: {m.description}"[:JEV_DESC_CHARS] for k, m in keys.items()
         }
+        # An explicit way out. Without it Jev must pick *something*, and measured
+        # confidence did not separate out-of-scope queries ("order a pizza" ->
+        # firecrawl_interact at 0.72) from real ones. Not a command id, so it can
+        # never be returned as a hit.
+        criteria[NONE_KEY] = (
+            "none: no registered command accomplishes this request; the agent "
+            "should tell the user it cannot do this"
+        )
         body = {
             "model": JEV_MODEL,
             "state": query,
@@ -256,7 +280,7 @@ class JevRerank:
         if not query.strip() or not commands:
             return fallback
         if not self.api_key and self._transport is None:
-            fallback.fallback_reason = "TYPESAFE_API_KEY not set"
+            fallback.fallback_reason = "no Jev API key (TYPESAFE_API_KEY or JEV_API_KEY)"
             return fallback
 
         cands = self._candidates(query, commands)
@@ -270,6 +294,12 @@ class JevRerank:
             fallback.fallback_reason = f"jev unavailable: {type(e).__name__}"
             return fallback
 
+        if answer.get("choice") == NONE_KEY and (confidence or 0) >= NONE_MIN_CONFIDENCE:
+            # Deliberate "nothing fits": an empty result, not a fallback, so the
+            # agent is told plainly rather than handed a plausible wrong command.
+            return SearchResult([], self.name, confidence=confidence,
+                                usage=reply.get("usage"), no_match=True)
+
         # Ignore any key we did not send — a reply cannot introduce a command.
         ranked = sorted(
             ((keys[k], float(p)) for k, p in probs.items() if k in keys),
@@ -279,8 +309,23 @@ class JevRerank:
             fallback.fallback_reason = "jev returned no known options"
             return fallback
         return SearchResult(
-            [Hit(m, p) for m, p in ranked[:limit]], self.name, confidence=confidence
+            [Hit(m, p) for m, p in ranked[:limit]],
+            self.name,
+            confidence=confidence,
+            usage=reply.get("usage"),
         )
+
+
+# TYPESAFE_API_KEY is the vendor's documented name; JEV_API_KEY is accepted too.
+JEV_KEY_VARS = ("TYPESAFE_API_KEY", "JEV_API_KEY")
+
+
+def jev_api_key() -> str:
+    for var in JEV_KEY_VARS:
+        val = os.environ.get(var, "").strip()
+        if val:
+            return val
+    return ""
 
 
 BACKENDS = {"keyword": KeywordSearch, "bm25": BM25Search, "jev": JevRerank}

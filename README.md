@@ -393,22 +393,32 @@ changed tool — that would let tampering be laundered by re-running import.
 round trip — search, junk, rephrase — re-sending the whole context each time, so
 selection quality is where GAX can still save tokens.
 
-Measured on [30 queries](eval/search_queries.yaml) (literal, synonym, intent):
+Measured on [36 queries](eval/search_queries.yaml) — literal, synonym, intent, and
+out-of-scope (where the right answer is "nothing") — hit@1:
 
-| Backend | literal | synonym | intent | all (hit@1) |
-|---|---:|---:|---:|---:|
-| `keyword` (default) | 1.00 | 0.40 | 0.20 | 0.53 |
-| `bm25` | 1.00 | 0.20 | 0.10 | 0.43 |
-| `jev` | — | — | — | *needs an API key to measure* |
+| Backend | 22 commands | 87 commands\* | intent @ 87 | out-of-scope | p50 latency |
+|---|---:|---:|---:|---:|---:|
+| `keyword` (default) | 0.47 | 0.40 | **0.00** | 0.17 | <1 ms |
+| `bm25` | 0.43 | — | — | — | <1 ms |
+| **`jev`** | **1.00** | **1.00** | **1.00** | **1.00** | ~230–270 ms |
+
+\*87 = bundled commands plus 65 imported from five real MCP servers (filesystem,
+memory, everything, firecrawl, context7).
+
+Keyword search gets *worse* as you import servers — their tools flood every query
+with noise, and intent queries ("what broke in CI") drop to zero. Jev held at 100%.
+Cost: ~57 Jev input tokens per registered command per search (~5k at 87 commands),
+billed by TypeSafe, not added to your agent's context.
 
 Lexical matching caps out near 50% once the agent stops using the manifest's exact
 words ("remove a pod", "what broke in CI"). [Jev](https://docs.typesafe.ai/api) is a
 selection model: it picks one option from a set you give it, with calibrated
 probabilities, so it cannot invent a command name. GAX sends it the query and
-candidate descriptions as a single `choice` question:
+candidate descriptions as a single `choice` question, plus an explicit "none"
+option so out-of-scope requests come back empty instead of as a plausible wrong command:
 
 ```bash
-export GAX_SEARCH=jev TYPESAFE_API_KEY=...
+export GAX_SEARCH=jev TYPESAFE_API_KEY=...   # JEV_API_KEY also accepted
 python eval/run_search_eval.py --backend keyword --backend jev   # measure before relying on it
 ```
 

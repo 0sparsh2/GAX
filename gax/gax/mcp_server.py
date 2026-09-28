@@ -163,7 +163,15 @@ class GaxMcpServer:
                     "Low confidence: several commands fit. Ask the user which "
                     "they mean, or call gax_doc on the top candidates."
                 )
-        if not result.hits:
+        if result.no_match:
+            # The reranker judged, confidently, that nothing registered does this.
+            # Say so plainly: rephrasing will not help, and guessing a command
+            # would be worse than telling the user.
+            out["hint"] = (
+                "No registered command does this. Tell the user it is not "
+                "available rather than trying other commands."
+            )
+        elif not result.hits:
             out["hint"] = "No match. Rephrase with the resource and action, e.g. 'delete pod'."
         return out
 

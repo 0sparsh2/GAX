@@ -98,7 +98,7 @@ def test_jev_sends_query_and_descriptions_only():
     q = body["questions"]["command"]
     assert q["type"] == "choice"
     # Option keys are opaque, never raw command ids (which contain dots).
-    assert all(k.startswith("c") and "." not in k for k in q["criteria"])
+    assert all(k.startswith("c") and "." not in k for k in q["criteria"] if k != "none")
     # Only id + description leave the machine — no args, caps, scopes, audit.
     sent = str(body)
     for forbidden in ("capability", "audit", "required_scopes", "tenant"):
@@ -120,7 +120,8 @@ def test_small_registry_sends_every_command():
     """
     fake = FakeJev(pick="gh.run.list")
     JevRerank(transport=fake).search("what broke in CI", COMMANDS)
-    assert len(fake.bodies[0]["questions"]["command"]["criteria"]) == len(COMMANDS)
+    criteria = fake.bodies[0]["questions"]["command"]["criteria"]
+    assert len(criteria) == len(COMMANDS) + 1  # plus the "none" option
 
 
 def test_large_registry_is_capped_and_never_exceeds_api_limit():
@@ -195,6 +196,7 @@ def test_malformed_reply_falls_back(reply):
 
 def test_no_api_key_never_touches_network(monkeypatch):
     monkeypatch.delenv("TYPESAFE_API_KEY", raising=False)
+    monkeypatch.delenv("JEV_API_KEY", raising=False)
 
     def boom(*a, **k):
         raise AssertionError("network call attempted without a key")
@@ -202,7 +204,7 @@ def test_no_api_key_never_touches_network(monkeypatch):
     monkeypatch.setattr(httpx, "post", boom)
     res = JevRerank().search("pod logs", COMMANDS)
     assert res.backend == "keyword"
-    assert res.fallback_reason == "TYPESAFE_API_KEY not set"
+    assert res.fallback_reason.startswith("no Jev API key")
 
 
 def test_opt_in_only(monkeypatch):
@@ -233,3 +235,71 @@ def test_mcp_search_keyword_has_no_confidence_field():
 
     out = GaxMcpServer().tool_search({"query": "echo"})
     assert "confidence" not in out
+
+
+def test_jev_api_key_alias(monkeypatch):
+    from gax.search import jev_api_key
+
+    monkeypatch.delenv("TYPESAFE_API_KEY", raising=False)
+    monkeypatch.setenv("JEV_API_KEY", "sk-alias")
+    assert jev_api_key() == "sk-alias"
+    monkeypatch.setenv("TYPESAFE_API_KEY", "sk-primary")
+    assert jev_api_key() == "sk-primary"
+
+
+# -- "nothing fits" ---------------------------------------------------------
+
+
+def _none_reply(conf):
+    return {"answers": {"command": {"choice": "none", "confidence": conf,
+            "probabilities": {"none": conf, "c0": 1 - conf}}}}
+
+
+def test_none_option_is_offered_but_is_not_a_command():
+    fake = FakeJev(pick="gh.run.list")
+    JevRerank(transport=fake).search("x", COMMANDS)
+    criteria = fake.bodies[0]["questions"]["command"]["criteria"]
+    assert "none" in criteria
+    assert criteria["none"].startswith("none:")
+
+
+def test_confident_none_returns_no_match():
+    res = JevRerank(transport=FakeJev(reply=_none_reply(0.95))).search("order a pizza", COMMANDS)
+    assert res.no_match is True
+    assert res.hits == []
+    assert res.fallback_reason is None, "a judged no-match is not a failure"
+
+
+def test_unsure_none_still_returns_ranked_commands():
+    """
+    A false 'nothing fits' strands the agent. Measured: real out-of-scope
+    queries chose none at >=0.90; the one false none was 0.51.
+    """
+    res = JevRerank(transport=FakeJev(reply=_none_reply(0.51))).search("wipe staging", COMMANDS)
+    assert res.no_match is False
+    assert [h.manifest.command for h in res.hits] == ["k8s.pod.logs"]
+
+
+def test_none_never_appears_as_a_hit():
+    reply = {"answers": {"command": {"choice": "c0", "confidence": 0.4,
+             "probabilities": {"none": 0.45, "c0": 0.4, "c1": 0.15}}}}
+    res = JevRerank(transport=FakeJev(reply=reply)).search("x", COMMANDS)
+    assert "none" not in [h.manifest.command for h in res.hits]
+
+
+def test_candidate_cap_leaves_room_for_none():
+    many = [_m(f"svc.t{i}.run", f"tool {i}") for i in range(400)]
+    fake = FakeJev(reply={"answers": {"command": {"probabilities": {"c0": 1.0}}}})
+    JevRerank(transport=fake, candidates=10_000).search("tool", many)
+    assert len(fake.bodies[0]["questions"]["command"]["criteria"]) == JEV_MAX_OPTIONS
+
+
+def test_mcp_search_says_plainly_when_nothing_fits(monkeypatch):
+    from gax import search as search_mod
+    from gax.mcp_server import GaxMcpServer
+
+    monkeypatch.setattr(search_mod, "get_searcher",
+                        lambda name=None: JevRerank(transport=FakeJev(reply=_none_reply(0.97))))
+    out = GaxMcpServer().tool_search({"query": "order a pizza"})
+    assert out["results"] == []
+    assert "not available" in out["hint"]
