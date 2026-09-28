@@ -1,82 +1,84 @@
-# Live eval run — GAX vs CLI vs MCP (May 2026)
+# Live eval run — GAX vs CLI vs MCP (September 2026)
 
-**Repo:** [0sparsh2/GAX](https://github.com/0sparsh2/GAX) · **Gist:** [live-run-summary](https://gist.github.com/0sparsh2/cea07652091fc4d47637e87d958ed340) · **Narrative:** [docs/PUBLIC_NARRATIVE.md](../../docs/PUBLIC_NARRATIVE.md) · **Harness:** `eval/run_comparison.py --live-mcp` · **Counter:** tiktoken `cl100k_base`
+**Repo:** [0sparsh2/GAX](https://github.com/0sparsh2/GAX) · **Narrative:** [docs/PUBLIC_NARRATIVE.md](../../docs/PUBLIC_NARRATIVE.md) · **Counter:** tiktoken `cl100k_base`
 
 ## Bias disclosure
 
-This is a **self-assessment** by the GAX authors. We report separate metrics (no weighted “winner”). External benchmarks: [Scalekit](https://www.scalekit.com/blog/mcp-vs-cli-use), [Anthropic Code Mode](https://www.anthropic.com/engineering/code-execution-with-mcp), [Cloudflare Code Mode](https://blog.cloudflare.com/code-mode-mcp/).
+This is a **self-assessment** by the GAX authors. Separate metrics, no weighted "winner". External references: [Scalekit](https://www.scalekit.com/blog/mcp-vs-cli-use), [Anthropic](https://www.anthropic.com/engineering/code-execution-with-mcp), [Cloudflare](https://blog.cloudflare.com/code-mode-mcp/).
 
-## Setup
+Every number below is read from a results file in this directory — `comparison.json`, `security-eval.json`, `search-eval-22.json`, `search-eval-87.json` — or `../case_study/results.json`.
 
-- 18 tasks: PR list/view, mocks, errors, policy denial, truncation, multi-turn, plans, MCP bridge
-- Live GitHub MCP server: `@modelcontextprotocol/server-github` (26 tools)
-- `gax_mcp_bridge`: `mcp.github.list_pulls` via GAX envelope (schema not in agent prompt)
+## What changed since July
 
-## Correction (July 2026)
+- **Security and search are now benchmarked**, not just tokens: [security-eval.md](./security-eval.md), [search-eval.md](./search-eval.md).
+- **July's corrected figures held.** Paired cli→gax was ~3.5×; this run: **3.48×**.
+- **A run was discarded.** The first refresh used a revoked `GITHUB_TOKEN` from `.env`: every `gh` call returned HTTP 401, CLI completion read 0.00, and one task showed GAX *cheaper* than CLI. Those numbers were thrown away and the run repeated with a valid credential. Noted because a broken environment produced plausible-looking output.
 
-**An earlier version of this summary published `cli 104` vs `gax 137` (~1.3×).
-That comparison was invalid** — the two medians ran over *different task subsets*.
-`cli` skips every mock and discovery task, while `gax` runs them cheaply, dragging the
-GAX median down. We found this in our own review; the corrected like-for-like figure is
-**~3.5×**, and `success_rate: 100%` across the board was an artifact of rewriting
-expected failures to `ok=True`. See [METHODOLOGY](../METHODOLOGY.md) and
-[PLAN-2026H2](../../docs/PLAN-2026H2.md).
+## 1. Tokens — paired (the like-for-like number)
 
-## Token comparison — paired (the like-for-like number)
+Only tasks where both modalities produced a real row:
 
-Restricted to tasks where **both** modalities produced a real, non-skipped row:
+| Pair | n | median A | median B | median ratio | range |
+|------|--:|---------:|---------:|-------------:|-------|
+| **cli → gax** | 6 | 79.0 | 248.0 | **3.48×** | 1.3–5.9× |
+| cli → gax_mcp_bridge | 2 | 112.0 | 578.5 | 5.17× | 4.0–6.3× |
 
-| Pair | n paired | median A | median B | median ratio |
-|------|---------:|---------:|---------:|-------------:|
-| **cli → gax** | 6 | 80 | 250 | **~3.5×** (range 1.3–5.9×) |
-| **cli → gax_mcp_bridge** | 1 | 114 | 456 | ~4.0× |
+Bridge row is **n = 2** — indicative only.
 
-Per-task ratios and the 9 excluded tasks: [`comparison.md`](./comparison.md).
+**3-turn workflow** ([case study](../case_study/RESULTS.md), simulated transcripts): cli 158 · gax 689 (**4.4×**) · gax_mcp_bridge 703 · mcp_naive_43 44,062.
 
-## Per-modality distribution (NOT head-to-head)
+**Live `tools/list`:** `@modelcontextprotocol/server-github` → **26 tools, 4,450 schema tokens** (measured) vs 44,026 for the 43-tool pack Scalekit cites (fixture, not measured by us).
 
-Each modality runs its own subset, so these medians are distributions, not a ranking:
+## 2. Per-modality distribution (NOT head-to-head)
 
-| Modality | n | Median tokens | Completion | Expected outcome | Derivation |
-|----------|--:|--------------:|-----------:|-----------------:|------------|
-| **cli** | 6 | 98 | 0.50 | 1.00 | measured |
-| **gax** | 15 | 139 | 0.73 | 1.00 | measured |
-| **gax_mcp_bridge** | 1 | 456 | 1.00 | 1.00 | measured |
-| **gax_plan** | 2 | 651 | 0.50 | 1.00 | measured |
-| **mcp_live** (26-tool server) | — | 4,483 | — | — | measured |
-| **mcp_naive_43** | 11 | 44,060 | 0.73 | 1.00 | **modeled from fixture** |
+Each modality runs its own task subset, so these medians are not a ranking.
 
-**Live `tools/list` probe:** 26 tools → **4,450** schema tokens (measured), vs **44,026** for the 43-tool Copilot MCP pack cited by Scalekit.
+| Modality | n | Median tokens | Completion | Expected outcome |
+|----------|--:|--------------:|-----------:|-----------------:|
+| **cli** | 7 | 97 | 0.57 | 1.00 |
+| **gax** | 15 | 139 | 0.73 | 1.00 |
+| **gax_mcp_bridge** | 2 | 709 | 1.00 | 1.00 |
+| **gax_plan** | 2 | 646 | 0.50 | 1.00 |
+| **mcp_naive_live** | 11 | 4,483 | 0.73 | 1.00 |
+| **mcp_naive_43** *(modeled from fixture)* | 12 | 44,062 | 0.75 | 1.00 |
 
-**By design, verified by test** (architectural constants, not measurements): `cli` audit-id rate 0%; `gax` 80–100%; `gax_mcp_bridge` / `gax_plan` 100%.
+## 3. Enforcement ([security-eval.md](./security-eval.md))
+
+| Check | Result |
+|---|---:|
+| Read-only capability refused on write/destructive commands, **command explicitly allowlisted** | **41/41** |
+| Capability at the command's level allowed (no over-blocking) | **41/41** |
+| Tampered MCP tool refused before running (description / schema / rename / vanish) | **4/4** |
+| Pins re-verified against 65 real public-server tools — false alarms | **0** |
+
+41 of 87 commands are mutating; most are imported MCP tools, which default to `destructive` until reviewed.
+
+## 4. Command selection ([search-eval.md](./search-eval.md))
+
+hit@1 on 36 queries (literal, synonym, intent, out-of-scope):
+
+| | 22 commands | 87 commands | intent @ 87 | p50 latency |
+|---|---:|---:|---:|---:|
+| keyword | 0.472 | 0.333 | 0.0 | <1 ms |
+| **jev** (default) | **1.0** | **1.0** | **1.0** | 272 ms |
+
+Keyword degrades as MCP servers are imported; Jev did not. Queries are hand-written by the author (n = 36).
 
 ## Takeaways
 
-1. **Token axis:** CLI beats GAX by **~3.5×** on like-for-like tasks. Governance is not free. Naive MCP remains far more expensive, but that fixture is a *model*, not our measurement — and modern tool-search / code-mode MCP setups largely close it.
-2. **Governance axis:** GAX and `gax_mcp_bridge` emit `audit_id` + envelope v1 and enforce **before** the adapter runs; CLI and raw MCP transcripts do neither.
-3. **`fail_closed` is scoped honestly:** only modalities that *have* an enforcement layer are scored on it. Raw `cli` is not marked 0.0 for a test it never sat.
-4. **Not a single winner:** CLI wins tokens, clearly. GAX wins pre-invoke enforcement and audit correlation.
-5. **Harness ≠ agent benchmark:** Transcripts are simulated ([`eval/session_transcript.py`](../session_transcript.py)). Real LLM proof: [`examples/agent_runs/SAMPLE_RUN/`](../../examples/agent_runs/SAMPLE_RUN/) (`20260518T193305Z`).
-
-## External benchmarks (not replicated here)
-
-| Claim | Source |
-|-------|--------|
-| 4×–32× tokens (naive MCP vs CLI) | [Scalekit](https://www.scalekit.com/blog/mcp-vs-cli-use) |
-| 28% MCP **run** failures (7/25 `ConnectTimeout`) | Scalekit — infrastructure, not our eval |
-| Optimized MCP token reductions | Anthropic, Cloudflare (see [benchmark report](../../mcp_vs_cli_benchmarks_2026/report.md)) |
+1. **Tokens:** CLI is ~3.5× cheaper than GAX like-for-like (~169 tokens absolute); ~4.4× over a 3-turn workflow. Governance is not free.
+2. **Enforcement held in every case measured**, including against a server rewriting its own tools, with zero false alarms on unchanged real servers.
+3. **Selection** is where GAX can still save turns: natural-language requests resolve correctly with Jev and mostly fail with keyword matching.
+4. **Harness ≠ agent benchmark.** Transcripts are simulated ([`session_transcript.py`](../session_transcript.py)); real-LLM receipts: [`examples/agent_runs/SAMPLE_RUN/`](../../examples/agent_runs/SAMPLE_RUN/).
 
 ## Reproduce
 
 ```bash
-pip install -r eval/requirements.txt
-cd gax && pip install -e ".[dev]"
-# GITHUB_TOKEN in repo-root .env (gitignored) or export
-python ../eval/run_comparison.py --live-mcp
+cd gax && pip install -e ".[dev]" && cd ..
+export GITHUB_TOKEN=...                        # must be valid — see "a run was discarded"
+python eval/run_comparison.py --live-mcp --extended
+python eval/import_mcp_servers.py eval/results/mcp_registry
+python eval/run_security_eval.py --live
+JEV_API_KEY=... python eval/run_search_eval.py --backend keyword --backend jev --json eval/results/search-eval-22.json
+python eval/case_study/run_case_study.py
 ```
-
-Full rows: `eval/results/comparison.json` · Case study: `eval/case_study/RESULTS.md`
-
-## CI (no secrets)
-
-PRs run pytest + mock MCP bridge + `eval/run_comparison.py --mock-only`. Offline MCP mock: `eval/mock_mcp/github_stdio_mock.py`.

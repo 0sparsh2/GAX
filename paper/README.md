@@ -9,25 +9,29 @@ A **continuously improving** working paper on the GAX/ACSP approach.
 | [`OPEN_QUESTIONS.md`](./OPEN_QUESTIONS.md) | Unresolved problems that could change conclusions |
 | [`CHANGELOG.md`](./CHANGELOG.md) | Revision history; superseded claims preserved |
 
-**Current version:** 0.1.0 · Working paper, no external peer review.
+**Current version:** 0.2.0 · Working paper, no external peer review.
 
 ---
 
 ## What this paper argues
 
-The CLI-versus-MCP debate treats a *coupling artifact* as a fundamental tradeoff. Both patterns bind three independent concerns — tool **discovery**, **authorization**, and **response structure** — to one interface decision. Decouple them and you get MCP-class governance at near-CLI context cost.
+The CLI-versus-MCP debate treats a *coupling artifact* as a fundamental tradeoff. Both patterns bind three independent concerns — tool **discovery**, **authorization**, and **response structure** — to one interface decision. Decouple them and you get MCP-class governance at a context cost within an order of magnitude of CLI — and far below eager-discovery MCP.
 
-The measured summary, which is genuinely mixed:
+The measured summary, which is genuinely mixed (v0.2.0, paired on shared tasks):
 
-| Modality | Median tokens | Audit | Structured |
-|----------|---:|---:|---:|
-| `cli` | **113** | 0% | 0% |
-| `gax` | 140 (1.24×) | 80% | 80% |
-| `programmatic_mcp` | 1,086 | 0% | 0% |
-| `mcp_live_github` (26 tools) | 4,488 | 0% | 0% |
-| `mcp_naive_43` (fixture) | 44,061 | 0% | 0% |
+| | Result |
+|---|---:|
+| CLI → GAX tokens | 79 → 248 (**3.48×**, ~170 absolute) |
+| Logging proxy vs GAX | proxy **cheaper** (93 vs 161) — but cannot refuse |
+| Live GitHub MCP schema | 4,450 tokens / 26 tools |
+| Naive MCP (43-tool fixture) | 44,062 tokens |
+| Read-only credential refused on mutating commands, even when allowlisted | 41/41, 0 over-blocks |
+| Third-party tool rewritten after approval, refused before running | 4/4, 0 false alarms on 65 real pins |
+| Right command on first search, 87 commands (selection model / keyword) | 1.00 / 0.33 |
 
-**Governance costs ~27 tokens. Eager schema injection costs ~44,000. These are separable concerns** — which is the paper's actual claim, not that GAX wins overall. It does not, and §8.2 says so.
+**Governance costs a few hundred tokens. Eager schema injection costs thousands. These are separable concerns** — which is the paper's actual claim, not that GAX wins overall. It does not, and §8.2 says so.
+
+**v0.2.0 retracts two v0.1.0 figures** — GAX at 1.24× CLI, and a logging proxy costing more than GAX. Both came from comparing medians over different task sets. See [`CHANGELOG.md`](./CHANGELOG.md).
 
 ---
 

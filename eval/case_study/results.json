@@ -6,7 +6,7 @@
   "rows": [
     {
       "modality": "cli",
-      "tokens": 154,
+      "tokens": 158,
       "ok": true
     },
     {
@@ -17,14 +17,14 @@
     },
     {
       "modality": "gax",
-      "tokens": 692,
+      "tokens": 689,
       "ok": true
     },
     {
       "modality": "gax_mcp_bridge",
-      "tokens": 725,
+      "tokens": 703,
       "ok": true,
-      "audit_id": "aud_dde9207babfd432b"
+      "audit_id": "aud_b33659cdbaed4091"
     }
   ]
 }

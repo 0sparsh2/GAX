@@ -1,0 +1,45 @@
+command: mcp.memory.delete_observations
+version: 1.0.0
+description: Delete specific observations from entities in the knowledge graph
+category: mcp/memory
+adapter: mcp
+required_scopes:
+- mcp:memory:use
+side_effects: destructive
+idempotent: false
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    deletions:
+      type: array
+      items:
+        type: object
+        properties:
+          entityName:
+            type: string
+            description: The name of the entity containing the observations
+          observations:
+            type: array
+            items:
+              type: string
+            description: An array of observations to delete
+        required:
+        - entityName
+        - observations
+  required:
+  - deletions
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - '@modelcontextprotocol/server-memory'
+  tool_name: delete_observations
+mcp_pin: sha256:af8caf807674837f3f384863e76fe3af3cadceba068fa4564a19d147a2fdea95
+mcp_pin_imported_from: memory
+mcp_pinned_tool:
+  name: delete_observations
+  description: Delete specific observations from entities in the knowledge graph
+  inputSchema: *id001

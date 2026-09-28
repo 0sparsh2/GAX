@@ -1,0 +1,125 @@
+{
+  "imported_at": "2026-09-28T03:41:44.511152+00:00",
+  "servers": {
+    "filesystem": {
+      "package": "@modelcontextprotocol/server-filesystem",
+      "tools": 14,
+      "side_effects": {
+        "read": 10,
+        "write": 0,
+        "destructive": 4
+      },
+      "pins": {
+        "mcp.filesystem.read_file": "sha256:1a19f9c66da8234489eca4a46359ff2adbaed9b04b273e25135123764dbdb991",
+        "mcp.filesystem.read_text_file": "sha256:1d8b2b6ca5e1073726f4f41ba61ac8c888d2867157d6cf12547c55051c7f482a",
+        "mcp.filesystem.read_media_file": "sha256:661d2d1d9e2a555058c3d0b708ef64c27fcd6ad573432a2890106c818b3c4b17",
+        "mcp.filesystem.read_multiple_files": "sha256:4c8a0ffe6571a32fd912099c90ded68dd23a05daa2604004330fcd5076ea6e9e",
+        "mcp.filesystem.write_file": "sha256:7b912840bf28bc44ce107f55630d64b645ad78ed92be02185b7ca9143bb0b917",
+        "mcp.filesystem.edit_file": "sha256:fcbcdc0249981d411ac04fddf7b390b674d502fd5ad0cb0c37c9c23f74089b14",
+        "mcp.filesystem.create_directory": "sha256:2d7848f9113d21f55f60e177430ba1dda372354fd94075d52bccde5c6f5637e2",
+        "mcp.filesystem.list_directory": "sha256:488944e6d821c9e6bc6cdc1347c5d01edaa3c1ed633f3b87dbccb3880dfd5702",
+        "mcp.filesystem.list_directory_with_sizes": "sha256:6a88e86c3c59f13f5b3602e162746cd7f970554d0f8e5c7193eb5c88f150dd14",
+        "mcp.filesystem.directory_tree": "sha256:25f83f24b499219f8e9e6d6f25bb8546b8a318084d98cdc56a7b4753f956ced5",
+        "mcp.filesystem.move_file": "sha256:ccd3a2f3e87121650767bc135408da868b67f6fc140d77ab75e3d6ea0b71ee66",
+        "mcp.filesystem.search_files": "sha256:41f144836f5e786009e2173256759e37b687add572cfba808e24bebb9a04ce96",
+        "mcp.filesystem.get_file_info": "sha256:6ff64b49d487d69c8743ec6c81fe5bb0cf7459267b6146b522d565e405a66ae8",
+        "mcp.filesystem.list_allowed_directories": "sha256:fe7d40d713a335fa54765eb86288cdd59c2a8eedc121f6156f45f9c96271c0e4"
+      }
+    },
+    "memory": {
+      "package": "@modelcontextprotocol/server-memory",
+      "tools": 9,
+      "side_effects": {
+        "read": 2,
+        "write": 0,
+        "destructive": 7
+      },
+      "pins": {
+        "mcp.memory.create_entities": "sha256:6ce7dc5b45d4e6c256bb20feed616343e011b6929d7d3d36439df4ce10a3231d",
+        "mcp.memory.create_relations": "sha256:9618aebf22f9736ab47a333971d03c827bbd63e86e11b3ca2d361d34d5dd1438",
+        "mcp.memory.add_observations": "sha256:20a69b24a5f88cdfc1cdb6f99f54e1862b86093559b4489f03bcf7de9a334ef8",
+        "mcp.memory.delete_entities": "sha256:8732851d4c21195d8897cd73fc21a2872d909f417dc5ce9ba4b1627d7aa41a46",
+        "mcp.memory.delete_observations": "sha256:af8caf807674837f3f384863e76fe3af3cadceba068fa4564a19d147a2fdea95",
+        "mcp.memory.delete_relations": "sha256:b5df204cc87e52c33ec7e709e2c384f6a1bcdfc5e200847713b73784a1bb36d6",
+        "mcp.memory.read_graph": "sha256:c0c21cc9552b694d4128f62a4e0e353ea15da9c690ddee4ae46485f280fd1a40",
+        "mcp.memory.search_nodes": "sha256:f931cc8a5ae4584a576b253acf24e2473dbb823cc6c9d253e65ad4ef7282aae0",
+        "mcp.memory.open_nodes": "sha256:b7c053613513ee0d46a5db261c81377546df01e739ce1911e71dbdd86e191310"
+      }
+    },
+    "everything": {
+      "package": "@modelcontextprotocol/server-everything",
+      "tools": 13,
+      "side_effects": {
+        "read": 8,
+        "write": 0,
+        "destructive": 5
+      },
+      "pins": {
+        "mcp.everything.echo": "sha256:87a6b5c343ddeeed1922f71fdce50c470e5f572d675ad848b1e3781e01463abe",
+        "mcp.everything.get_annotated_message": "sha256:e2dc5dd6b859e8246fb25583d4fbce6bfc210ae8afaef6701e3d0a7f251b93e8",
+        "mcp.everything.get_env": "sha256:95de105e967bcf1fd5060892121192d6725149d42be8031464799e186bc3d6a5",
+        "mcp.everything.get_resource_links": "sha256:f9febf0e0f7ef468c08bfcaab44108f8d0ecedd2248f0dc6b7b282e70157f6c8",
+        "mcp.everything.get_resource_reference": "sha256:5e3b65b8d495e8350f7e52b3cd82b622d4d8e1ea82479eef15741d296d1d2345",
+        "mcp.everything.get_structured_content": "sha256:24fd310fc318335d22160e7652f6061a5bd25789133bce62e0f07eb858e85b13",
+        "mcp.everything.get_sum": "sha256:090e34d8f6e1cb4c079f4d9cc62e4c105d67fa629dc3af18c2aba2bba5891489",
+        "mcp.everything.get_tiny_image": "sha256:945e15749abef23ba3a1cbf4f22caddfaed882a65a6fd109f2bd9ae40beeb945",
+        "mcp.everything.gzip_file_as_resource": "sha256:ecf41b3e2d4f69333bf6f1f3c26387923005722e50fc53abd0274d2f3b34a1b9",
+        "mcp.everything.toggle_simulated_logging": "sha256:cbe3245cd4d770b26c9643f2ef726bff083802c1f3b619d6a0bf1dcdaed6fff0",
+        "mcp.everything.toggle_subscriber_updates": "sha256:d383d176f3fe178244980d05e402f6e3750cf91177f444155cf89661a63c6de3",
+        "mcp.everything.trigger_long_running_operation": "sha256:7efbac46cf0b694fa8e4d07440e16b14900fd884527a065317edd85b8625162b",
+        "mcp.everything.simulate_research_query": "sha256:048a7f704c1efd20baa40df316ec000e3e6830435fce117db553172f89d39b7a"
+      }
+    },
+    "firecrawl": {
+      "package": "firecrawl-mcp",
+      "tools": 27,
+      "side_effects": {
+        "read": 9,
+        "write": 0,
+        "destructive": 18
+      },
+      "pins": {
+        "mcp.firecrawl.firecrawl_scrape": "sha256:bf536a42d68064c662d7930d0e548961826796dcbf2f2eda563a48b74ca2adb8",
+        "mcp.firecrawl.firecrawl_map": "sha256:6b2992a1f8f030917f412803ac3f39533eb51827f9976189a2fcf3b7eaf07cf0",
+        "mcp.firecrawl.firecrawl_search": "sha256:28b51626d6303e81557c91db96b7707a3293b9e9812cc5d0c2a75d31f60a89e6",
+        "mcp.firecrawl.firecrawl_find_tools": "sha256:42ffdf5ad42cf9f31457caacbe57d01e352a41f8b4754e5f6ec11f26d4aa7f94",
+        "mcp.firecrawl.firecrawl_crawl": "sha256:4e7a051560e5e3e1310f7245af461524dd9feb0685269a7dd8792b4cb07298aa",
+        "mcp.firecrawl.firecrawl_check_crawl_status": "sha256:a87a63de24f86b91e4af5e40b1ca81f2b1e9735b27f9bf97ebaef51799f9db81",
+        "mcp.firecrawl.firecrawl_extract": "sha256:591249d3e555f507dba5680593d71018b909dab8521dc7dd6691bb7544e937b4",
+        "mcp.firecrawl.firecrawl_agent": "sha256:c17cf7501f6f5b3caf4be78d1bc3f44cee06375a9329f60c1333b104158a5b81",
+        "mcp.firecrawl.firecrawl_agent_status": "sha256:61803ef0a303a9704a883c9adac2fa31f8d873cc74f1f1ac82b18a407ea117fd",
+        "mcp.firecrawl.firecrawl_interact": "sha256:d920589af8658537956b03c9d726ac22bdfa7a4726693f96f27bdbede4514af7",
+        "mcp.firecrawl.firecrawl_interact_stop": "sha256:5479893d04a42f62d4f99d8d7876c9e4266d4ba6af7f0504b28fe0fddb949312",
+        "mcp.firecrawl.firecrawl_parse": "sha256:bd240723a6f11c87d120ef332653833617479d076b52355215624fa3dca62e84",
+        "mcp.firecrawl.firecrawl_monitor_create": "sha256:a87d43736527c34a45882680ae111dd7d0d132450efce62a917e1d1e1c1127c6",
+        "mcp.firecrawl.firecrawl_monitor_list": "sha256:ea4e32328bf0e5de250668be7a7af237ce3d3d75207be5993ad590c2190d6bd0",
+        "mcp.firecrawl.firecrawl_monitor_get": "sha256:4d959cf78cb4e642d251e5cf0c07fc5151b7553d7c53aa7eac5f0e5615fabcd0",
+        "mcp.firecrawl.firecrawl_monitor_update": "sha256:193604cf7ca08c509ca83232f82e73b7d43de51b4addb577c188e7bf07ea9338",
+        "mcp.firecrawl.firecrawl_monitor_delete": "sha256:1c8481ee6d95b64b7bf8fe77499d91fc38fe24f0e30935fe65778dd5bb4e4219",
+        "mcp.firecrawl.firecrawl_monitor_run": "sha256:340b1f848787fff8c5d96c73ea2f2b921136fd247f7c8b3f92fd03318f06099d",
+        "mcp.firecrawl.firecrawl_monitor_checks": "sha256:62afcee6c870b01bbd28a28ca1ff3cd6e7dc5d5c663cb460f1b4ecc96a3e3835",
+        "mcp.firecrawl.firecrawl_monitor_check": "sha256:c15d401897c9fbd35498516320b8c3147bdd2bd0eee8b80174de8da79ba2b48d",
+        "mcp.firecrawl.firecrawl_research_search_papers": "sha256:78b4ae800869ed15f832a7cab5acae74dfad6a214e4d5c8150b2bec165a2533d",
+        "mcp.firecrawl.firecrawl_research_inspect_paper": "sha256:02dda079ad03d0a1f534a1e8b6cc4f9ab417f32b721994f29682c7b2531e3c5c",
+        "mcp.firecrawl.firecrawl_research_related_papers": "sha256:c945cb0f75b52696632552f6eb49657e9e2fdb96f8676ef4682eb01ea2a20217",
+        "mcp.firecrawl.firecrawl_research_read_paper": "sha256:3dd8fe2dbfe7c3176a891952839e8efc3e16f4957778503b104b222d60e4c031",
+        "mcp.firecrawl.firecrawl_research_search_github": "sha256:da03c2a3cc6a6b9a8955f8e3ecbd4cb6919389583b46622e4e677cb35c9f2086",
+        "mcp.firecrawl.firecrawl_developer_search": "sha256:b436c0df097cf33b5e35e5de86352b87d0a941b3004a5f2c2507fa3d5049ab13",
+        "mcp.firecrawl.firecrawl_credit_usage": "sha256:fce60e5c003f541f46ebf60692105a13a8e9b6239d4e0659a1e6037022a9b68d"
+      }
+    },
+    "context7": {
+      "package": "@upstash/context7-mcp",
+      "tools": 2,
+      "side_effects": {
+        "read": 1,
+        "write": 0,
+        "destructive": 1
+      },
+      "pins": {
+        "mcp.context7.resolve_library_id": "sha256:8274b16ba1ab33955e1d8c6888a96a6e881bfbb9adcdb643a345dea291ef9b5e",
+        "mcp.context7.query_docs": "sha256:f2e95030d4e00be68a32fa7acf3476763f1e2c675fefb53417b7e87c077890b4"
+      }
+    }
+  }
+}

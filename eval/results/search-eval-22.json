@@ -1,0 +1,2065 @@
+{
+  "commands": 22,
+  "queries": 36,
+  "backends": {
+    "keyword": {
+      "summary": {
+        "literal": {
+          "n": 10,
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "mrr": 1.0,
+          "empty": 0
+        },
+        "synonym": {
+          "n": 10,
+          "hit@1": 0.4,
+          "hit@3": 0.5,
+          "mrr": 0.45,
+          "empty": 4
+        },
+        "intent": {
+          "n": 10,
+          "hit@1": 0.2,
+          "hit@3": 0.4,
+          "mrr": 0.303,
+          "empty": 1
+        },
+        "out_of_scope": {
+          "n": 6,
+          "hit@1": 0.167,
+          "hit@3": 0.167,
+          "mrr": 0.167,
+          "empty": 0
+        },
+        "all": {
+          "n": 36,
+          "hit@1": 0.472,
+          "hit@3": 0.556,
+          "mrr": 0.515,
+          "empty": 5
+        }
+      },
+      "fallbacks": 0,
+      "seconds": 0.0,
+      "rows": [
+        {
+          "q": "pod logs",
+          "expect": [
+            "k8s.pod.logs"
+          ],
+          "bucket": "literal",
+          "got": [
+            "k8s.pod.logs",
+            "k8s.deployment.restart",
+            "k8s.pod.delete",
+            "k8s.pod.describe",
+            "kubectl.get.pods"
+          ],
+          "rank": 1,
+          "confidence": null,
+          "ms": 0.0,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "list pull requests",
+          "expect": [
+            "gh.pr.list",
+            "mcp.github.list_pulls"
+          ],
+          "bucket": "literal",
+          "got": [
+            "gh.pr.list",
+            "mcp.github.list_pulls",
+            "aws.s3.list",
+            "gh.issue.list",
+            "gh.pr.comment"
+          ],
+          "rank": 1,
+          "confidence": null,
+          "ms": 0.0,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "merge a pull request",
+          "expect": [
+            "gh.pr.merge"
+          ],
+          "bucket": "literal",
+          "got": [
+            "gh.pr.merge",
+            "gh.pr.comment",
+            "gh.pr.list",
+            "gh.pr.view",
+            "mcp.github.list_pulls"
+          ],
+          "rank": 1,
+          "confidence": null,
+          "ms": 0.0,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "restart deployment",
+          "expect": [
+            "k8s.deployment.restart"
+          ],
+          "bucket": "literal",
+          "got": [
+            "k8s.deployment.restart",
+            "k8s.deployment.list",
+            "k8s.deployment.scale"
+          ],
+          "rank": 1,
+          "confidence": null,
+          "ms": 0.0,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "list services",
+          "expect": [
+            "k8s.service.list"
+          ],
+          "bucket": "literal",
+          "got": [
+            "k8s.service.list",
+            "aws.s3.list",
+            "gh.issue.list",
+            "gh.pr.list",
+            "gh.run.list"
+          ],
+          "rank": 1,
+          "confidence": null,
+          "ms": 0.0,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "delete namespace",
+          "expect": [
+            "k8s.namespace.delete"
+          ],
+          "bucket": "literal",
+          "got": [
+            "k8s.namespace.delete",
+            "k8s.pod.delete",
+            "k8s.deployment.list",
+            "k8s.service.list",
+            "kubectl.get.pods"
+          ],
+          "rank": 1,
+          "confidence": null,
+          "ms": 0.0,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "scale deployment replicas",
+          "expect": [
+            "k8s.deployment.scale"
+          ],
+          "bucket": "literal",
+          "got": [
+            "k8s.deployment.scale",
+            "k8s.deployment.list",
+            "k8s.deployment.restart"
+          ],
+          "rank": 1,
+          "confidence": null,
+          "ms": 0.0,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "list s3 buckets",
+          "expect": [
+            "aws.s3.list"
+          ],
+          "bucket": "literal",
+          "got": [
+            "aws.s3.list",
+            "gh.issue.list",
+            "gh.pr.list",
+            "gh.run.list",
+            "k8s.deployment.list"
+          ],
+          "rank": 1,
+          "confidence": null,
+          "ms": 0.0,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "get jira issue",
+          "expect": [
+            "jira.issue.get"
+          ],
+          "bucket": "literal",
+          "got": [
+            "jira.issue.get",
+            "gh.issue.list",
+            "gh.issue.view",
+            "kubectl.get.pods",
+            "pet.getpetbyid"
+          ],
+          "rank": 1,
+          "confidence": null,
+          "ms": 0.0,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "view issue",
+          "expect": [
+            "gh.issue.view",
+            "jira.issue.get"
+          ],
+          "bucket": "literal",
+          "got": [
+            "gh.issue.view",
+            "gh.issue.list",
+            "gh.pr.view",
+            "jira.issue.get"
+          ],
+          "rank": 1,
+          "confidence": null,
+          "ms": 0.0,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "remove a pod",
+          "expect": [
+            "k8s.pod.delete"
+          ],
+          "bucket": "synonym",
+          "got": [
+            "k8s.deployment.restart",
+            "k8s.pod.delete",
+            "k8s.pod.describe",
+            "k8s.pod.logs",
+            "kubectl.get.pods"
+          ],
+          "rank": 2,
+          "confidence": null,
+          "ms": 0.0,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "show container output",
+          "expect": [
+            "k8s.pod.logs"
+          ],
+          "bucket": "synonym",
+          "got": [],
+          "rank": null,
+          "confidence": null,
+          "ms": 0.0,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "reply on a PR",
+          "expect": [
+            "gh.pr.comment"
+          ],
+          "bucket": "synonym",
+          "got": [
+            "gh.pr.comment",
+            "gh.pr.merge",
+            "gh.pr.list",
+            "gh.pr.view",
+            "gh.run.list"
+          ],
+          "rank": 1,
+          "confidence": null,
+          "ms": 0.0,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "bounce the api service pods",
+          "expect": [
+            "k8s.deployment.restart",
+            "k8s.pod.delete"
+          ],
+          "bucket": "synonym",
+          "got": [
+            "k8s.deployment.scale",
+            "k8s.service.list",
+            "kubectl.get.pods"
+          ],
+          "rank": null,
+          "confidence": null,
+          "ms": 0.0,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "open tickets in the repo",
+          "expect": [
+            "gh.issue.list"
+          ],
+          "bucket": "synonym",
+          "got": [
+            "gh.issue.list",
+            "demo.echo",
+            "gh.issue.view",
+            "gh.pr.list",
+            "gh.pr.view"
+          ],
+          "rank": 1,
+          "confidence": null,
+          "ms": 0.0,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "wipe the staging environment",
+          "expect": [
+            "k8s.namespace.delete"
+          ],
+          "bucket": "synonym",
+          "got": [],
+          "rank": null,
+          "confidence": null,
+          "ms": 0.0,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "add more instances of the web app",
+          "expect": [
+            "k8s.deployment.scale"
+          ],
+          "bucket": "synonym",
+          "got": [],
+          "rank": null,
+          "confidence": null,
+          "ms": 0.0,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "storage buckets on amazon",
+          "expect": [
+            "aws.s3.list"
+          ],
+          "bucket": "synonym",
+          "got": [
+            "aws.s3.list",
+            "gh.pr.comment",
+            "gh.pr.merge",
+            "gh.run.list",
+            "k8s.pod.describe"
+          ],
+          "rank": 1,
+          "confidence": null,
+          "ms": 0.0,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "code review requests",
+          "expect": [
+            "gh.pr.list",
+            "mcp.github.list_pulls"
+          ],
+          "bucket": "synonym",
+          "got": [
+            "gh.pr.list",
+            "mcp.github.list_pulls"
+          ],
+          "rank": 1,
+          "confidence": null,
+          "ms": 0.0,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "land this change",
+          "expect": [
+            "gh.pr.merge"
+          ],
+          "bucket": "synonym",
+          "got": [],
+          "rank": null,
+          "confidence": null,
+          "ms": 0.0,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "what broke in CI",
+          "expect": [
+            "gh.run.list"
+          ],
+          "bucket": "intent",
+          "got": [
+            "demo.echo",
+            "gh.issue.list",
+            "gh.issue.view",
+            "gh.pr.view",
+            "k8s.deployment.list"
+          ],
+          "rank": null,
+          "confidence": null,
+          "ms": 0.0,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "why is my pod crashlooping",
+          "expect": [
+            "k8s.pod.describe",
+            "k8s.pod.logs"
+          ],
+          "bucket": "intent",
+          "got": [
+            "kubectl.get.pods",
+            "aws.s3.list",
+            "gh.issue.list",
+            "gh.issue.view",
+            "gh.pr.list"
+          ],
+          "rank": null,
+          "confidence": null,
+          "ms": 0.0,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "is the build green",
+          "expect": [
+            "gh.run.list"
+          ],
+          "bucket": "intent",
+          "got": [
+            "aws.s3.list",
+            "gh.issue.list",
+            "gh.issue.view",
+            "gh.pr.list",
+            "gh.run.list"
+          ],
+          "rank": 5,
+          "confidence": null,
+          "ms": 0.0,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "what is running in production",
+          "expect": [
+            "k8s.deployment.list",
+            "kubectl.get.pods"
+          ],
+          "bucket": "intent",
+          "got": [
+            "gh.issue.list",
+            "gh.issue.view",
+            "k8s.deployment.list",
+            "k8s.service.list",
+            "kubectl.get.pods"
+          ],
+          "rank": 3,
+          "confidence": null,
+          "ms": 0.0,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "leave feedback on a code change",
+          "expect": [
+            "gh.pr.comment"
+          ],
+          "bucket": "intent",
+          "got": [
+            "gh.pr.comment",
+            "gh.pr.merge",
+            "gh.run.list",
+            "k8s.pod.describe",
+            "kubectl.get.pods"
+          ],
+          "rank": 1,
+          "confidence": null,
+          "ms": 0.0,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "turn the service off for now",
+          "expect": [
+            "k8s.deployment.scale"
+          ],
+          "bucket": "intent",
+          "got": [
+            "gh.pr.list",
+            "k8s.deployment.scale",
+            "k8s.pod.logs",
+            "k8s.service.list"
+          ],
+          "rank": 2,
+          "confidence": null,
+          "ms": 0.0,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "which bugs are reported",
+          "expect": [
+            "gh.issue.list"
+          ],
+          "bucket": "intent",
+          "got": [
+            "gh.pr.merge"
+          ],
+          "rank": null,
+          "confidence": null,
+          "ms": 0.0,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "check why the container failed",
+          "expect": [
+            "k8s.pod.describe",
+            "k8s.pod.logs"
+          ],
+          "bucket": "intent",
+          "got": [],
+          "rank": null,
+          "confidence": null,
+          "ms": 0.0,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "what changes are waiting for review",
+          "expect": [
+            "gh.pr.list",
+            "mcp.github.list_pulls"
+          ],
+          "bucket": "intent",
+          "got": [
+            "gh.pr.list",
+            "gh.pr.merge",
+            "k8s.pod.logs"
+          ],
+          "rank": 1,
+          "confidence": null,
+          "ms": 0.0,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "free up the cluster from old test envs",
+          "expect": [
+            "k8s.namespace.delete"
+          ],
+          "bucket": "intent",
+          "got": [
+            "demo.echo"
+          ],
+          "rank": null,
+          "confidence": null,
+          "ms": 0.0,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "book a flight to Paris",
+          "expect": [],
+          "bucket": "out_of_scope",
+          "got": [
+            "gh.issue.list",
+            "gh.pr.list",
+            "k8s.deployment.scale",
+            "aws.s3.list",
+            "demo.echo"
+          ],
+          "rank": null,
+          "confidence": null,
+          "ms": 0.0,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "what's the weather tomorrow",
+          "expect": [],
+          "bucket": "out_of_scope",
+          "got": [],
+          "rank": 1,
+          "confidence": null,
+          "ms": 0.0,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "send an email to my boss",
+          "expect": [],
+          "bucket": "out_of_scope",
+          "got": [
+            "gh.issue.list",
+            "gh.pr.list",
+            "gh.pr.merge",
+            "k8s.deployment.scale",
+            "k8s.namespace.delete"
+          ],
+          "rank": null,
+          "confidence": null,
+          "ms": 0.0,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "transfer $500 to savings",
+          "expect": [],
+          "bucket": "out_of_scope",
+          "got": [
+            "gh.issue.list",
+            "gh.pr.list",
+            "k8s.deployment.scale"
+          ],
+          "rank": null,
+          "confidence": null,
+          "ms": 0.0,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "order a pizza",
+          "expect": [],
+          "bucket": "out_of_scope",
+          "got": [
+            "aws.s3.list",
+            "demo.echo",
+            "gh.issue.list",
+            "gh.issue.view",
+            "gh.pr.comment"
+          ],
+          "rank": null,
+          "confidence": null,
+          "ms": 0.0,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "translate this to French",
+          "expect": [],
+          "bucket": "out_of_scope",
+          "got": [
+            "gh.issue.list",
+            "gh.pr.list",
+            "k8s.deployment.scale"
+          ],
+          "rank": null,
+          "confidence": null,
+          "ms": 0.0,
+          "usage": null,
+          "fallback": null
+        }
+      ],
+      "p50_ms": 0.0,
+      "p95_ms": 0.0
+    },
+    "bm25": {
+      "summary": {
+        "literal": {
+          "n": 10,
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "mrr": 1.0,
+          "empty": 0
+        },
+        "synonym": {
+          "n": 10,
+          "hit@1": 0.2,
+          "hit@3": 0.3,
+          "mrr": 0.295,
+          "empty": 5
+        },
+        "intent": {
+          "n": 10,
+          "hit@1": 0.1,
+          "hit@3": 0.2,
+          "mrr": 0.15,
+          "empty": 8
+        },
+        "out_of_scope": {
+          "n": 6,
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "mrr": 1.0,
+          "empty": 0
+        },
+        "all": {
+          "n": 36,
+          "hit@1": 0.528,
+          "hit@3": 0.583,
+          "mrr": 0.568,
+          "empty": 13
+        }
+      },
+      "fallbacks": 0,
+      "seconds": 0.0,
+      "rows": [
+        {
+          "q": "pod logs",
+          "expect": [
+            "k8s.pod.logs"
+          ],
+          "bucket": "literal",
+          "got": [
+            "k8s.pod.logs",
+            "k8s.pod.describe",
+            "kubectl.get.pods",
+            "k8s.pod.delete",
+            "k8s.deployment.restart"
+          ],
+          "rank": 1,
+          "confidence": null,
+          "ms": 0.1,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "list pull requests",
+          "expect": [
+            "gh.pr.list",
+            "mcp.github.list_pulls"
+          ],
+          "bucket": "literal",
+          "got": [
+            "mcp.github.list_pulls",
+            "gh.pr.list",
+            "gh.pr.comment",
+            "gh.pr.view",
+            "gh.pr.merge"
+          ],
+          "rank": 1,
+          "confidence": null,
+          "ms": 0.1,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "merge a pull request",
+          "expect": [
+            "gh.pr.merge"
+          ],
+          "bucket": "literal",
+          "got": [
+            "gh.pr.merge",
+            "mcp.github.list_pulls",
+            "gh.pr.comment",
+            "gh.pr.list",
+            "gh.pr.view"
+          ],
+          "rank": 1,
+          "confidence": null,
+          "ms": 0.1,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "restart deployment",
+          "expect": [
+            "k8s.deployment.restart"
+          ],
+          "bucket": "literal",
+          "got": [
+            "k8s.deployment.restart",
+            "k8s.deployment.list",
+            "k8s.deployment.scale"
+          ],
+          "rank": 1,
+          "confidence": null,
+          "ms": 0.1,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "list services",
+          "expect": [
+            "k8s.service.list"
+          ],
+          "bucket": "literal",
+          "got": [
+            "k8s.service.list",
+            "k8s.deployment.scale",
+            "gh.issue.list",
+            "k8s.deployment.list",
+            "gh.pr.list"
+          ],
+          "rank": 1,
+          "confidence": null,
+          "ms": 0.1,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "delete namespace",
+          "expect": [
+            "k8s.namespace.delete"
+          ],
+          "bucket": "literal",
+          "got": [
+            "k8s.namespace.delete",
+            "k8s.pod.delete",
+            "k8s.deployment.list",
+            "k8s.service.list",
+            "kubectl.get.pods"
+          ],
+          "rank": 1,
+          "confidence": null,
+          "ms": 0.1,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "scale deployment replicas",
+          "expect": [
+            "k8s.deployment.scale"
+          ],
+          "bucket": "literal",
+          "got": [
+            "k8s.deployment.scale",
+            "k8s.deployment.list",
+            "k8s.deployment.restart"
+          ],
+          "rank": 1,
+          "confidence": null,
+          "ms": 0.1,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "list s3 buckets",
+          "expect": [
+            "aws.s3.list"
+          ],
+          "bucket": "literal",
+          "got": [
+            "aws.s3.list",
+            "gh.issue.list",
+            "k8s.deployment.list",
+            "k8s.service.list",
+            "gh.pr.list"
+          ],
+          "rank": 1,
+          "confidence": null,
+          "ms": 0.1,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "get jira issue",
+          "expect": [
+            "jira.issue.get"
+          ],
+          "bucket": "literal",
+          "got": [
+            "jira.issue.get",
+            "gh.issue.list",
+            "gh.issue.view",
+            "kubectl.get.pods",
+            "pet.getpetbyid"
+          ],
+          "rank": 1,
+          "confidence": null,
+          "ms": 0.1,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "view issue",
+          "expect": [
+            "gh.issue.view",
+            "jira.issue.get"
+          ],
+          "bucket": "literal",
+          "got": [
+            "gh.issue.view",
+            "gh.pr.view",
+            "gh.issue.list",
+            "jira.issue.get"
+          ],
+          "rank": 1,
+          "confidence": null,
+          "ms": 0.1,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "remove a pod",
+          "expect": [
+            "k8s.pod.delete"
+          ],
+          "bucket": "synonym",
+          "got": [
+            "k8s.pod.logs",
+            "k8s.pod.describe",
+            "kubectl.get.pods",
+            "k8s.pod.delete",
+            "k8s.deployment.restart"
+          ],
+          "rank": 4,
+          "confidence": null,
+          "ms": 0.1,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "show container output",
+          "expect": [
+            "k8s.pod.logs"
+          ],
+          "bucket": "synonym",
+          "got": [],
+          "rank": null,
+          "confidence": null,
+          "ms": 0.1,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "reply on a PR",
+          "expect": [
+            "gh.pr.comment"
+          ],
+          "bucket": "synonym",
+          "got": [
+            "gh.pr.comment",
+            "gh.pr.list",
+            "gh.pr.view",
+            "gh.pr.merge"
+          ],
+          "rank": 1,
+          "confidence": null,
+          "ms": 0.1,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "bounce the api service pods",
+          "expect": [
+            "k8s.deployment.restart",
+            "k8s.pod.delete"
+          ],
+          "bucket": "synonym",
+          "got": [
+            "k8s.service.list",
+            "k8s.pod.logs",
+            "k8s.pod.describe",
+            "kubectl.get.pods",
+            "k8s.pod.delete"
+          ],
+          "rank": 5,
+          "confidence": null,
+          "ms": 0.1,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "open tickets in the repo",
+          "expect": [
+            "gh.issue.list"
+          ],
+          "bucket": "synonym",
+          "got": [],
+          "rank": null,
+          "confidence": null,
+          "ms": 0.1,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "wipe the staging environment",
+          "expect": [
+            "k8s.namespace.delete"
+          ],
+          "bucket": "synonym",
+          "got": [],
+          "rank": null,
+          "confidence": null,
+          "ms": 0.1,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "add more instances of the web app",
+          "expect": [
+            "k8s.deployment.scale"
+          ],
+          "bucket": "synonym",
+          "got": [],
+          "rank": null,
+          "confidence": null,
+          "ms": 0.1,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "storage buckets on amazon",
+          "expect": [
+            "aws.s3.list"
+          ],
+          "bucket": "synonym",
+          "got": [
+            "aws.s3.list"
+          ],
+          "rank": 1,
+          "confidence": null,
+          "ms": 0.1,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "code review requests",
+          "expect": [
+            "gh.pr.list",
+            "mcp.github.list_pulls"
+          ],
+          "bucket": "synonym",
+          "got": [
+            "gh.pr.comment",
+            "gh.pr.list",
+            "gh.pr.view",
+            "gh.pr.merge",
+            "mcp.github.list_pulls"
+          ],
+          "rank": 2,
+          "confidence": null,
+          "ms": 0.1,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "land this change",
+          "expect": [
+            "gh.pr.merge"
+          ],
+          "bucket": "synonym",
+          "got": [],
+          "rank": null,
+          "confidence": null,
+          "ms": 0.1,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "what broke in CI",
+          "expect": [
+            "gh.run.list"
+          ],
+          "bucket": "intent",
+          "got": [],
+          "rank": null,
+          "confidence": null,
+          "ms": 0.1,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "why is my pod crashlooping",
+          "expect": [
+            "k8s.pod.describe",
+            "k8s.pod.logs"
+          ],
+          "bucket": "intent",
+          "got": [
+            "k8s.pod.logs",
+            "k8s.pod.describe",
+            "kubectl.get.pods",
+            "k8s.pod.delete",
+            "k8s.deployment.restart"
+          ],
+          "rank": 1,
+          "confidence": null,
+          "ms": 0.1,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "is the build green",
+          "expect": [
+            "gh.run.list"
+          ],
+          "bucket": "intent",
+          "got": [],
+          "rank": null,
+          "confidence": null,
+          "ms": 0.1,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "what is running in production",
+          "expect": [
+            "k8s.deployment.list",
+            "kubectl.get.pods"
+          ],
+          "bucket": "intent",
+          "got": [],
+          "rank": null,
+          "confidence": null,
+          "ms": 0.1,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "leave feedback on a code change",
+          "expect": [
+            "gh.pr.comment"
+          ],
+          "bucket": "intent",
+          "got": [],
+          "rank": null,
+          "confidence": null,
+          "ms": 0.1,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "turn the service off for now",
+          "expect": [
+            "k8s.deployment.scale"
+          ],
+          "bucket": "intent",
+          "got": [
+            "k8s.service.list",
+            "k8s.deployment.scale"
+          ],
+          "rank": 2,
+          "confidence": null,
+          "ms": 0.1,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "which bugs are reported",
+          "expect": [
+            "gh.issue.list"
+          ],
+          "bucket": "intent",
+          "got": [],
+          "rank": null,
+          "confidence": null,
+          "ms": 0.1,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "check why the container failed",
+          "expect": [
+            "k8s.pod.describe",
+            "k8s.pod.logs"
+          ],
+          "bucket": "intent",
+          "got": [],
+          "rank": null,
+          "confidence": null,
+          "ms": 0.1,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "what changes are waiting for review",
+          "expect": [
+            "gh.pr.list",
+            "mcp.github.list_pulls"
+          ],
+          "bucket": "intent",
+          "got": [],
+          "rank": null,
+          "confidence": null,
+          "ms": 0.1,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "free up the cluster from old test envs",
+          "expect": [
+            "k8s.namespace.delete"
+          ],
+          "bucket": "intent",
+          "got": [],
+          "rank": null,
+          "confidence": null,
+          "ms": 0.1,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "book a flight to Paris",
+          "expect": [],
+          "bucket": "out_of_scope",
+          "got": [],
+          "rank": 1,
+          "confidence": null,
+          "ms": 0.1,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "what's the weather tomorrow",
+          "expect": [],
+          "bucket": "out_of_scope",
+          "got": [],
+          "rank": 1,
+          "confidence": null,
+          "ms": 0.1,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "send an email to my boss",
+          "expect": [],
+          "bucket": "out_of_scope",
+          "got": [],
+          "rank": 1,
+          "confidence": null,
+          "ms": 0.1,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "transfer $500 to savings",
+          "expect": [],
+          "bucket": "out_of_scope",
+          "got": [],
+          "rank": 1,
+          "confidence": null,
+          "ms": 0.1,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "order a pizza",
+          "expect": [],
+          "bucket": "out_of_scope",
+          "got": [],
+          "rank": 1,
+          "confidence": null,
+          "ms": 0.1,
+          "usage": null,
+          "fallback": null
+        },
+        {
+          "q": "translate this to French",
+          "expect": [],
+          "bucket": "out_of_scope",
+          "got": [],
+          "rank": 1,
+          "confidence": null,
+          "ms": 0.1,
+          "usage": null,
+          "fallback": null
+        }
+      ],
+      "p50_ms": 0.1,
+      "p95_ms": 0.1
+    },
+    "jev": {
+      "summary": {
+        "literal": {
+          "n": 10,
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "mrr": 1.0,
+          "empty": 0
+        },
+        "synonym": {
+          "n": 10,
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "mrr": 1.0,
+          "empty": 0
+        },
+        "intent": {
+          "n": 10,
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "mrr": 1.0,
+          "empty": 0
+        },
+        "out_of_scope": {
+          "n": 6,
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "mrr": 1.0,
+          "empty": 0
+        },
+        "all": {
+          "n": 36,
+          "hit@1": 1.0,
+          "hit@3": 1.0,
+          "mrr": 1.0,
+          "empty": 0
+        }
+      },
+      "fallbacks": 0,
+      "seconds": 9.15,
+      "rows": [
+        {
+          "q": "pod logs",
+          "expect": [
+            "k8s.pod.logs"
+          ],
+          "bucket": "literal",
+          "got": [
+            "k8s.pod.logs",
+            "aws.s3.list",
+            "demo.echo",
+            "gh.issue.list",
+            "gh.issue.view"
+          ],
+          "rank": 1,
+          "confidence": 1.0,
+          "ms": 384.8,
+          "usage": {
+            "input_tokens": 923,
+            "output_tokens": 214
+          },
+          "fallback": null
+        },
+        {
+          "q": "list pull requests",
+          "expect": [
+            "gh.pr.list",
+            "mcp.github.list_pulls"
+          ],
+          "bucket": "literal",
+          "got": [
+            "gh.pr.list",
+            "mcp.github.list_pulls",
+            "aws.s3.list",
+            "demo.echo",
+            "gh.issue.list"
+          ],
+          "rank": 1,
+          "confidence": 0.94,
+          "ms": 226.8,
+          "usage": {
+            "input_tokens": 924,
+            "output_tokens": 213
+          },
+          "fallback": null
+        },
+        {
+          "q": "merge a pull request",
+          "expect": [
+            "gh.pr.merge"
+          ],
+          "bucket": "literal",
+          "got": [
+            "gh.pr.merge",
+            "aws.s3.list",
+            "demo.echo",
+            "gh.issue.list",
+            "gh.issue.view"
+          ],
+          "rank": 1,
+          "confidence": 1.0,
+          "ms": 257.3,
+          "usage": {
+            "input_tokens": 925,
+            "output_tokens": 214
+          },
+          "fallback": null
+        },
+        {
+          "q": "restart deployment",
+          "expect": [
+            "k8s.deployment.restart"
+          ],
+          "bucket": "literal",
+          "got": [
+            "k8s.deployment.restart",
+            "aws.s3.list",
+            "demo.echo",
+            "gh.issue.list",
+            "gh.issue.view"
+          ],
+          "rank": 1,
+          "confidence": 1.0,
+          "ms": 273.3,
+          "usage": {
+            "input_tokens": 923,
+            "output_tokens": 214
+          },
+          "fallback": null
+        },
+        {
+          "q": "list services",
+          "expect": [
+            "k8s.service.list"
+          ],
+          "bucket": "literal",
+          "got": [
+            "k8s.service.list",
+            "aws.s3.list",
+            "demo.echo",
+            "gh.issue.list",
+            "gh.issue.view"
+          ],
+          "rank": 1,
+          "confidence": 0.99,
+          "ms": 277.8,
+          "usage": {
+            "input_tokens": 923,
+            "output_tokens": 214
+          },
+          "fallback": null
+        },
+        {
+          "q": "delete namespace",
+          "expect": [
+            "k8s.namespace.delete"
+          ],
+          "bucket": "literal",
+          "got": [
+            "k8s.namespace.delete",
+            "aws.s3.list",
+            "demo.echo",
+            "gh.issue.list",
+            "gh.issue.view"
+          ],
+          "rank": 1,
+          "confidence": 1.0,
+          "ms": 227.4,
+          "usage": {
+            "input_tokens": 923,
+            "output_tokens": 214
+          },
+          "fallback": null
+        },
+        {
+          "q": "scale deployment replicas",
+          "expect": [
+            "k8s.deployment.scale"
+          ],
+          "bucket": "literal",
+          "got": [
+            "k8s.deployment.scale",
+            "aws.s3.list",
+            "demo.echo",
+            "gh.issue.list",
+            "gh.issue.view"
+          ],
+          "rank": 1,
+          "confidence": 1.0,
+          "ms": 215.5,
+          "usage": {
+            "input_tokens": 924,
+            "output_tokens": 213
+          },
+          "fallback": null
+        },
+        {
+          "q": "list s3 buckets",
+          "expect": [
+            "aws.s3.list"
+          ],
+          "bucket": "literal",
+          "got": [
+            "aws.s3.list",
+            "demo.echo",
+            "gh.issue.list",
+            "gh.issue.view",
+            "gh.pr.comment"
+          ],
+          "rank": 1,
+          "confidence": 1.0,
+          "ms": 241.2,
+          "usage": {
+            "input_tokens": 925,
+            "output_tokens": 213
+          },
+          "fallback": null
+        },
+        {
+          "q": "get jira issue",
+          "expect": [
+            "jira.issue.get"
+          ],
+          "bucket": "literal",
+          "got": [
+            "jira.issue.get",
+            "aws.s3.list",
+            "demo.echo",
+            "gh.issue.list",
+            "gh.issue.view"
+          ],
+          "rank": 1,
+          "confidence": 1.0,
+          "ms": 257.0,
+          "usage": {
+            "input_tokens": 925,
+            "output_tokens": 213
+          },
+          "fallback": null
+        },
+        {
+          "q": "view issue",
+          "expect": [
+            "gh.issue.view",
+            "jira.issue.get"
+          ],
+          "bucket": "literal",
+          "got": [
+            "gh.issue.view",
+            "aws.s3.list",
+            "demo.echo",
+            "gh.issue.list",
+            "gh.pr.comment"
+          ],
+          "rank": 1,
+          "confidence": 1.0,
+          "ms": 234.2,
+          "usage": {
+            "input_tokens": 923,
+            "output_tokens": 214
+          },
+          "fallback": null
+        },
+        {
+          "q": "remove a pod",
+          "expect": [
+            "k8s.pod.delete"
+          ],
+          "bucket": "synonym",
+          "got": [
+            "k8s.pod.delete",
+            "aws.s3.list",
+            "demo.echo",
+            "gh.issue.list",
+            "gh.issue.view"
+          ],
+          "rank": 1,
+          "confidence": 1.0,
+          "ms": 399.8,
+          "usage": {
+            "input_tokens": 924,
+            "output_tokens": 213
+          },
+          "fallback": null
+        },
+        {
+          "q": "show container output",
+          "expect": [
+            "k8s.pod.logs"
+          ],
+          "bucket": "synonym",
+          "got": [
+            "k8s.pod.logs",
+            "aws.s3.list",
+            "demo.echo",
+            "gh.issue.list",
+            "gh.issue.view"
+          ],
+          "rank": 1,
+          "confidence": 0.94,
+          "ms": 232.5,
+          "usage": {
+            "input_tokens": 924,
+            "output_tokens": 214
+          },
+          "fallback": null
+        },
+        {
+          "q": "reply on a PR",
+          "expect": [
+            "gh.pr.comment"
+          ],
+          "bucket": "synonym",
+          "got": [
+            "gh.pr.comment",
+            "aws.s3.list",
+            "demo.echo",
+            "gh.issue.list",
+            "gh.issue.view"
+          ],
+          "rank": 1,
+          "confidence": 1.0,
+          "ms": 245.8,
+          "usage": {
+            "input_tokens": 925,
+            "output_tokens": 214
+          },
+          "fallback": null
+        },
+        {
+          "q": "bounce the api service pods",
+          "expect": [
+            "k8s.deployment.restart",
+            "k8s.pod.delete"
+          ],
+          "bucket": "synonym",
+          "got": [
+            "k8s.deployment.restart",
+            "aws.s3.list",
+            "demo.echo",
+            "gh.issue.list",
+            "gh.issue.view"
+          ],
+          "rank": 1,
+          "confidence": 0.99,
+          "ms": 261.7,
+          "usage": {
+            "input_tokens": 926,
+            "output_tokens": 214
+          },
+          "fallback": null
+        },
+        {
+          "q": "open tickets in the repo",
+          "expect": [
+            "gh.issue.list"
+          ],
+          "bucket": "synonym",
+          "got": [
+            "gh.issue.list",
+            "aws.s3.list",
+            "demo.echo",
+            "gh.issue.view",
+            "gh.pr.comment"
+          ],
+          "rank": 1,
+          "confidence": 1.0,
+          "ms": 217.0,
+          "usage": {
+            "input_tokens": 926,
+            "output_tokens": 214
+          },
+          "fallback": null
+        },
+        {
+          "q": "wipe the staging environment",
+          "expect": [
+            "k8s.namespace.delete"
+          ],
+          "bucket": "synonym",
+          "got": [
+            "k8s.namespace.delete",
+            "k8s.deployment.restart",
+            "k8s.pod.delete",
+            "aws.s3.list",
+            "demo.echo"
+          ],
+          "rank": 1,
+          "confidence": 0.6,
+          "ms": 267.2,
+          "usage": {
+            "input_tokens": 925,
+            "output_tokens": 214
+          },
+          "fallback": null
+        },
+        {
+          "q": "add more instances of the web app",
+          "expect": [
+            "k8s.deployment.scale"
+          ],
+          "bucket": "synonym",
+          "got": [
+            "k8s.deployment.scale",
+            "aws.s3.list",
+            "demo.echo",
+            "gh.issue.list",
+            "gh.issue.view"
+          ],
+          "rank": 1,
+          "confidence": 1.0,
+          "ms": 249.7,
+          "usage": {
+            "input_tokens": 928,
+            "output_tokens": 213
+          },
+          "fallback": null
+        },
+        {
+          "q": "storage buckets on amazon",
+          "expect": [
+            "aws.s3.list"
+          ],
+          "bucket": "synonym",
+          "got": [
+            "aws.s3.list",
+            "demo.echo",
+            "gh.issue.list",
+            "gh.issue.view",
+            "gh.pr.comment"
+          ],
+          "rank": 1,
+          "confidence": 0.98,
+          "ms": 256.7,
+          "usage": {
+            "input_tokens": 925,
+            "output_tokens": 213
+          },
+          "fallback": null
+        },
+        {
+          "q": "code review requests",
+          "expect": [
+            "gh.pr.list",
+            "mcp.github.list_pulls"
+          ],
+          "bucket": "synonym",
+          "got": [
+            "gh.pr.list",
+            "gh.pr.comment",
+            "mcp.github.list_pulls",
+            "gh.pr.view",
+            "gh.issue.list"
+          ],
+          "rank": 1,
+          "confidence": 0.36,
+          "ms": 265.3,
+          "usage": {
+            "input_tokens": 924,
+            "output_tokens": 213
+          },
+          "fallback": null
+        },
+        {
+          "q": "land this change",
+          "expect": [
+            "gh.pr.merge"
+          ],
+          "bucket": "synonym",
+          "got": [
+            "gh.pr.merge",
+            "aws.s3.list",
+            "demo.echo",
+            "gh.issue.list",
+            "gh.issue.view"
+          ],
+          "rank": 1,
+          "confidence": 0.91,
+          "ms": 276.8,
+          "usage": {
+            "input_tokens": 924,
+            "output_tokens": 214
+          },
+          "fallback": null
+        },
+        {
+          "q": "what broke in CI",
+          "expect": [
+            "gh.run.list"
+          ],
+          "bucket": "intent",
+          "got": [
+            "gh.run.list",
+            "aws.s3.list",
+            "demo.echo",
+            "gh.issue.list",
+            "gh.issue.view"
+          ],
+          "rank": 1,
+          "confidence": 0.96,
+          "ms": 254.0,
+          "usage": {
+            "input_tokens": 925,
+            "output_tokens": 214
+          },
+          "fallback": null
+        },
+        {
+          "q": "why is my pod crashlooping",
+          "expect": [
+            "k8s.pod.describe",
+            "k8s.pod.logs"
+          ],
+          "bucket": "intent",
+          "got": [
+            "k8s.pod.logs",
+            "k8s.pod.describe",
+            "aws.s3.list",
+            "demo.echo",
+            "gh.issue.list"
+          ],
+          "rank": 1,
+          "confidence": 0.7,
+          "ms": 224.8,
+          "usage": {
+            "input_tokens": 929,
+            "output_tokens": 214
+          },
+          "fallback": null
+        },
+        {
+          "q": "is the build green",
+          "expect": [
+            "gh.run.list"
+          ],
+          "bucket": "intent",
+          "got": [
+            "gh.run.list",
+            "aws.s3.list",
+            "demo.echo",
+            "gh.issue.list",
+            "gh.issue.view"
+          ],
+          "rank": 1,
+          "confidence": 0.92,
+          "ms": 246.4,
+          "usage": {
+            "input_tokens": 925,
+            "output_tokens": 214
+          },
+          "fallback": null
+        },
+        {
+          "q": "what is running in production",
+          "expect": [
+            "k8s.deployment.list",
+            "kubectl.get.pods"
+          ],
+          "bucket": "intent",
+          "got": [
+            "k8s.deployment.list",
+            "kubectl.get.pods",
+            "k8s.service.list",
+            "gh.run.list",
+            "k8s.pod.describe"
+          ],
+          "rank": 1,
+          "confidence": 0.57,
+          "ms": 237.1,
+          "usage": {
+            "input_tokens": 926,
+            "output_tokens": 214
+          },
+          "fallback": null
+        },
+        {
+          "q": "leave feedback on a code change",
+          "expect": [
+            "gh.pr.comment"
+          ],
+          "bucket": "intent",
+          "got": [
+            "gh.pr.comment",
+            "aws.s3.list",
+            "demo.echo",
+            "gh.issue.list",
+            "gh.issue.view"
+          ],
+          "rank": 1,
+          "confidence": 1.0,
+          "ms": 220.6,
+          "usage": {
+            "input_tokens": 927,
+            "output_tokens": 214
+          },
+          "fallback": null
+        },
+        {
+          "q": "turn the service off for now",
+          "expect": [
+            "k8s.deployment.scale"
+          ],
+          "bucket": "intent",
+          "got": [
+            "k8s.deployment.scale",
+            "aws.s3.list",
+            "demo.echo",
+            "gh.issue.list",
+            "gh.issue.view"
+          ],
+          "rank": 1,
+          "confidence": 0.99,
+          "ms": 225.1,
+          "usage": {
+            "input_tokens": 927,
+            "output_tokens": 213
+          },
+          "fallback": null
+        },
+        {
+          "q": "which bugs are reported",
+          "expect": [
+            "gh.issue.list"
+          ],
+          "bucket": "intent",
+          "got": [
+            "gh.issue.list",
+            "aws.s3.list",
+            "demo.echo",
+            "gh.issue.view",
+            "gh.pr.comment"
+          ],
+          "rank": 1,
+          "confidence": 0.97,
+          "ms": 262.7,
+          "usage": {
+            "input_tokens": 925,
+            "output_tokens": 214
+          },
+          "fallback": null
+        },
+        {
+          "q": "check why the container failed",
+          "expect": [
+            "k8s.pod.describe",
+            "k8s.pod.logs"
+          ],
+          "bucket": "intent",
+          "got": [
+            "k8s.pod.logs",
+            "k8s.pod.describe",
+            "kubectl.get.pods",
+            "aws.s3.list",
+            "demo.echo"
+          ],
+          "rank": 1,
+          "confidence": 0.75,
+          "ms": 263.8,
+          "usage": {
+            "input_tokens": 926,
+            "output_tokens": 214
+          },
+          "fallback": null
+        },
+        {
+          "q": "what changes are waiting for review",
+          "expect": [
+            "gh.pr.list",
+            "mcp.github.list_pulls"
+          ],
+          "bucket": "intent",
+          "got": [
+            "gh.pr.list",
+            "mcp.github.list_pulls",
+            "aws.s3.list",
+            "demo.echo",
+            "gh.issue.list"
+          ],
+          "rank": 1,
+          "confidence": 0.81,
+          "ms": 252.9,
+          "usage": {
+            "input_tokens": 927,
+            "output_tokens": 213
+          },
+          "fallback": null
+        },
+        {
+          "q": "free up the cluster from old test envs",
+          "expect": [
+            "k8s.namespace.delete"
+          ],
+          "bucket": "intent",
+          "got": [
+            "k8s.namespace.delete",
+            "k8s.pod.delete",
+            "k8s.deployment.scale",
+            "aws.s3.list",
+            "demo.echo"
+          ],
+          "rank": 1,
+          "confidence": 0.93,
+          "ms": 216.1,
+          "usage": {
+            "input_tokens": 930,
+            "output_tokens": 214
+          },
+          "fallback": null
+        },
+        {
+          "q": "book a flight to Paris",
+          "expect": [],
+          "bucket": "out_of_scope",
+          "got": [],
+          "rank": 1,
+          "confidence": 1.0,
+          "ms": 210.4,
+          "usage": {
+            "input_tokens": 926,
+            "output_tokens": 212
+          },
+          "fallback": null
+        },
+        {
+          "q": "what's the weather tomorrow",
+          "expect": [],
+          "bucket": "out_of_scope",
+          "got": [],
+          "rank": 1,
+          "confidence": 1.0,
+          "ms": 227.9,
+          "usage": {
+            "input_tokens": 926,
+            "output_tokens": 212
+          },
+          "fallback": null
+        },
+        {
+          "q": "send an email to my boss",
+          "expect": [],
+          "bucket": "out_of_scope",
+          "got": [],
+          "rank": 1,
+          "confidence": 1.0,
+          "ms": 237.8,
+          "usage": {
+            "input_tokens": 927,
+            "output_tokens": 212
+          },
+          "fallback": null
+        },
+        {
+          "q": "transfer $500 to savings",
+          "expect": [],
+          "bucket": "out_of_scope",
+          "got": [],
+          "rank": 1,
+          "confidence": 1.0,
+          "ms": 263.6,
+          "usage": {
+            "input_tokens": 928,
+            "output_tokens": 212
+          },
+          "fallback": null
+        },
+        {
+          "q": "order a pizza",
+          "expect": [],
+          "bucket": "out_of_scope",
+          "got": [],
+          "rank": 1,
+          "confidence": 1.0,
+          "ms": 282.5,
+          "usage": {
+            "input_tokens": 924,
+            "output_tokens": 212
+          },
+          "fallback": null
+        },
+        {
+          "q": "translate this to French",
+          "expect": [],
+          "bucket": "out_of_scope",
+          "got": [],
+          "rank": 1,
+          "confidence": 0.97,
+          "ms": 260.2,
+          "usage": {
+            "input_tokens": 925,
+            "output_tokens": 212
+          },
+          "fallback": null
+        }
+      ],
+      "p50_ms": 252.9,
+      "p95_ms": 384.8
+    }
+  }
+}

@@ -1,0 +1,43 @@
+command: mcp.everything.simulate_research_query
+version: 1.0.0
+description: Simulates a deep research operation that gathers, analyzes, and synthesizes
+  information. Demonstrates MCP task-based operations with progress through multiple
+  stages. If 'ambiguous' is true and client supports elicitation, sends an elicitation
+  request for clarification.
+category: mcp/everything
+adapter: mcp
+required_scopes:
+- mcp:everything:use
+side_effects: read
+idempotent: true
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    topic:
+      type: string
+      description: The research topic to investigate
+    ambiguous:
+      default: false
+      description: Simulate an ambiguous query that requires clarification (triggers
+        input_required status)
+      type: boolean
+  required:
+  - topic
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - '@modelcontextprotocol/server-everything'
+  tool_name: simulate-research-query
+mcp_pin: sha256:048a7f704c1efd20baa40df316ec000e3e6830435fce117db553172f89d39b7a
+mcp_pin_imported_from: everything
+mcp_pinned_tool:
+  name: simulate-research-query
+  description: Simulates a deep research operation that gathers, analyzes, and synthesizes
+    information. Demonstrates MCP task-based operations with progress through multiple
+    stages. If 'ambiguous' is true and client supports elicitation, sends an elicitation
+    request for clarification.
+  inputSchema: *id001

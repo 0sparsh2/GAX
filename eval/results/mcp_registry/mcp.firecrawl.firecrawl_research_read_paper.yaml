@@ -1,0 +1,60 @@
+command: mcp.firecrawl.firecrawl_research_read_paper
+version: 1.0.0
+description: '
+
+  Retrieve in-body passages from one paper that are relevant to a specific question.
+  Full text is available only for indexed papers; `k` controls the number of passages.
+
+
+  Returns matching passages or a notice when full text is unavailable.
+
+  '
+category: mcp/firecrawl
+adapter: mcp
+required_scopes:
+- mcp:firecrawl:use
+side_effects: read
+idempotent: true
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    paperId:
+      type: string
+      minLength: 1
+      description: Canonical paperId or primaryId such as `arxiv:1706.03762`, `pmcid:PMC12530322`,
+        `pmid:40953549`, or `doi:10.1016/j.neunet.2025.108095`.
+    question:
+      type: string
+      minLength: 1
+    k:
+      description: Number of passages to return (default 4).
+      type: integer
+      minimum: 1
+      maximum: 50
+  required:
+  - paperId
+  - question
+  additionalProperties: false
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - firecrawl-mcp
+  tool_name: firecrawl_research_read_paper
+mcp_pin: sha256:3dd8fe2dbfe7c3176a891952839e8efc3e16f4957778503b104b222d60e4c031
+mcp_pin_imported_from: firecrawl
+mcp_pinned_tool:
+  name: firecrawl_research_read_paper
+  description: '
+
+    Retrieve in-body passages from one paper that are relevant to a specific question.
+    Full text is available only for indexed papers; `k` controls the number of passages.
+
+
+    Returns matching passages or a notice when full text is unavailable.
+
+    '
+  inputSchema: *id001

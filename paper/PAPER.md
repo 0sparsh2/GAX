@@ -1,7 +1,7 @@
 # Governed Agent Execution: Decoupling Tool Discovery, Authorization, and Response Structure in LLM Agent Tool Interfaces
 
-**Version:** 0.1.0 (living document) · **Status:** Working paper — Draft
-**Last revised:** 2026-07-29
+**Version:** 0.2.0 (living document) · **Status:** Working paper — Draft
+**Last revised:** 2026-09-28
 **Corresponding artifact:** [GAX / ACSP reference implementation](https://github.com/0sparsh2/GAX)
 
 > **Living document notice.** This is a continuously revised working paper, not a frozen submission. Claims are tiered by evidence strength (§1.4) and every quantitative result is traceable to a reproducible harness invocation (§10). Superseded claims are retained in [`CHANGELOG.md`](./CHANGELOG.md) rather than silently deleted. Open problems that would change the paper's conclusions are tracked in [`OPEN_QUESTIONS.md`](./OPEN_QUESTIONS.md).
@@ -14,11 +14,13 @@ Large language model (LLM) agents increasingly act on external systems — versi
 
 We argue this is a false dichotomy arising from a *conflation of concerns*: both patterns bind tool **discovery**, **authorization**, and **response structure** to a single interface decision. We present **ACSP** (Agent Capability Shell Protocol) and its reference implementation **GAX** (Governed Agent eXecution), which decompose agent tool access into three planes with distinct visibility to the model — an **invocation plane** the model sees, a **control plane** it never sees, and a **data plane** it sees only in projected form. The design rests on five invariants: lazy discovery, capability tokens per invocation, a uniform response envelope, a registered-command allowlist in place of arbitrary shell, and composable declarative plans.
 
-We evaluate on an 18-task suite spanning happy paths, error handling, policy denial, output truncation, multi-turn sessions, and plan failure, measuring agent-context cost with `tiktoken` (`cl100k_base`) across 18 modalities. We deliberately report **separate metrics rather than a weighted composite**, because the authors designed the system under test. Results are genuinely mixed and we report them as such: raw CLI achieves the lowest median context cost (113 tokens) but 0% audit coverage and 0% structured-response rate; GAX costs modestly more (140 tokens, a 1.24× overhead) while achieving 80% audit and structured-envelope coverage; naive MCP with a 43-tool schema fixture costs 44,061 median tokens, roughly 390× the CLI baseline, with no governance benefit in return. A live probe of `@modelcontextprotocol/server-github` measured 4,450 schema tokens across 26 tools, confirming the schema tax is real but that the widely-cited 44k figure reflects larger catalogs than a single contemporary server.
+We evaluate on an 18-task suite spanning happy paths, error handling, policy denial, output truncation, multi-turn sessions, and plan failure, measuring agent-context cost with `tiktoken` (`cl100k_base`). We deliberately report **separate metrics rather than a weighted composite**, and compare modalities only on **tasks both completed** — an earlier version of this paper compared medians over different task subsets and understated GAX's cost by about 3× (§5.4, `CHANGELOG.md`). Results are mixed and we report them as such. On paired tasks raw CLI costs a median 79 tokens and GAX 248 — a **3.48× overhead, about 170 tokens absolute** — for pre-invocation enforcement and a structured, audited response. Naive MCP with a 43-tool schema fixture costs 44,062 median tokens; a live probe of `@modelcontextprotocol/server-github` measured 4,450 schema tokens across 26 tools, so the widely cited 44k figure reflects larger catalogs than a single contemporary server.
 
-Four ablations isolate which invariants carry the result. Removing the envelope drops median cost to 56 tokens but structured-response rate to zero, establishing the envelope's price at roughly 84 tokens per invocation. Adding schema preloading to the GAX path raises median cost to 44,170 tokens, demonstrating that the token advantage derives from lazy discovery specifically, not from the protocol as a whole. A permissive-capability ablation succeeds on a task the governed path refuses, isolating the capability check as the mechanism of policy enforcement. Against a `gh`-plus-logging-proxy comparator — the most common reviewer objection — we find comparable token cost but no pre-invocation enforcement, supporting our claim that post-hoc logging and fail-closed authorization are not substitutes.
+We also measure what the token harness cannot: whether enforcement holds and whether agents find the right command. A read-only capability was refused on all 41 write and destructive commands in an 87-command registry even when the command was explicitly allowlisted, with no over-blocking. An MCP server that rewrote its own tool after approval — description, schema, name, or disappearance — was refused before execution in 4 of 4 cases, with no false alarms across 65 pins re-verified against five public servers. For command selection, keyword matching found the right command first 33% of the time at 87 commands and 0% on intent-style requests; a selection model (Jev) scored 100% on both, at ~250 ms per query.
 
-Our central finding is that **the token cost of governance is small; the token cost of eager schema injection is large; and these are separable concerns.** We explicitly do not claim GAX is superior overall — no such claim survives our own data.
+Ablations isolate which invariants carry the result. Removing the envelope cuts cost by about 78 tokens per invocation on paired tasks while dropping structured responses to zero. A permissive-capability ablation performs an action the governed path refuses, isolating the capability check as the enforcement mechanism. Against a `gh`-plus-logging-proxy comparator — the most common objection — the proxy is **cheaper** than GAX on paired tasks (93 vs 161 tokens); what it cannot do is refuse an action before it runs. We previously reported the opposite token result; it was an artifact of unpaired comparison.
+
+Our central finding is that **governance costs a few hundred tokens per invocation, eager schema injection costs thousands to tens of thousands, and these are separable concerns.** We explicitly do not claim GAX is superior overall — no such claim survives our own data.
 
 **Keywords:** LLM agents, tool use, Model Context Protocol, capability-based security, agent governance, context engineering, protocol design
 
@@ -178,9 +180,15 @@ Three design decisions deserve note. **`audit_id` is mandatory on every response
 
 GAX is a Python 3.10+ implementation in two parts: `gax`, a client CLI handling discovery, auth, invocation, and plans; and `gaxd`, an HTTP sidecar owning the registry, policy engine, projection, and audit log. Commands are declared as YAML manifests specifying adapter, required scopes, side effects, and I/O schemas, and may be generated from OpenAPI specifications.
 
-Four adapters are implemented: `exec` (wraps existing CLIs such as `gh`), `mcp` (one ACSP command per MCP tool, schema retained in the sidecar), `http` (OpenAPI-derived), and `mock` (credential-free testing). Semantic exit codes distinguish policy denial (2), invalid capability (3), not found (4), and adapter error (5) — failure modes an agent should handle differently.
+Five adapters are implemented: `exec` (wraps existing CLIs such as `gh`), `k8s` (argv-only `kubectl` with DNS-1123 validation and server-side dry run), `mcp` (one ACSP command per MCP tool, schema retained in the sidecar), `http` (OpenAPI-derived), and `mock` (credential-free testing). Semantic exit codes distinguish policy denial (2), invalid capability (3), not found (4), adapter error (5), and pin mismatch (6) — failure modes an agent should handle differently.
 
-**Maturity is uneven and we state it plainly [A].** The envelope, sidecar, manifest registry, capability minting, plans, and OAuth device flow are working. The MCP bridge is a functioning prototype without connection pooling. Enterprise integrations — HashiCorp Vault, SPIFFE, OPA, compliance export — are hooks and stubs, not production deployments. `kubectl`, `aws`, and `jira` commands exist as mocks. Claims in this paper are scoped to the working subset.
+Three mechanisms added since v0.1.0 are evaluated in §6.3–6.4:
+
+- **Side-effect ceiling.** Every command declares `read`, `write`, or `destructive`; every capability carries a ceiling (default `read`). A command above the ceiling is refused *even if the capability allowlists it by name*, so an allowlist edit cannot silently promote a read-only credential. Undeclared levels fail closed to `destructive`.
+- **Pinned MCP import.** `gax mcp import` turns any MCP server's `tools/list` into governed commands and records a SHA-256 over each tool's name, description, and input schema. The live tool is re-hashed before every invocation; a mismatch fails closed. Description is pinned because it is instruction text for the model — the tool-poisoning vector.
+- **Pluggable command search.** `gax_search` ranks commands with keyword matching or, when a key is configured, a remote selection model (TypeSafe Jev) that chooses among the registered commands plus an explicit "none" option. It sends the query and command descriptions — never arguments, capabilities, or audit data — and falls back to keyword matching on any failure.
+
+**Maturity is uneven and we state it plainly [A].** The envelope, sidecar, manifest registry, capability minting, side-effect ceiling, pinned import, plans, and OAuth device flow are working, and the package is published. The MCP bridge spawns a process per call (no connection pooling) and the sidecar handles one request at a time. Enterprise integrations — HashiCorp Vault, SPIFFE, OPA, compliance export — are hooks and stubs. `aws` and `jira` commands are mocks. Claims in this paper are scoped to the working subset.
 
 ---
 
@@ -196,6 +204,10 @@ Second, **adversarial ablations.** The ablation suite (§7) is constructed to fi
 
 Third, **external claims remain external.** The largest numbers in §2 are third-party and tiered **[E]**. We did not replicate them.
 
+Fourth, **we compare like with like, and we have been wrong about this before.** Each modality runs a different subset of the suite (CLI has no equivalent for mock or discovery tasks), so a median per modality compares different workloads. v0.1.0 did exactly that and reported GAX at 1.24× CLI; paired on shared tasks it is ~3.5×. Every cross-modality token claim in this version is paired (§5.3), and v0.1.0's unpaired claims are retracted in `CHANGELOG.md`.
+
+Fifth, **we discard runs from a broken environment, and say so.** The first refresh for this version used a revoked GitHub token. It produced a complete, plausible-looking run — CLI completion 0.00, one task showing GAX *cheaper* than CLI — and was discarded. A self-evaluation that can be silently corrupted this way should disclose when it happened.
+
 ### 5.2 Task suite and modalities
 
 Eighteen tasks span happy paths, error conditions, policy denial, output truncation, multi-turn sessions, plan failure, and discovery-only operations, against `octocat/Hello-World` where live access is required.
@@ -204,7 +216,13 @@ Eighteen modalities are measured, grouped as: **baselines** (`cli`, `mcp_naive_4
 
 ### 5.3 Measurement
 
-Tokens are counted with `tiktoken` `cl100k_base` over the simulated agent transcript, falling back to `len(text)//4` only if unavailable. Metrics: `success` (completed as intended), `has_audit_id`, `structured_envelope` (valid envelope v1 with a `data` object). We report **medians**, since schema-tax distributions are heavily skewed by fixed per-session costs.
+Tokens are counted with `tiktoken` `cl100k_base` over the simulated agent transcript, falling back to `len(text)//4` only if unavailable.
+
+**Token comparisons are paired.** A cross-modality claim is computed only over tasks where both modalities produced a real row, and reported as per-task ratios with their median and range (`paired_by_modality_pair` in `comparison.json`). Per-modality medians are still reported, but as distributions, not rankings.
+
+**Success is decomposed** into three axes, because a single rate that counts expected failures as successes reads 1.00 for every modality and measures nothing: `completion` (the operation succeeded on its own terms), `expected_outcome` (the result matched the task's declared expectation, including intended failures), and `fail_closed` (enforcement fired *before* the adapter ran — scored only for modalities that have an enforcement layer, and only on tasks meant to be blocked). Audit-id and envelope rates are architectural constants, reported as by-design properties rather than measurements.
+
+Two further benchmarks cover what tokens cannot (§6.3–6.4): an **enforcement** benchmark (`run_security_eval.py`) and a **selection** benchmark (`run_search_eval.py`, 36 queries in literal, synonym, intent, and out-of-scope buckets, scored hit@1).
 
 ### 5.4 Threats to validity
 
@@ -218,7 +236,11 @@ We state these before results, not after, because they qualify the numbers rathe
 
 **Schema fixture provenance [E].** The 44k figure is a published Scalekit measurement, not ours. Our live probe measured 4,450 tokens for a 26-tool server. Conclusions about naive MCP are therefore *conditional on catalog size*, and we present both.
 
-**Success-rate artifacts.** Several modalities show non-1.0 success rates due to intentional environment restrictions (e.g. mock-only runs cannot execute live `gh`). These reflect harness configuration, not interface quality, and we avoid drawing quality conclusions from them.
+**Small n on some pairs.** The bridge comparisons rest on two paired tasks, and the proxy comparisons on five. They are reported with n and should be read as indicative.
+
+**Author-written selection queries.** The 36 search queries were written by the author, and the out-of-scope confidence threshold (0.7) was tuned on the same six queries it is scored on. A held-out, third-party query set would be stronger.
+
+**Live servers drift.** Public MCP servers change between runs: filesystem grew from 3,127 to 3,345 schema tokens and memory from 2,676 to 2,955 between July and September 2026. Import snapshots (`eval/results/mcp_registry/snapshot.json`) record the exact tool set each number was measured on.
 
 ---
 
@@ -226,36 +248,75 @@ We state these before results, not after, because they qualify the numbers rathe
 
 All figures from the extended run recorded in `eval/results/comparison.json` **[M]**.
 
-### 6.1 Primary comparison
+### 6.1 Token cost
 
-| Modality | n | Success | Median tokens | Audit-id | Structured envelope |
-|----------|---:|---:|---:|---:|---:|
-| `cli` | 7 | 1.00 | **113** | 0% | 0% |
-| `gax` | 15 | 1.00 | 140 | **80%** | **80%** |
-| `gax_plan` | 2 | 1.00 | 488 | **100%** | **100%** |
-| `gax_mcp_bridge` | 2 | 1.00 | 610 | **100%** | **100%** |
-| `programmatic_mcp` | 6 | 1.00 | 1,086 | 0% | 0% |
-| `mcp_live_github` (26 tools) | 6 | 1.00 | 4,488 | 0% | 0% |
-| `mcp_naive_43` (fixture) | 12 | 1.00 | 44,061 | 0% | 0% |
+**Paired** — only tasks both modalities completed:
 
-Medians are over **successful runs only**, matching the published harness tables; modality `n` therefore reflects completed runs, not attempts. Failed and skipped runs record `tokens: 0`, so medians over all rows differ substantially (e.g. `cli` 40 vs 113) — the population choice is load-bearing and is fixed by `CHANGELOG.md` for future revisions. Even-`n` medians are reported floored, following the harness.
+| Pair | n | median A | median B | median ratio | range |
+|------|--:|---------:|---------:|-------------:|-------|
+| `cli` → `gax` | 6 | 79 | 248 | **3.48×** | 1.3–5.9× |
+| `cli` → `gax_mcp_bridge` | 2 | 112 | 579 | 5.17× | 4.0–6.3× |
+| `gax_mcp_bridge` → `mcp_naive_live` | 2 | 579 | 4,489 | 7.76× | 6.3–10.0× |
 
-**Finding 1 — CLI wins on tokens; the margin is small [M].** Raw CLI is the cheapest realistic modality at 113 median tokens. GAX costs 140, an overhead of **27 tokens (1.24×)**. We report this as a CLI win because it is one.
+**Per-modality distribution** — each over its own task subset, *not* a ranking:
 
-**Finding 2 — governance is nearly free; eager schema injection is not [M].** The 27-token premium buys 80% audit and structured-envelope coverage. The naive MCP path costs 43,948 *additional* tokens over CLI — **1,627× the cost of GAX's governance overhead** — and delivers 0% on both governance axes. Cost and governance are not on the same axis, and the expensive pattern is not the governed one.
+| Modality | n | Median tokens | Completion | Expected outcome |
+|----------|--:|--------------:|-----------:|-----------------:|
+| `cli` | 7 | 97 | 0.57 | 1.00 |
+| `gax` | 15 | 139 | 0.73 | 1.00 |
+| `gax_mcp_bridge` | 2 | 709 | 1.00 | 1.00 |
+| `programmatic_mcp` | 6 | 1,088 | 1.00 | 1.00 |
+| `mcp_naive_live` (26 tools, measured) | 11 | 4,483 | 0.73 | 1.00 |
+| `mcp_naive_43` (fixture, modeled) | 12 | 44,062 | 0.75 | 1.00 |
 
-**Finding 3 — schema cost scales with catalog, not protocol [M].** Live servers measured 4,450 (github, 26 tools), 3,127 (filesystem, 14), and 2,676 (memory, 9) schema tokens. The 44k fixture models a large aggregated catalog. Naive MCP's cost is therefore a *deployment* property. It is also cumulative: an agent connected to all three live servers pays ~10,253 tokens before its first turn.
+A 3-turn PR-triage workflow (`eval/case_study/`, simulated transcripts) gives cli 158, gax 689 (**4.4×**), bridge 703, naive MCP 44,062.
 
-**Finding 4 — the bridge governs MCP tools at a fraction of naive cost [M].** `gax_mcp_bridge` reaches 100% audit and envelope coverage at 610 median tokens versus 4,488 for the same server accessed naively — **86% cheaper with strictly more governance**, because the schema stays in the sidecar.
+**Finding 1 — CLI wins on tokens, by more than we first reported [M].** On paired tasks GAX costs 3.48× CLI, about 170 tokens absolute per invocation; over a multi-turn workflow, 4.4×. v0.1.0 reported 1.24× and ~27 tokens from unpaired medians; that figure is retracted.
+
+**Finding 2 — governance and eager discovery are still costs of different magnitude [M].** The ~170-token governance premium is roughly 26× smaller than one live server's schema (4,450 tokens) and ~260× smaller than the 43-tool fixture. The separation that motivates the paper survives the correction; the claim that governance is "nearly free" does not, and is withdrawn.
+
+**Finding 3 — schema cost scales with catalog, not protocol [M].** Live servers measured 4,450 (github, 26 tools), 3,345 (filesystem, 14), and 2,955 (memory, 9) schema tokens. An agent connected to all three pays ~10,750 tokens before its first turn. Naive MCP's cost is a *deployment* property.
+
+**Finding 4 — the bridge governs MCP tools at a fraction of naive cost [M].** On the two paired tasks, `gax_mcp_bridge` costs 579 median tokens versus 4,489 for the same server accessed naively — **87% cheaper**, with audit and envelope coverage the naive path lacks. n = 2; the direction is driven by the fixed schema term and is robust, the magnitude is not.
 
 ### 6.2 Pareto structure
 
-- **Lowest median tokens:** `gax_ablation_no_envelope` (56) — *an ablation, not the advocated system*
-- **Highest success rate:** thirteen modalities tie at 1.00
-- **Highest audit-id rate:** all GAX variants (1.00, except baseline `gax` at 0.80)
-- **Highest structured-envelope rate:** `gax_mcp_bridge`, `gax_plan`, `gax_ablation_no_cap`, `gax_ablation_schema_preload`
+Pareto winners are reported per axis (`pareto_winners_per_axis`). The **token axis is deliberately excluded** from that computation: ranking per-modality medians would reintroduce the unpaired comparison of §5.4. Token comparisons live in §6.1's paired table.
 
-**No modality dominates all axes.** The token-optimal configuration is one we do not recommend, because it discards the structured envelope. This is the honest shape of the result and we decline to smooth it with a composite score.
+On the remaining axes every modality reaches 1.00 `expected_outcome`; `gax_mcp_bridge` and `programmatic_mcp` lead `completion`; and only GAX paths register on `fail_closed`. Baseline `gax` scores 0.50 there (n = 4): two of its four expected-failure tasks are an invalid repository and an invalid PR number, where the backend was reached and returned an error. That is correct behaviour — those are not authorization failures — and we report the 0.50 rather than redefining the metric to reach 1.00.
+
+**No modality dominates all axes.** We decline to smooth this with a composite score.
+
+### 6.3 Enforcement
+
+`eval/run_security_eval.py`, results in `security-eval.json` **[M]**. The registry is 87 commands: bundled, two profiles, and 65 tools imported from five public MCP servers.
+
+| Check | Result |
+|---|---:|
+| Read-only capability refused on write/destructive commands, **command explicitly allowlisted** | **41/41** |
+| Capability at the command's own level allowed (no over-blocking) | **41/41** |
+| MCP tool changed after approval, refused before running — description, schema, rename, vanish | **4/4** |
+| Honest server unaffected | yes |
+| Pins re-verified against 65 real public-server tools — false alarms | **0** |
+
+**Finding 6 — the ceiling holds independently of the allowlist [M].** Naming a destructive command in a read-only capability does not make it invocable. The check is a second, independent condition, so a single mistaken allowlist edit cannot delete anything. The positive control matters as much as the refusal: a check that refuses everything would also score 41/41 on the first row.
+
+**Finding 7 — pinning detects contract changes without false alarms [M].** Rewriting a tool's description — instruction text the model will follow — is caught with the schema untouched. Unchanged real servers produced no mismatches, which is what keeps operators from disabling the check.
+
+### 6.4 Command selection
+
+`eval/run_search_eval.py`, 36 queries, results in `search-eval-{22,87}.json` **[M]**. hit@1 = the first result is correct, i.e. no extra agent turn.
+
+| Registry | Backend | literal | synonym | intent | out-of-scope | all | p50 latency |
+|---:|---|---:|---:|---:|---:|---:|---:|
+| 22 | keyword | 1.00 | 0.40 | 0.20 | 0.17 | 0.47 | <1 ms |
+| 22 | Jev | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 253 ms |
+| 87 | keyword | 1.00 | 0.20 | 0.00 | 0.00 | 0.33 | <1 ms |
+| 87 | Jev | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 272 ms |
+
+**Finding 8 — lexical discovery degrades as the catalog grows [M].** Keyword matching is perfect when the agent uses the manifest's words and fails otherwise; importing real MCP servers adds noise that drives intent-style requests ("what broke in CI") from 0.20 to 0.00. A selection model held at 1.00, with latency nearly flat in catalog size and ~57 remote input tokens per command. Lazy discovery (§7.2) removes the *schema* cost of a large catalog; this result is about the *selection* cost, which lazy discovery alone does not address.
+
+Two design choices were forced by measurement. Without an explicit "none" option the model always picked something ("order a pizza" → a browser-automation tool at 0.72 confidence); with it, all six out-of-scope queries were refused. And sending all commands was more accurate than a lexical prefilter to 64, at no latency cost.
 
 ---
 
@@ -265,45 +326,48 @@ Ablations answer the attribution question: *which invariants produce the effect?
 
 ### 7.1 Envelope removal — pricing the structure
 
-| Modality | Median tokens | Audit | Envelope |
-|----------|---:|---:|---:|
-| `gax` | 140 | 0.80 | 0.80 |
-| `gax_ablation_no_envelope` | **56** | 0.79 | **0.00** |
+Paired on the 10 tasks both completed:
 
-Returning raw JSON instead of envelope v1 cuts median cost by 60%. **The envelope costs ~84 tokens per invocation [M]** — the price of `ok`, `cmd`, `audit_id`, `meta`, and `next` on every response.
+| Modality | Median tokens |
+|----------|---:|
+| `gax_ablation_no_envelope` | 65 |
+| `gax` | 143 |
 
-This is the study's most useful number and the one most damaging to a naive pro-GAX reading: a deployment that does not need machine-parseable responses should not pay for them. The envelope is justified when uniform failure handling and audit correlation matter — and only then. Note that `audit_id` coverage is essentially unchanged (0.79), since the sidecar logs regardless of projection; what is lost is the agent's ability to *parse* results uniformly.
+Returning raw JSON instead of envelope v1 cuts median cost by about half. **The envelope costs ~78 tokens per invocation [M]** (v0.1.0 reported ~84 from unpaired medians; the conclusion is unchanged) — the price of `ok`, `cmd`, `audit_id`, `meta`, and `next` on every response.
+
+This is the study's most useful number and the one most damaging to a naive pro-GAX reading: a deployment that does not need machine-parseable responses should not pay for them. The envelope is justified when uniform failure handling and audit correlation matter — and only then. `audit_id` coverage is unchanged by the ablation, since the sidecar logs regardless of projection; what is lost is the agent's ability to *parse* results uniformly.
 
 ### 7.2 Schema preloading — isolating the mechanism
 
 | Modality | Median tokens |
 |----------|---:|
-| `gax` | 140 |
-| `gax_ablation_schema_preload` | **44,170** |
-| `mcp_naive_43` | 44,061 |
+| `gax` | 139 |
+| `gax_ablation_schema_preload` | 44,163 |
+| `mcp_naive_43` | 44,062 |
 
-Adding eager schema injection to the GAX path reproduces naive MCP's cost almost exactly (within 0.25%). **GAX's token advantage comes from lazy discovery specifically, not from ACSP as a whole [M].** Any protocol adopting lazy discovery would capture the same benefit; conversely, ACSP deployed with eager discovery would forfeit it entirely. This is the cleanest attribution in the study, and it deliberately limits the credit ACSP can claim.
+Adding eager schema injection to the GAX path reproduces naive MCP's cost almost exactly. **This agreement is arithmetic, not an independent measurement [A]:** both modalities add the same 44,026-token fixture to a small transcript, so they could not have differed by much. What the ablation establishes is the attribution argument, not a measured coincidence — **GAX's token advantage comes from lazy discovery specifically, not from ACSP as a whole.** Any protocol adopting lazy discovery would capture the same benefit; conversely, ACSP deployed with eager discovery would forfeit it entirely. This is the cleanest attribution in the study, and it deliberately limits the credit ACSP can claim.
 
 ### 7.3 Capability removal — isolating enforcement
 
-On the `policy_denied` task, baseline `gax` **fails closed** while `gax_ablation_no_cap` (permissive capability) **succeeds in performing the action** **[M]**. The difference is attributable to the capability check alone — not the envelope, not discovery, not the sidecar's existence. Refusal is a property of the authorization mechanism, and removing it removes the refusal.
+On the `policy_denied` task, baseline `gax` **fails closed** while `gax_ablation_no_cap` (permissive capability) **succeeds in performing the action** **[M]**. The difference is attributable to the capability check alone — not the envelope, not discovery, not the sidecar's existence. Refusal is a property of the authorization mechanism, and removing it removes the refusal. In the decomposed metrics, `gax` records `fail_closed` on this task and the ablation records a completed action. §6.3 generalises the test from one task to every mutating command in the registry.
 
 ### 7.4 Against `gh` + a logging proxy
 
-The most common reviewer objection: *why not run `gh` and log it?* We implemented that comparator.
+The most common reviewer objection: *why not run `gh` and log it?* We implemented that comparator. Paired on the five tasks both completed:
 
 | Modality | Median tokens | Audit-id | Envelope | Pre-invoke enforcement |
 |----------|---:|---:|---:|---|
-| `cli` | 113 | 0% | 0% | No |
-| `cli_logged_proxy` | 159 | 0%* | 0% | **No** |
-| `cli_agent_spec` | 170 | 0% | 0% | No |
-| `gax` | 140 | 80% | 80% | **Yes** |
+| `cli_logged_proxy` | **93** | post-hoc* | no | **No** |
+| `cli_agent_spec` | 95 | no | structured, not governed | No |
+| `gax` | 161 | yes | yes | **Yes** |
 
-\* synthetic post-hoc log line, not a protocol-guaranteed identifier.
+\* a synthetic log line written after the command ran, not a protocol-guaranteed identifier.
 
-**Finding 5 [M] + [A].** The logging proxy costs *more* than GAX (159 vs 140) while providing strictly less. The token argument for proxying does not hold in our measurements. More fundamentally, a proxy observes what the model already ran; it cannot shrink the action surface (arbitrary shell remains available), cannot fail closed before execution, and cannot supply a uniform envelope. Logging and authorization are different mechanisms with different failure modes: a proxy tells you what happened, a capability check determines what *can* happen. §7.3 shows the latter changes outcomes.
+**Finding 5 (revised) — a logging proxy is cheaper, and cannot refuse [M] + [A].** The proxy costs about 58% of GAX's tokens. v0.1.0 reported the reverse (159 vs 140) from unpaired medians and concluded that "the token argument for proxying does not hold"; that conclusion is **retracted**. The token argument for proxying does hold.
 
-Notably `cli_agent_spec` — the strongest CLI-side comparator, with genuinely structured output — costs 170 tokens, *more* than GAX, while lacking the control plane. Structured output alone does not confer governance.
+What survives is the mechanism argument, and it is the one that matters. A proxy observes what the model already ran: it cannot shrink the action surface (arbitrary shell remains available), cannot fail closed before execution, and cannot stop a changed third-party tool. §7.3 and §6.3 show refusal is measurable, and it is what the extra ~70 tokens buy. A deployment that needs a record but not prevention should use the proxy.
+
+`cli_agent_spec` — structured CLI output without a control plane — is likewise cheaper than GAX. Structured output alone is cheap; governance is what costs.
 
 ---
 
@@ -311,11 +375,15 @@ Notably `cli_agent_spec` — the strongest CLI-side comparator, with genuinely s
 
 ### 8.1 What the evidence supports
 
-**Decoupling is achievable and cheap [M].** Governance-per-invocation costs ~27 tokens over raw CLI; structured envelopes cost ~84. Both are small relative to any realistic tool response, and both are two to three orders of magnitude below eager schema injection.
+**Decoupling is achievable at a modest, stated cost [M].** Governance-per-invocation costs ~170 tokens over raw CLI on paired tasks, of which the envelope is ~78. That is an order of magnitude or more below eager schema injection from even a single live server.
 
-**The dichotomy is false [M] + [A].** "Efficient but ungoverned" versus "governed but expensive" does not survive measurement. The expensive property (eager discovery) and the governance properties (capabilities, envelopes, audit) are independent, and §7.2 demonstrates the independence directly by transplanting the expensive property onto the governed system.
+**The dichotomy is false [M] + [A].** "Efficient but ungoverned" versus "governed but expensive" does not survive measurement. The expensive property (eager discovery) and the governance properties (capabilities, envelopes, audit) are independent; §7.2 shows the independence by transplanting the expensive property onto the governed system.
 
-**MCP need not be replaced [M].** The bridge governs MCP tools at 86% lower context cost than naive access. ACSP is a coordination layer over MCP, not a competitor for the same slot.
+**Enforcement is independent of naming [M].** A side-effect ceiling refused every mutating command to a read-only credential even when the credential named the command, with no over-blocking (§6.3).
+
+**A changed third-party tool can be stopped before it runs [M].** Pinning caught every contract change tried, including description-only rewrites, with no false alarms on unchanged public servers (§6.3).
+
+**MCP need not be replaced [M].** The bridge governs MCP tools at ~87% lower context cost than naive access (n = 2). ACSP is a coordination layer over MCP, not a competitor for the same slot.
 
 ### 8.2 What the evidence does not support
 
@@ -329,6 +397,14 @@ We state these directly rather than in a closing caveat.
 
 **Simulated transcripts may not reflect real agent behavior [U].** Real models may consume turns differently across interfaces. This could narrow the gap we report, and no result in §6 is safe from it.
 
+**Governance is not "nearly free" [M].** v0.1.0 said it was. At ~3.5× CLI on paired tasks and ~4.4× over a multi-turn workflow, it is a real cost that deployments should weigh.
+
+**A logging proxy is cheaper than GAX [M].** Where prevention is not required, it is the better tool (§7.4).
+
+**Pinning covers the declared contract, not the implementation [A].** The hash covers a tool's name, description, and input schema. A server that changes what a tool *does* while advertising the same contract is not detected. Pinning closes the description-poisoning vector; it is not a substitute for trusting, sandboxing, or auditing the server.
+
+**Better selection depends on a remote model [M] + [A].** The Jev results require a network call to a third party (~250 ms, query and command descriptions leave the machine). Without a key GAX falls back to keyword matching, which scored 0.33 at 87 commands. The selection result is therefore a property of GAX-plus-a-vendor, not of ACSP.
+
 **Enterprise claims are unproven [A].** Vault, SPIFFE, OPA, and compliance export are hooks and stubs. No production deployment, no threat model at security-venue rigor, no conformance suite at scale.
 
 ### 8.3 When to use what
@@ -336,9 +412,11 @@ We state these directly rather than in a closing caveat.
 | Context | Recommendation | Basis |
 |---------|----------------|-------|
 | Single-user, trusted creds, no audit need | **Raw CLI** | Cheapest; premium buys unneeded properties |
-| Token-constrained, governance not required | **Optimized MCP / code mode** | 1,086 tok, mature |
-| Multi-tenant, audit or policy required | **ACSP / GAX** | Governance at ~1.24× CLI cost |
-| Existing MCP investment, context pressure | **ACSP bridge over MCP** | 86% cheaper, schema stays in sidecar |
+| Token-constrained, governance not required | **Optimized MCP / code mode** | ~1,088 tok, mature |
+| Multi-tenant, audit or policy required | **ACSP / GAX** | Pre-invoke enforcement at ~3.5× CLI tokens (~170 absolute) |
+| Record of actions needed, prevention not required | **CLI + logging proxy** | Cheaper than GAX; cannot refuse |
+| Existing MCP investment, context pressure | **ACSP bridge over MCP** | ~87% cheaper than naive (n = 2), schema stays in sidecar |
+| Untrusted third-party MCP servers | **ACSP with pinned import** | Contract changes refused pre-invoke |
 | Regulated environment | **ACSP — with caveats** | Protocol fits; enterprise integrations are stubs |
 
 ### 8.4 Generalizable lessons
@@ -347,15 +425,16 @@ Independent of ACSP's fate, three findings should transfer **[A]**:
 
 1. **Discovery cost should scale with use, not catalog size.** §7.2 shows this is the dominant term; any protocol can adopt it.
 2. **Audit belongs in the response contract.** An identifier produced by the same code path as the result cannot be omitted by a misconfigured deployment.
-3. **Post-hoc logging is not authorization.** §7.3 and §7.4 show the distinction is empirical, not semantic.
+3. **Post-hoc logging is not authorization.** §7.3 and §6.3 show the distinction is empirical, not semantic — and §7.4 shows it is not free.
+4. **Compare paired, and check the environment.** This paper's own largest error came from comparing different task subsets, and its worst run from a revoked credential that failed silently. Both produce plausible numbers.
 
 ---
 
 ## 9. Conclusion
 
-The CLI-versus-MCP debate treats a coupling artifact as a fundamental tradeoff. By decomposing agent tool access into invocation, control, and data planes organized by model visibility, and enforcing lazy discovery, per-invocation capabilities, and a uniform envelope, ACSP obtains MCP-class governance at close to CLI-class context cost.
+The CLI-versus-MCP debate treats a coupling artifact as a fundamental tradeoff. By decomposing agent tool access into invocation, control, and data planes organized by model visibility, and enforcing lazy discovery, per-invocation capabilities, and a uniform envelope, ACSP obtains MCP-class governance at a context cost within an order of magnitude of CLI and far below eager-discovery MCP.
 
-Our measurements are mixed and we report them mixed. CLI remains the token-optimal realistic modality at 113 median tokens; GAX costs 140 for 80% audit and structured-envelope coverage; naive MCP costs 44,061 for neither. Ablations attribute the token result specifically to lazy discovery — reproducible by any protocol — and the governance result specifically to capability enforcement, which post-hoc logging does not replicate. The strongest honest summary is not that GAX wins, but that **the cost of governance is small, the cost of eager schema injection is large, and treating them as the same tradeoff is a design error.**
+Our measurements are mixed and we report them mixed. On paired tasks CLI costs 79 tokens and GAX 248; a logging proxy is cheaper than GAX; naive MCP costs 4,450 schema tokens for one live server and 44,062 with the 43-tool fixture. What the premium buys is measurable: every mutating command refused to a read-only credential, every tested tool rewrite refused before running. Ablations attribute the token result to lazy discovery — reproducible by any protocol — and refusal to capability enforcement, which post-hoc logging does not replicate. The strongest honest summary is not that GAX wins, but that **governance costs a few hundred tokens, eager schema injection costs thousands, and treating them as the same tradeoff is a design error.**
 
 The most important open problem is the one that most threatens these results: real-agent trials replacing simulated transcripts, to establish whether interface choice changes how many turns a model takes (§10.2, `OPEN_QUESTIONS.md` Q1).
 
@@ -371,8 +450,15 @@ cd gax && python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 
 python ../eval/run_comparison.py --mock-only --extended   # CI-safe, no credentials
-python ../eval/run_comparison.py --live-mcp --extended    # full; needs GITHUB_TOKEN
+python ../eval/run_comparison.py --live-mcp --extended    # full; needs a *valid* GITHUB_TOKEN
+python ../eval/import_mcp_servers.py ../eval/results/mcp_registry
+python ../eval/run_security_eval.py --live
+JEV_API_KEY=... python ../eval/run_search_eval.py --backend keyword --backend jev \
+    --extra-dir ../eval/results/mcp_registry --json ../eval/results/search-eval-87.json
+python ../eval/case_study/run_case_study.py
 ```
+
+Before trusting a live run, confirm `cli` completion is non-zero and the live probe reports `ok: true` — a revoked token produces a complete but meaningless run (§5.1).
 
 Outputs: `eval/results/comparison.json` (all rows), `comparison.md` (base), `extended-comparison.md` (ablations).
 
@@ -382,17 +468,22 @@ Live-server probes require `npx` and network access; individual server failures 
 
 | §  | Claim | Tier | Source |
 |----|-------|------|--------|
-| 6.1 | cli 113 / gax 140 / naive 44,061 median tokens | **[M]** | `comparison.json`, success-only rows |
-| 6.1 | github MCP 4,450 tok / 26 tools | **[M]** | Live `tools/list` probe |
-| 6.1 | bridge 610 vs 4,488 tokens | **[M]** | `comparison.json` |
-| 7.1 | envelope costs ~84 tok | **[M]** | 140 − 56, ablation |
-| 7.2 | preload 44,170 ≈ naive 44,061 | **[M]** | Ablation |
-| 7.3 | policy denial reverses without cap | **[M]** | `policy_denied` task |
-| 7.4 | proxy 159 vs gax 140 | **[M]** | Comparator |
+| 6.1 | paired cli 79 → gax 248, 3.48× (1.3–5.9×), n = 6 | **[M]** | `comparison.json` → `paired_by_modality_pair.cli_vs_gax` |
+| 6.1 | bridge 579 vs naive 4,489, 87% cheaper, n = 2 | **[M]** | `paired_by_modality_pair.gax_mcp_bridge_vs_mcp_naive_live` |
+| 6.1 | per-modality medians and completion rates | **[M]** | `comparison.json` → `aggregate_by_modality` |
+| 6.1 | github MCP 4,450 tok / 26 tools | **[M]** | `comparison.json` → `live_mcp_probe` |
+| 6.1 | filesystem 3,345 / memory 2,955; 3-server sum 10,750 | **[M]** | `comparison.json` → `mcp_catalog_probes` |
+| 6.1 | 3-turn workflow cli 158 / gax 689 (4.4×) | **[M]** | `eval/case_study/results.json` |
+| 6.2 | `gax` fail_closed 0.50 (n = 4) | **[M]** | `aggregate_by_modality.gax` |
+| 6.3 | 41/41 refused, 41/41 allowed, 4/4 attacks, 0/65 false alarms | **[M]** | `security-eval.json` |
+| 6.4 | keyword 0.47 / 0.33, Jev 1.00 / 1.00; intent 0.00 vs 1.00 at 87; p50 253 / 272 ms | **[M]** | `search-eval-22.json`, `search-eval-87.json` (0 fallbacks) |
+| 7.1 | envelope ~78 tok (65 → 143, n = 10) | **[M]** | `paired_by_modality_pair.gax_ablation_no_envelope_vs_gax` |
+| 7.2 | preload 44,163 ≈ naive 44,062 | **[A]** | Same fixture added to both — arithmetic, not independent |
+| 7.3 | policy denial reverses without cap | **[M]** | `policy_denied` rows |
+| 7.4 | proxy 93 vs gax 161, n = 5 | **[M]** | `paired_by_modality_pair.gax_vs_cli_logged_proxy` |
 | 2.1 | 4×–32× tokens; 18/25 (72%) MCP completion; 44,026-tok fixture | **[E]** | Scalekit — source re-verified 2026-07-29; *not replicated* |
 | 2.2 | ~98.7% (150k→2k tokens) | **[E]** | Anthropic — source re-verified 2026-07-29; *not replicated* |
 | 2.2 | ~1k vs ~1.17M tokens | **[E]** | Cloudflare — *not replicated* |
-| 6.1 | 3-server catalog sum 10,253 tok | **[M]** | 4,450 + 3,127 + 2,676, probe rows |
 | 4 | Enterprise maturity | **[A]** | Repository roadmap |
 | 5.4 | Simulated-transcript threat | **[U]** | `OPEN_QUESTIONS.md` Q1 |
 

@@ -1,0 +1,65 @@
+command: mcp.firecrawl.firecrawl_credit_usage
+version: 1.0.0
+description: '
+
+  Get the authenticated Firecrawl team''s current credit balance or historical credit
+  consumption. Use the current view to answer how many credits remain or to check
+  billing-period boundaries. Use the historical view for monthly usage reporting and
+  trend analysis.
+
+
+  The current view returns `remainingC'
+category: mcp/firecrawl
+adapter: mcp
+required_scopes:
+- mcp:firecrawl:use
+side_effects: destructive
+idempotent: false
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    view:
+      description: Select current balance or historical monthly usage. Defaults to
+        current.
+      type: string
+      enum:
+      - current
+      - historical
+    byApiKey:
+      description: Break historical usage down by API key. When view is omitted, true
+        selects the historical view; it cannot be combined with view "current".
+      type: boolean
+  additionalProperties: false
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - firecrawl-mcp
+  tool_name: firecrawl_credit_usage
+mcp_pin: sha256:fce60e5c003f541f46ebf60692105a13a8e9b6239d4e0659a1e6037022a9b68d
+mcp_pin_imported_from: firecrawl
+mcp_pinned_tool:
+  name: firecrawl_credit_usage
+  description: '
+
+    Get the authenticated Firecrawl team''s current credit balance or historical credit
+    consumption. Use the current view to answer how many credits remain or to check
+    billing-period boundaries. Use the historical view for monthly usage reporting
+    and trend analysis.
+
+
+    The current view returns `remainingCredits`, `planCredits`, `billingPeriodStart`,
+    and `billingPeriodEnd`. Extra purchased or granted credits can make `remainingCredits`
+    greater than `planCredits`. Billing-period dates may be null when the upstream
+    billing provider has no period metadata.
+
+
+    The historical view returns periods sorted by start date with `startDate`, `endDate`,
+    and `creditsUsed`. Set `byApiKey` to include separate periods per API key, identified
+    by the optional `apiKey` field. The newest period''s `endDate` can be null.
+
+    '
+  inputSchema: *id001

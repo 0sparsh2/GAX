@@ -1,0 +1,38 @@
+command: mcp.filesystem.create_directory
+version: 1.0.0
+description: Create a new directory or ensure a directory exists. Can create multiple
+  nested directories in one operation. If the directory already exists, this operation
+  will succeed silently. Perfect for setting up directory structures for projects
+  or ensuring required paths exist. Only works within allowed di
+category: mcp/filesystem
+adapter: mcp
+required_scopes:
+- mcp:filesystem:use
+side_effects: destructive
+idempotent: false
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    path:
+      type: string
+  required:
+  - path
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - '@modelcontextprotocol/server-filesystem'
+  - /tmp
+  tool_name: create_directory
+mcp_pin: sha256:2d7848f9113d21f55f60e177430ba1dda372354fd94075d52bccde5c6f5637e2
+mcp_pin_imported_from: filesystem
+mcp_pinned_tool:
+  name: create_directory
+  description: Create a new directory or ensure a directory exists. Can create multiple
+    nested directories in one operation. If the directory already exists, this operation
+    will succeed silently. Perfect for setting up directory structures for projects
+    or ensuring required paths exist. Only works within allowed directories.
+  inputSchema: *id001

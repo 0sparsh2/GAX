@@ -1,0 +1,38 @@
+command: mcp.filesystem.get_file_info
+version: 1.0.0
+description: Retrieve detailed metadata about a file or directory. Returns comprehensive
+  information including size, creation time, last modified time, permissions, and
+  type. This tool is perfect for understanding file characteristics without reading
+  the actual content. Only works within allowed directories.
+category: mcp/filesystem
+adapter: mcp
+required_scopes:
+- mcp:filesystem:use
+side_effects: read
+idempotent: true
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    path:
+      type: string
+  required:
+  - path
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - '@modelcontextprotocol/server-filesystem'
+  - /tmp
+  tool_name: get_file_info
+mcp_pin: sha256:6ff64b49d487d69c8743ec6c81fe5bb0cf7459267b6146b522d565e405a66ae8
+mcp_pin_imported_from: filesystem
+mcp_pinned_tool:
+  name: get_file_info
+  description: Retrieve detailed metadata about a file or directory. Returns comprehensive
+    information including size, creation time, last modified time, permissions, and
+    type. This tool is perfect for understanding file characteristics without reading
+    the actual content. Only works within allowed directories.
+  inputSchema: *id001

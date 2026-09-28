@@ -1,0 +1,32 @@
+command: mcp.everything.echo
+version: 1.0.0
+description: Echoes back the input string
+category: mcp/everything
+adapter: mcp
+required_scopes:
+- mcp:everything:use
+side_effects: destructive
+idempotent: false
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    message:
+      type: string
+      description: Message to echo
+  required:
+  - message
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - '@modelcontextprotocol/server-everything'
+  tool_name: echo
+mcp_pin: sha256:87a6b5c343ddeeed1922f71fdce50c470e5f572d675ad848b1e3781e01463abe
+mcp_pin_imported_from: everything
+mcp_pinned_tool:
+  name: echo
+  description: Echoes back the input string
+  inputSchema: *id001

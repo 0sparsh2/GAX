@@ -1,0 +1,37 @@
+command: mcp.everything.get_resource_reference
+version: 1.0.0
+description: Returns a resource reference that can be used by MCP clients
+category: mcp/everything
+adapter: mcp
+required_scopes:
+- mcp:everything:use
+side_effects: read
+idempotent: true
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    resourceType:
+      default: Text
+      type: string
+      enum:
+      - Text
+      - Blob
+    resourceId:
+      default: 1
+      description: ID of the text resource to fetch
+      type: number
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - '@modelcontextprotocol/server-everything'
+  tool_name: get-resource-reference
+mcp_pin: sha256:5e3b65b8d495e8350f7e52b3cd82b622d4d8e1ea82479eef15741d296d1d2345
+mcp_pin_imported_from: everything
+mcp_pinned_tool:
+  name: get-resource-reference
+  description: Returns a resource reference that can be used by MCP clients
+  inputSchema: *id001

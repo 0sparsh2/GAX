@@ -1,0 +1,42 @@
+command: mcp.firecrawl.firecrawl_check_crawl_status
+version: 1.0.0
+description: '
+
+  Retrieve the current status, progress, and available results for an existing crawl
+  ID. This only reads Firecrawl job state and does not start or modify the crawl.
+
+  '
+category: mcp/firecrawl
+adapter: mcp
+required_scopes:
+- mcp:firecrawl:use
+side_effects: destructive
+idempotent: false
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    id:
+      type: string
+  required:
+  - id
+  additionalProperties: false
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - firecrawl-mcp
+  tool_name: firecrawl_check_crawl_status
+mcp_pin: sha256:a87a63de24f86b91e4af5e40b1ca81f2b1e9735b27f9bf97ebaef51799f9db81
+mcp_pin_imported_from: firecrawl
+mcp_pinned_tool:
+  name: firecrawl_check_crawl_status
+  description: '
+
+    Retrieve the current status, progress, and available results for an existing crawl
+    ID. This only reads Firecrawl job state and does not start or modify the crawl.
+
+    '
+  inputSchema: *id001

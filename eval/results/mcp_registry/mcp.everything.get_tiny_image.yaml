@@ -1,0 +1,27 @@
+command: mcp.everything.get_tiny_image
+version: 1.0.0
+description: Returns a tiny MCP logo image.
+category: mcp/everything
+adapter: mcp
+required_scopes:
+- mcp:everything:use
+side_effects: read
+idempotent: true
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties: {}
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - '@modelcontextprotocol/server-everything'
+  tool_name: get-tiny-image
+mcp_pin: sha256:945e15749abef23ba3a1cbf4f22caddfaed882a65a6fd109f2bd9ae40beeb945
+mcp_pin_imported_from: everything
+mcp_pinned_tool:
+  name: get-tiny-image
+  description: Returns a tiny MCP logo image.
+  inputSchema: *id001

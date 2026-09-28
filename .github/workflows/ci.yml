@@ -53,6 +53,12 @@ jobs:
         working-directory: gax
         run: pytest -q tests/test_search.py
 
+      # Offline parts A (ceiling, all 87 commands incl. imported MCP tools) and
+      # B (pin tampering against a live mutating stdio server). Exits non-zero
+      # on any leak, over-block, or unrefused attack.
+      - name: Security benchmark (ceiling + pin tampering)
+        run: python eval/run_security_eval.py
+
       - name: Search quality eval (local backends)
         run: python eval/run_search_eval.py --backend keyword --backend bm25
 

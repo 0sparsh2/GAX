@@ -1,0 +1,36 @@
+command: mcp.memory.delete_entities
+version: 1.0.0
+description: Delete multiple entities and their associated relations from the knowledge
+  graph
+category: mcp/memory
+adapter: mcp
+required_scopes:
+- mcp:memory:use
+side_effects: destructive
+idempotent: false
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    entityNames:
+      type: array
+      items:
+        type: string
+      description: An array of entity names to delete
+  required:
+  - entityNames
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - '@modelcontextprotocol/server-memory'
+  tool_name: delete_entities
+mcp_pin: sha256:8732851d4c21195d8897cd73fc21a2872d909f417dc5ce9ba4b1627d7aa41a46
+mcp_pin_imported_from: memory
+mcp_pinned_tool:
+  name: delete_entities
+  description: Delete multiple entities and their associated relations from the knowledge
+    graph
+  inputSchema: *id001

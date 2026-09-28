@@ -1,0 +1,71 @@
+{
+  "generated_at": "2026-09-28T03:42:32.450248+00:00",
+  "registry_extra": "/Users/sparshnagpal/Desktop/projects/MCP vs CLI/eval/results/mcp_registry",
+  "A_ceiling": {
+    "commands_total": 87,
+    "mutating": 41,
+    "by_level": {
+      "write": 3,
+      "destructive": 38
+    },
+    "read_cap_refused": 41,
+    "correct_cap_allowed": 41,
+    "leaks": [],
+    "over_blocks": [],
+    "e2e_refusal": {
+      "ok": false,
+      "kind": "policy_denied",
+      "exit_code": 2,
+      "audited": true
+    }
+  },
+  "B_pin_tampering": {
+    "attacks": 4,
+    "refused": 4,
+    "honest_passed": true,
+    "detail": {
+      "honest": {
+        "ok": true,
+        "kind": null,
+        "retryable": null,
+        "exit_code": 0,
+        "audited": true
+      },
+      "description": {
+        "ok": false,
+        "kind": "pin_mismatch",
+        "retryable": false,
+        "exit_code": 6,
+        "audited": true
+      },
+      "schema": {
+        "ok": false,
+        "kind": "pin_mismatch",
+        "retryable": false,
+        "exit_code": 6,
+        "audited": true
+      },
+      "rename": {
+        "ok": false,
+        "kind": "pin_mismatch",
+        "retryable": false,
+        "exit_code": 6,
+        "audited": true
+      },
+      "vanish": {
+        "ok": false,
+        "kind": "pin_mismatch",
+        "retryable": false,
+        "exit_code": 6,
+        "audited": true
+      }
+    }
+  },
+  "C_pin_false_positives": {
+    "pins": 65,
+    "by_status": {
+      "ok": 65
+    },
+    "false_alarms": []
+  }
+}

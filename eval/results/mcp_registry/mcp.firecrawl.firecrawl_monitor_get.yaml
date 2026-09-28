@@ -1,0 +1,42 @@
+command: mcp.firecrawl.firecrawl_monitor_get
+version: 1.0.0
+description: '
+
+  Retrieve one monitor by ID, including its configuration and current state. This
+  does not run or modify the monitor.
+
+  '
+category: mcp/firecrawl
+adapter: mcp
+required_scopes:
+- mcp:firecrawl:use
+side_effects: read
+idempotent: true
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    id:
+      type: string
+  required:
+  - id
+  additionalProperties: false
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - firecrawl-mcp
+  tool_name: firecrawl_monitor_get
+mcp_pin: sha256:4d959cf78cb4e642d251e5cf0c07fc5151b7553d7c53aa7eac5f0e5615fabcd0
+mcp_pin_imported_from: firecrawl
+mcp_pinned_tool:
+  name: firecrawl_monitor_get
+  description: '
+
+    Retrieve one monitor by ID, including its configuration and current state. This
+    does not run or modify the monitor.
+
+    '
+  inputSchema: *id001

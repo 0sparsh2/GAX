@@ -1,0 +1,42 @@
+command: mcp.firecrawl.firecrawl_monitor_run
+version: 1.0.0
+description: '
+
+  Queue an immediate check for a monitor outside its normal schedule. This starts
+  network work for the monitor''s configured targets and returns the queued check.
+
+  '
+category: mcp/firecrawl
+adapter: mcp
+required_scopes:
+- mcp:firecrawl:use
+side_effects: destructive
+idempotent: false
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    id:
+      type: string
+  required:
+  - id
+  additionalProperties: false
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - firecrawl-mcp
+  tool_name: firecrawl_monitor_run
+mcp_pin: sha256:340b1f848787fff8c5d96c73ea2f2b921136fd247f7c8b3f92fd03318f06099d
+mcp_pin_imported_from: firecrawl
+mcp_pinned_tool:
+  name: firecrawl_monitor_run
+  description: '
+
+    Queue an immediate check for a monitor outside its normal schedule. This starts
+    network work for the monitor''s configured targets and returns the queued check.
+
+    '
+  inputSchema: *id001

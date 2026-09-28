@@ -249,11 +249,20 @@ Reproducible harness: **18 tasks** (happy path, errors, policy denial, truncatio
 
 | | median tokens |
 |---|---:|
-| cli | 80 |
-| gax | 250 |
-| **median ratio** | **~3.5×** (range 1.3×–5.9×) |
+| cli | 79 |
+| gax | 248 |
+| **median ratio** | **3.48×** (range 1.3×–5.9×) |
 
-Per-task ratios and the excluded-task list are in [`eval/results/comparison.md`](eval/results/comparison.md). Live `gh` calls vary run to run, so expect ~3–3.5×; every paired task costs GAX more than CLI.
+Per-task ratios and the excluded-task list are in [`eval/results/comparison.md`](eval/results/comparison.md). Live `gh` calls vary run to run: measured 2.9×, 3.46× and 3.48× across runs. Every paired task costs GAX more than CLI.
+
+**Enforcement and selection are benchmarked too** — see [live-run-summary.md](eval/results/live-run-summary.md):
+
+| | Result |
+|---|---:|
+| Read-only capability refused on write/destructive commands (even when allowlisted) | **41/41**, 0 over-blocks |
+| Tampered MCP tool refused before it runs | **4/4** |
+| False alarms re-verifying 65 real public-server pins | **0** |
+| Correct command on first search, 87 commands (Jev / keyword) | **1.00** / 0.33 |
 
 Governance properties are **by design, verified by test** — not experimental outcomes: `cli` emits no `audit_id` (0%) and `gax` emits one on every invoke (100%) because that is what each architecture *is*.
 
@@ -396,11 +405,12 @@ selection quality is where GAX can still save tokens.
 Measured on [36 queries](eval/search_queries.yaml) — literal, synonym, intent, and
 out-of-scope (where the right answer is "nothing") — hit@1:
 
-| Backend | 22 commands | 87 commands\* | intent @ 87 | out-of-scope | p50 latency |
+| Backend | 22 commands | 87 commands\* | intent @ 87 | out-of-scope @ 87 | p50 latency |
 |---|---:|---:|---:|---:|---:|
-| `keyword` (fallback) | 0.47 | 0.40 | **0.00** | 0.17 | <1 ms |
-| `bm25` | 0.43 | — | — | — | <1 ms |
-| **`jev`** (default) | **1.00** | **1.00** | **1.00** | **1.00** | ~230–270 ms |
+| `keyword` (fallback) | 0.47 | 0.33 | **0.00** | 0.00 | <1 ms |
+| **`jev`** (default) | **1.00** | **1.00** | **1.00** | **1.00** | ~253–272 ms |
+
+Full table including BM25, and why its out-of-scope score is misleading: [search-eval.md](eval/results/search-eval.md).
 
 \*87 = bundled commands plus 65 imported from five real MCP servers (filesystem,
 memory, everything, firecrawl, context7).

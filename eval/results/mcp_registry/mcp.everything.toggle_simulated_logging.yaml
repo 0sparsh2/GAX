@@ -1,0 +1,27 @@
+command: mcp.everything.toggle_simulated_logging
+version: 1.0.0
+description: Toggles simulated, random-leveled logging on or off.
+category: mcp/everything
+adapter: mcp
+required_scopes:
+- mcp:everything:use
+side_effects: destructive
+idempotent: false
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties: {}
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - '@modelcontextprotocol/server-everything'
+  tool_name: toggle-simulated-logging
+mcp_pin: sha256:cbe3245cd4d770b26c9643f2ef726bff083802c1f3b619d6a0bf1dcdaed6fff0
+mcp_pin_imported_from: everything
+mcp_pinned_tool:
+  name: toggle-simulated-logging
+  description: Toggles simulated, random-leveled logging on or off.
+  inputSchema: *id001

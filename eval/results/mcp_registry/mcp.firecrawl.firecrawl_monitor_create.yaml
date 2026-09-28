@@ -1,0 +1,96 @@
+command: mcp.firecrawl.firecrawl_monitor_create
+version: 1.0.0
+description: '
+
+  Create a recurring scrape, crawl, or search monitor that compares each check with
+  its retained predecessor. The simple form accepts `page`/`pages` or `queries` plus
+  a plain-language `goal`; the advanced `body` form controls targets, schedule, change-tracking
+  formats, judging, retention, webhook, an'
+category: mcp/firecrawl
+adapter: mcp
+required_scopes:
+- mcp:firecrawl:use
+side_effects: destructive
+idempotent: false
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    body:
+      type: object
+      propertyNames:
+        type: string
+      additionalProperties: false
+    page:
+      type: string
+    pages:
+      type: array
+      items:
+        type: string
+    queries:
+      type: array
+      items:
+        type: string
+    searchWindow:
+      type: string
+      enum:
+      - 5m
+      - 15m
+      - 1h
+      - 6h
+      - 24h
+      - 7d
+    maxResults:
+      type: integer
+      minimum: 1
+      maximum: 50
+    includeDomains:
+      type: array
+      items:
+        type: string
+    excludeDomains:
+      type: array
+      items:
+        type: string
+    goal:
+      type: string
+    name:
+      type: string
+    scheduleText:
+      type: string
+    timezone:
+      type: string
+    email:
+      type: string
+    includeDiffs:
+      type: boolean
+    webhookUrl:
+      type: string
+  additionalProperties: false
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - firecrawl-mcp
+  tool_name: firecrawl_monitor_create
+mcp_pin: sha256:a87d43736527c34a45882680ae111dd7d0d132450efce62a917e1d1e1c1127c6
+mcp_pin_imported_from: firecrawl
+mcp_pinned_tool:
+  name: firecrawl_monitor_create
+  description: '
+
+    Create a recurring scrape, crawl, or search monitor that compares each check with
+    its retained predecessor. The simple form accepts `page`/`pages` or `queries`
+    plus a plain-language `goal`; the advanced `body` form controls targets, schedule,
+    change-tracking formats, judging, retention, webhook, and notifications.
+
+
+    In the simple form, a `goal` is required. If `queries` contains one or more non-empty
+    values and is supplied with `page`/`pages`, `queries` create the search target
+    and page targets are ignored. A monitor schedules future network checks and can
+    send configured email or webhook notifications. Returns the created monitor.
+
+    '
+  inputSchema: *id001

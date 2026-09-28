@@ -1,0 +1,337 @@
+command: mcp.firecrawl.firecrawl_scrape
+version: 1.0.0
+description: '
+
+  Scrape one URL and return its content: markdown by default, or HTML, links, screenshots,
+  branding data, a targeted answer, or JSON matching a supplied schema. Use it when
+  the request identifies a page and needs its content or defined fields. Use `firecrawl_search`
+  when additional web sources are ne'
+category: mcp/firecrawl
+adapter: mcp
+required_scopes:
+- mcp:firecrawl:use
+side_effects: destructive
+idempotent: false
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    url:
+      type: string
+      format: uri
+    formats:
+      type: array
+      items:
+        type: string
+        enum:
+        - markdown
+        - html
+        - rawHtml
+        - screenshot
+        - links
+        - summary
+        - changeTracking
+        - branding
+        - json
+        - query
+        - audio
+    jsonOptions:
+      type: object
+      properties:
+        prompt:
+          type: string
+        schema:
+          type: object
+          propertyNames:
+            type: string
+          additionalProperties: false
+      additionalProperties: false
+    queryOptions:
+      type: object
+      properties:
+        prompt:
+          type: string
+          maxLength: 10000
+        mode:
+          default: freeform
+          type: string
+          enum:
+          - directQuote
+          - freeform
+      required:
+      - prompt
+      additionalProperties: false
+    screenshotOptions:
+      type: object
+      properties:
+        fullPage:
+          type: boolean
+        quality:
+          type: number
+        viewport:
+          type: object
+          properties:
+            width:
+              type: number
+            height:
+              type: number
+          required:
+          - width
+          - height
+          additionalProperties: false
+      additionalProperties: false
+    parsers:
+      type: array
+      items:
+        type: string
+        enum:
+        - pdf
+    pdfOptions:
+      type: object
+      properties:
+        maxPages:
+          type: integer
+          minimum: 1
+          maximum: 10000
+      additionalProperties: false
+    onlyMainContent:
+      type: boolean
+    redactPII:
+      type: boolean
+    includeTags:
+      type: array
+      items:
+        type: string
+    excludeTags:
+      type: array
+      items:
+        type: string
+    waitFor:
+      type: number
+    actions:
+      type: array
+      items:
+        type: object
+        properties:
+          type:
+            type: string
+            enum:
+            - wait
+            - screenshot
+            - scroll
+            - scrape
+            - click
+            - write
+            - press
+            - executeJavascript
+            - generatePDF
+          selector:
+            type: string
+          milliseconds:
+            type: number
+          text:
+            type: string
+          key:
+            type: string
+          direction:
+            type: string
+            enum:
+            - up
+            - down
+          script:
+            type: string
+          fullPage:
+            type: boolean
+        required:
+        - type
+    mobile:
+      type: boolean
+    skipTlsVerification:
+      type: boolean
+    removeBase64Images:
+      type: boolean
+    location:
+      type: object
+      properties:
+        country:
+          type: string
+        languages:
+          type: array
+          items:
+            type: string
+      additionalProperties: false
+    storeInCache:
+      type: boolean
+    zeroDataRetention:
+      type: boolean
+    maxAge:
+      type: number
+    lockdown:
+      type: boolean
+    proxy:
+      type: string
+      enum:
+      - basic
+      - stealth
+      - enhanced
+      - auto
+    profile:
+      type: object
+      properties:
+        name:
+          type: string
+        saveChanges:
+          type: boolean
+      required:
+      - name
+      additionalProperties: false
+    timeout:
+      description: Execution timeout in milliseconds.
+      type: integer
+      exclusiveMinimum: 0
+      maximum: 9007199254740991
+    requestId:
+      description: Identifies one logical Alexandria execution; generated when omitted
+        and returned with the result. Repeated attempts of the identical payload require
+        the same ID. A new ID cannot reconcile a pending or uncertain execution. A
+        caller-supplied ID supports recovery if no response is received. Errors relay
+        a code and may include chargeId. request_in_flight (409) means the execution
+        is pending; request_unresolved (503) requires reconciliation under the same
+        ID; duplicate_request (409) means the ID belongs to a different payload; unknown_provider
+        (404), insufficient_credits (402) and billing_unavailable (503) mean nothing
+        executed.
+      type: string
+      pattern: ^[A-Za-z0-9._:-]{1,128}$
+    alexandria:
+      description: Catalogued Alexandria capability invocation, mutually exclusive
+        with url. One {provider, capability, options} object or an array of 1-10,
+        with contracts available through firecrawl_search or firecrawl_find_tools.
+        Each call may include version to pin a published workflow; omitting it uses
+        latest. Only requestId and timeout are supported alongside alexandria. The
+        selected contract marks required inputs and any requiresOneOf groups (at least
+        one member per group); it may include example.request/example.response and
+        response.key (which may differ from records). Where pagination is declared,
+        its fields govern paging with the same filters; catalogue next is separate
+        from provider pagination. Returns per-capability results in data.alexandria
+        with data, records, or an error with a code; individual capabilities can fail
+        even when the outer response succeeds. nextTool identifies access to retained
+        results without repeating a successful provider call. Requires an API key
+        on a team with Alexandria enabled. THIRD_PARTY_DATA_TERMS_REQUIRED (403) means
+        execution is blocked by provider terms, with requiresAction.url for review
+        by an organization admin. Through this tool, terms/show displays the agreement
+        and terms/accept records acceptance; acceptance requires explicit user authorization
+        for the reviewed version and digest and confirmed:true. A data request does
+        not authorize acceptance. Provider execution remains blocked until acceptance
+        is confirmed.
+      anyOf:
+      - type: object
+        properties:
+          provider:
+            type: string
+            minLength: 1
+            description: Provider slug, e.g. "fred".
+          capability:
+            type: string
+            minLength: 1
+            description: Capability address as returned by search or discover, e.g.
+              "series/observations".
+          version:
+            description: Optional published workflow version. Omit to use the latest
+              version.
+            type: string
+            minLength: 1
+            maxLength: 128
+          options:
+            description: Capability options as declared by its contract.
+            type: object
+            propertyNames:
+              type: string
+            additionalProperties: {}
+        required:
+        - provider
+        - capability
+      - minItems: 1
+        maxItems: 10
+        type: array
+        items:
+          type: object
+          properties:
+            provider:
+              type: string
+              minLength: 1
+              description: Provider slug, e.g. "fred".
+            capability:
+              type: string
+              minLength: 1
+              description: Capability address as returned by search or discover, e.g.
+                "series/observations".
+            version:
+              description: Optional published workflow version. Omit to use the latest
+                version.
+              type: string
+              minLength: 1
+              maxLength: 128
+            options:
+              description: Capability options as declared by its contract.
+              type: object
+              propertyNames:
+                type: string
+              additionalProperties: {}
+          required:
+          - provider
+          - capability
+    toolDetail:
+      description: 'URL mode only: domain discovery detail, summary by default; compact
+        returns provider/capability/description, full includes contracts. Ignored
+        with alexandria.'
+      type: string
+      enum:
+      - compact
+      - summary
+      - full
+    domainTools:
+      description: 'URL mode only: include domain-matched Alexandria tools for the
+        page in tools on the returned document. Ignored with alexandria.'
+      type: boolean
+  additionalProperties: false
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - firecrawl-mcp
+  tool_name: firecrawl_scrape
+mcp_pin: sha256:bf536a42d68064c662d7930d0e548961826796dcbf2f2eda563a48b74ca2adb8
+mcp_pin_imported_from: firecrawl
+mcp_pinned_tool:
+  name: firecrawl_scrape
+  description: '
+
+    Scrape one URL and return its content: markdown by default, or HTML, links, screenshots,
+    branding data, a targeted answer, or JSON matching a supplied schema. Use it when
+    the request identifies a page and needs its content or defined fields. Use `firecrawl_search`
+    when additional web sources are needed; on an authenticated session, `firecrawl_map`
+    lists a site''s URLs and `firecrawl_crawl` collects a set of pages.
+
+
+    Firecrawl may serve recently indexed content; set `maxAge: 0` for a live fetch
+    or a smaller `maxAge` to bound staleness. A successful response does not by itself
+    confirm the page is still current. Browser actions can change the live page when
+    interactive actions are enabled. Authenticated responses can include a `metadata.scrapeId`
+    for optional scrape feedback.
+
+
+    On an authenticated session with Alexandria access, `firecrawl_search` with `sources`
+    unset and `firecrawl_find_tools` can discover providers for the same fields across
+    several pages; a matching provider returns typed records in one call. Keyless
+    sessions have no provider matches.
+
+
+    Alexandria mode, on an authenticated session with Alexandria access: `alexandria`
+    selects catalogued capability execution and is mutually exclusive with `url`;
+    the `alexandria` and `requestId` parameters describe batching, retries, errors
+    and provider terms.
+
+    '
+  inputSchema: *id001

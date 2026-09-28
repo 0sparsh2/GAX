@@ -1,0 +1,71 @@
+command: mcp.firecrawl.firecrawl_research_related_papers
+version: 1.0.0
+description: '
+
+  Find citation-graph candidates from one to ten `seed_ids`; the first ID is the primary
+  seed and later IDs are anchors. `mode` defaults to `similar` (co-citation/bibliographic
+  coupling); `citers` returns papers citing a seed and `references` papers cited by
+  a seed. `intent` ranks candidates.
+
+
+  Return'
+category: mcp/firecrawl
+adapter: mcp
+required_scopes:
+- mcp:firecrawl:use
+side_effects: destructive
+idempotent: false
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    seed_ids:
+      minItems: 1
+      maxItems: 10
+      type: array
+      items:
+        type: string
+    intent:
+      type: string
+      minLength: 1
+    mode:
+      type: string
+      enum:
+      - similar
+      - citers
+      - references
+    k:
+      type: integer
+      minimum: 1
+      maximum: 500
+    rerank:
+      description: Apply an additional rerank over the fused candidates.
+      type: boolean
+  required:
+  - seed_ids
+  - intent
+  additionalProperties: false
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - firecrawl-mcp
+  tool_name: firecrawl_research_related_papers
+mcp_pin: sha256:c945cb0f75b52696632552f6eb49657e9e2fdb96f8676ef4682eb01ea2a20217
+mcp_pin_imported_from: firecrawl
+mcp_pinned_tool:
+  name: firecrawl_research_related_papers
+  description: '
+
+    Find citation-graph candidates from one to ten `seed_ids`; the first ID is the
+    primary seed and later IDs are anchors. `mode` defaults to `similar` (co-citation/bibliographic
+    coupling); `citers` returns papers citing a seed and `references` papers cited
+    by a seed. `intent` ranks candidates.
+
+
+    Returns ranked candidates and the evaluated pool size.
+
+    '
+  inputSchema: *id001

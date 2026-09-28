@@ -1,0 +1,48 @@
+command: mcp.filesystem.search_files
+version: 1.0.0
+description: Recursively search for files and directories matching a pattern. The
+  patterns should be glob-style patterns that match paths relative to the working
+  directory. Use pattern like '*.ext' to match files in current directory, and '**/*.ext'
+  to match files in all subdirectories. Returns full paths to all
+category: mcp/filesystem
+adapter: mcp
+required_scopes:
+- mcp:filesystem:use
+side_effects: read
+idempotent: true
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    path:
+      type: string
+    pattern:
+      type: string
+    excludePatterns:
+      default: []
+      type: array
+      items:
+        type: string
+  required:
+  - path
+  - pattern
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - '@modelcontextprotocol/server-filesystem'
+  - /tmp
+  tool_name: search_files
+mcp_pin: sha256:41f144836f5e786009e2173256759e37b687add572cfba808e24bebb9a04ce96
+mcp_pin_imported_from: filesystem
+mcp_pinned_tool:
+  name: search_files
+  description: Recursively search for files and directories matching a pattern. The
+    patterns should be glob-style patterns that match paths relative to the working
+    directory. Use pattern like '*.ext' to match files in current directory, and '**/*.ext'
+    to match files in all subdirectories. Returns full paths to all matching items.
+    Great for finding files when you don't know their exact location. Only searches
+    within allowed directories.
+  inputSchema: *id001

@@ -1,0 +1,347 @@
+command: mcp.firecrawl.firecrawl_search
+version: 1.0.0
+description: '
+
+  Search web, news, or image sources and return ranked results with query-relevant
+  highlights. Each web result is a title, URL, and description; use `firecrawl_scrape`
+  on a result URL when the excerpt is not enough.
+
+
+  Authenticated search also returns matching Alexandria data providers in data.tools
+  ('
+category: mcp/firecrawl
+adapter: mcp
+required_scopes:
+- mcp:firecrawl:use
+side_effects: read
+idempotent: true
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    toolDetail:
+      description: Compact by default. Compact returns only provider, capability and
+        description; full includes contracts. Inspect selected compact tools with
+        firecrawl_find_tools providers and capabilities.
+      type: string
+      enum:
+      - compact
+      - summary
+      - full
+    query:
+      type: string
+      minLength: 1
+      description: Query for web and semantic tool discovery. Operators include quoted
+        phrases, `-term`, `site:host`, `inurl:term`, `intitle:term`, and `related:host`;
+        the set is non-exhaustive. Catalogue browsing is available through firecrawl_find_tools.
+    domainTools:
+      description: Include domain-matched tools for result URLs. Defaults to true
+        when Alexandria is combined with web, news or images; semantic-only search
+        leaves domain matching off.
+      type: boolean
+    highlights:
+      description: Return query-relevant page excerpts for web and news results when
+        available (default). Highlights appear in web `description` and news `snippet`;
+        otherwise, original snippets are returned. Set to false to keep the original
+        search snippets.
+      type: boolean
+    limit:
+      type: integer
+      minimum: 1
+      maximum: 100
+    tbs:
+      type: string
+    filter:
+      type: string
+    location:
+      type: string
+    includeDomains:
+      description: Hostnames to restrict results to. Mutually exclusive with excludeDomains.
+      type: array
+      items:
+        type: string
+        minLength: 1
+        maxLength: 253
+        pattern: ^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$
+    excludeDomains:
+      description: Hostnames to leave out of results. Mutually exclusive with includeDomains.
+      type: array
+      items:
+        type: string
+        minLength: 1
+        maxLength: 253
+        pattern: ^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$
+    sources:
+      description: 'Search sources; authenticated sessions default to web + alexandria,
+        keyless sessions to web only. A search with sources: ["web"] omits semantic
+        provider discovery; domainTools: true can still return website-matched tools.
+        Web-only results use domainTools: false. Use ["alexandria"] alone for provider
+        discovery without web results.'
+      type: array
+      items:
+        anyOf:
+        - type: string
+          enum:
+          - web
+          - images
+          - news
+          - alexandria
+          - exchange
+        - type: object
+          properties:
+            type:
+              type: string
+              enum:
+              - web
+              - images
+              - news
+              - alexandria
+              - exchange
+          required:
+          - type
+          additionalProperties: false
+    categories:
+      description: 'Limit results to specific source types. `research` restricts ordinary
+        web results to research-affiliated websites and returns page snippets, which
+        is separate from the `firecrawl_research_*` tools that search paper abstracts
+        and full text across biomedical (PubMed, bioRxiv, medRxiv) and arXiv literature;
+        `pdf` searches PDF results; `developer` searches an index built for coding
+        agents over public repositories, GitHub issues, merged pull requests, repository
+        READMEs, and code documentation. `developer` returns hits in `data.web` with
+        `category: "developer"`; the other categories also filter `data.web`.'
+      type: array
+      items:
+        type: string
+        enum:
+        - research
+        - pdf
+        - developer
+    enterprise:
+      type: array
+      items:
+        type: string
+        enum:
+        - default
+        - anon
+        - zdr
+    scrapeOptions:
+      description: Attach page content for web results in the same call. These fetches
+        ignore maxAge, so use firecrawl_scrape when you need a live fetch. scrapeOptions
+        fetches web pages, never Alexandria provider tools.
+      type: object
+      properties:
+        formats:
+          type: array
+          items:
+            type: string
+            enum:
+            - markdown
+            - html
+            - rawHtml
+            - screenshot
+            - links
+            - summary
+            - changeTracking
+            - branding
+            - json
+            - query
+            - audio
+        jsonOptions:
+          type: object
+          properties:
+            prompt:
+              type: string
+            schema:
+              type: object
+              propertyNames:
+                type: string
+              additionalProperties: false
+          additionalProperties: false
+        queryOptions:
+          type: object
+          properties:
+            prompt:
+              type: string
+              maxLength: 10000
+            mode:
+              default: freeform
+              type: string
+              enum:
+              - directQuote
+              - freeform
+          required:
+          - prompt
+          additionalProperties: false
+        screenshotOptions:
+          type: object
+          properties:
+            fullPage:
+              type: boolean
+            quality:
+              type: number
+            viewport:
+              type: object
+              properties:
+                width:
+                  type: number
+                height:
+                  type: number
+              required:
+              - width
+              - height
+              additionalProperties: false
+          additionalProperties: false
+        parsers:
+          type: array
+          items:
+            type: string
+            enum:
+            - pdf
+        pdfOptions:
+          type: object
+          properties:
+            maxPages:
+              type: integer
+              minimum: 1
+              maximum: 10000
+          additionalProperties: false
+        onlyMainContent:
+          type: boolean
+        redactPII:
+          type: boolean
+        includeTags:
+          type: array
+          items:
+            type: string
+        excludeTags:
+          type: array
+          items:
+            type: string
+        waitFor:
+          type: number
+        actions:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                enum:
+                - wait
+                - screenshot
+                - scroll
+                - scrape
+                - click
+                - write
+                - press
+                - executeJavascript
+                - generatePDF
+              selector:
+                type: string
+              milliseconds:
+                type: number
+              text:
+                type: string
+              key:
+                type: string
+              direction:
+                type: string
+                enum:
+                - up
+                - down
+              script:
+                type: string
+              fullPage:
+                type: boolean
+            required:
+            - type
+        mobile:
+          type: boolean
+        skipTlsVerification:
+          type: boolean
+        removeBase64Images:
+          type: boolean
+        location:
+          type: object
+          properties:
+            country:
+              type: string
+            languages:
+              type: array
+              items:
+                type: string
+          additionalProperties: false
+        storeInCache:
+          type: boolean
+        zeroDataRetention:
+          type: boolean
+        maxAge:
+          type: number
+        lockdown:
+          type: boolean
+        proxy:
+          type: string
+          enum:
+          - basic
+          - stealth
+          - enhanced
+          - auto
+        profile:
+          type: object
+          properties:
+            name:
+              type: string
+            saveChanges:
+              type: boolean
+          required:
+          - name
+          additionalProperties: false
+      additionalProperties: false
+  required:
+  - query
+  additionalProperties: false
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - firecrawl-mcp
+  tool_name: firecrawl_search
+mcp_pin: sha256:28b51626d6303e81557c91db96b7707a3293b9e9812cc5d0c2a75d31f60a89e6
+mcp_pin_imported_from: firecrawl
+mcp_pinned_tool:
+  name: firecrawl_search
+  description: '
+
+    Search web, news, or image sources and return ranked results with query-relevant
+    highlights. Each web result is a title, URL, and description; use `firecrawl_scrape`
+    on a result URL when the excerpt is not enough.
+
+
+    Authenticated search also returns matching Alexandria data providers in data.tools
+    (companies, people, jobs, finance and filings, public records and government spending,
+    real estate, places and restaurants, retail and prices, package registries and
+    developer data, news, research, and more). Prefer a provider over scraping pages
+    when the task needs the same fields across several entities, exact figures or
+    timestamps, provenance, or many records; use web results when they already answer
+    the question. A search with sources: ["web"] omits semantic provider discovery;
+    domainTools: true can still return website-matched tools. Web-only results use
+    domainTools: false.
+
+
+    On an authenticated session, tool matches describe available capabilities; `firecrawl_find_tools`
+    returns their contracts and `firecrawl_scrape` with an `alexandria` body executes
+    a selected capability. Keyless sessions get no Alexandria matches in data.tools.
+
+
+    For a programming question, add `categories: ["developer"]`; its hits return in
+    `data.web` with `category: "developer"`. `categories: ["research"]` restricts
+    web results to research-affiliated websites; the `firecrawl_research_*` tools
+    are a separate surface over paper abstracts and full text (PubMed, bioRxiv, medRxiv,
+    arXiv). Query operators, domain filters, `categories`, `toolDetail` and `scrapeOptions`
+    are described on their parameters. Returns source-type result groups and usage
+    metadata. Authenticated responses can include an `id` for optional search feedback.
+
+    '
+  inputSchema: *id001

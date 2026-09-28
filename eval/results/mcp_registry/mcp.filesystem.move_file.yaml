@@ -1,0 +1,42 @@
+command: mcp.filesystem.move_file
+version: 1.0.0
+description: Move or rename files and directories. Can move files between directories
+  and rename them in a single operation. If the destination exists, the operation
+  will fail. Works across different directories and can be used for simple renaming
+  within the same directory. Both source and destination must be wi
+category: mcp/filesystem
+adapter: mcp
+required_scopes:
+- mcp:filesystem:use
+side_effects: destructive
+idempotent: false
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    source:
+      type: string
+    destination:
+      type: string
+  required:
+  - source
+  - destination
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - '@modelcontextprotocol/server-filesystem'
+  - /tmp
+  tool_name: move_file
+mcp_pin: sha256:ccd3a2f3e87121650767bc135408da868b67f6fc140d77ab75e3d6ea0b71ee66
+mcp_pin_imported_from: filesystem
+mcp_pinned_tool:
+  name: move_file
+  description: Move or rename files and directories. Can move files between directories
+    and rename them in a single operation. If the destination exists, the operation
+    will fail. Works across different directories and can be used for simple renaming
+    within the same directory. Both source and destination must be within allowed
+    directories.
+  inputSchema: *id001

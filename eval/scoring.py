@@ -236,6 +236,13 @@ def paired_matrix(
         ("cli", "gax_mcp_bridge"),
         ("gax", "mcp_live"),
         ("cli", "mcp_live"),
+        # Pairs behind the paper's ablation and comparator claims (§7). Each of
+        # those was first reported as a difference of unpaired medians.
+        ("gax_ablation_no_envelope", "gax"),  # price of the envelope
+        ("gax", "cli_logged_proxy"),  # "why not gh + a logging proxy?"
+        ("gax", "cli_agent_spec"),  # structured CLI output without a control plane
+        ("gax_mcp_bridge", "mcp_naive_live"),  # bridge vs same server, naive
+        ("cli", "cli_logged_proxy"),
     ]
     out: dict[str, dict[str, Any]] = {}
     for a, b in pairs:

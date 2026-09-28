@@ -1,0 +1,41 @@
+command: mcp.everything.get_annotated_message
+version: 1.0.0
+description: Demonstrates how annotations can be used to provide metadata about content.
+category: mcp/everything
+adapter: mcp
+required_scopes:
+- mcp:everything:use
+side_effects: read
+idempotent: true
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    messageType:
+      type: string
+      enum:
+      - error
+      - success
+      - debug
+      description: Type of message to demonstrate different annotation patterns
+    includeImage:
+      default: false
+      description: Whether to include an example image
+      type: boolean
+  required:
+  - messageType
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - '@modelcontextprotocol/server-everything'
+  tool_name: get-annotated-message
+mcp_pin: sha256:e2dc5dd6b859e8246fb25583d4fbce6bfc210ae8afaef6701e3d0a7f251b93e8
+mcp_pin_imported_from: everything
+mcp_pinned_tool:
+  name: get-annotated-message
+  description: Demonstrates how annotations can be used to provide metadata about
+    content.
+  inputSchema: *id001

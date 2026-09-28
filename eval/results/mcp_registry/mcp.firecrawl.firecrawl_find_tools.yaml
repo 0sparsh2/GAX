@@ -1,0 +1,116 @@
+command: mcp.firecrawl.firecrawl_find_tools
+version: 1.0.0
+description: 'Browse Alexandria data providers and workflows or read a selected contract.
+  Alexandria covers companies, people, jobs, finance and filings, public records and
+  government spending, real estate, places and restaurants, retail and prices, package
+  registries and developer data, news, research, and more:'
+category: mcp/firecrawl
+adapter: mcp
+required_scopes:
+- mcp:firecrawl:use
+side_effects: read
+idempotent: true
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    query:
+      description: Semantic lookup of tools for the data you need. Selectors constrain
+        the search.
+      type: string
+      minLength: 1
+      maxLength: 2000
+    urls:
+      minItems: 1
+      maxItems: 100
+      type: array
+      items:
+        type: string
+        pattern: ^https?:\/\/
+    providers:
+      description: Provider IDs returned by category browsing. Lists compact tools
+        by default.
+      minItems: 1
+      maxItems: 50
+      type: array
+      items:
+        type: string
+        minLength: 1
+    categories:
+      description: Category IDs returned by an empty call. Lists providers by default.
+      minItems: 1
+      maxItems: 50
+      type: array
+      items:
+        type: string
+        minLength: 1
+    groups:
+      description: Optional group IDs for explicit group browsing.
+      minItems: 1
+      maxItems: 50
+      type: array
+      items:
+        type: string
+        minLength: 1
+    capabilities:
+      description: Exact capability IDs. A selected capability expands its complete
+        contract by default.
+      minItems: 1
+      maxItems: 50
+      type: array
+      items:
+        type: string
+        minLength: 1
+    level:
+      type: string
+      enum:
+      - categories
+      - providers
+      - groups
+      - tools
+    expand:
+      description: Use ["options", "response"] for inputs and output shape without
+        example payloads; [] keeps results compact. Omit for full contracts on selected
+        capabilities.
+      type: array
+      items:
+        type: string
+        enum:
+        - options
+        - response
+        - examples
+    limit:
+      type: integer
+      minimum: 1
+      maximum: 100
+    offset:
+      type: integer
+      minimum: 0
+      maximum: 9007199254740991
+  additionalProperties: false
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - firecrawl-mcp
+  tool_name: firecrawl_find_tools
+mcp_pin: sha256:42ffdf5ad42cf9f31457caacbe57d01e352a41f8b4754e5f6ec11f26d4aa7f94
+mcp_pin_imported_from: firecrawl
+mcp_pinned_tool:
+  name: firecrawl_find_tools
+  description: 'Browse Alexandria data providers and workflows or read a selected
+    contract. Alexandria covers companies, people, jobs, finance and filings, public
+    records and government spending, real estate, places and restaurants, retail and
+    prices, package registries and developer data, news, research, and more: typed,
+    sourced records through published contracts. Prefer normal firecrawl_search for
+    a data task; it already returns matching providers. Use this tool when the contract
+    you need was not returned in full, to browse a category when search found nothing,
+    or before scraping the same fields from several pages. Discovery is free. Use
+    query for semantic discovery or urls to find providers for a website. With no
+    arguments, browse categories, then providers and tools. Contracts describe the
+    inputs and outputs for execution through firecrawl_scrape. nextTool identifies
+    further discovery or pagination. Discovery does not execute providers. Use firecrawl_search
+    when you also need web results.'
+  inputSchema: *id001

@@ -1,0 +1,27 @@
+command: mcp.everything.toggle_subscriber_updates
+version: 1.0.0
+description: Toggles simulated resource subscription updates on or off.
+category: mcp/everything
+adapter: mcp
+required_scopes:
+- mcp:everything:use
+side_effects: destructive
+idempotent: false
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties: {}
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - '@modelcontextprotocol/server-everything'
+  tool_name: toggle-subscriber-updates
+mcp_pin: sha256:d383d176f3fe178244980d05e402f6e3750cf91177f444155cf89661a63c6de3
+mcp_pin_imported_from: everything
+mcp_pinned_tool:
+  name: toggle-subscriber-updates
+  description: Toggles simulated resource subscription updates on or off.
+  inputSchema: *id001

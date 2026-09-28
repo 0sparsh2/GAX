@@ -16,7 +16,7 @@ The specific risk: lazy discovery may induce extra turns. An agent that must cal
 
 **What would resolve it.** N≥30 trials per modality with a real model on the same task suite, measuring total session tokens and turn counts, across at least two model families to separate model-specific prompting effects from interface effects.
 
-**Possible outcomes.** (a) Turn counts comparable → §6 stands. (b) Lazy discovery costs extra turns → the 1.24× overhead figure is wrong and §6.1/§8.1 need revision. (c) Lazy discovery *reduces* turns because smaller context improves selection → results strengthen. **We do not know which, and the paper should not be read as if we do.**
+**Possible outcomes.** (a) Turn counts comparable → §6 stands. (b) Lazy discovery costs extra turns → the paired 3.48× overhead understates the real gap and §6.1/§8.1 need revision. (c) Lazy discovery *reduces* turns because smaller context improves selection → results strengthen. **We do not know which, and the paper should not be read as if we do.**
 
 **Partial evidence.** `examples/agent_runs/SAMPLE_RUN/` shows a real model (Gemini 2.5 Flash-Lite) completing discovery-plus-invoke with only `gax_search`/`gax_doc`/`gax_invoke` — establishing feasibility `[O]`, not token parity. One run is not a trial.
 
@@ -58,13 +58,15 @@ Note that invariant 4 (no arbitrary shell) bounds prompt-injection *blast radius
 
 **What would resolve it.** A formal threat model with adversary capabilities, an attack-surface analysis per plane, and either a penetration test or formal argument.
 
+**Partial evidence (v0.2.0) `[M]`.** Two mechanisms are now benchmarked (§6.3): a side-effect ceiling refused 41/41 mutating commands to a read-only credential even when allowlisted, and schema pinning refused 4/4 tool rewrites (description, schema, rename, vanish) with 0 false alarms across 65 real-server pins. This narrows two threats in the list above — privilege escalation via allowlist mistakes, and third-party tools changing after approval. It does not address capability theft, confused deputies, sidecar compromise, or audit tampering, and it introduces a known gap: pinning covers a tool's declared contract, not its implementation.
+
 **Current honest position:** ACSP provides *mechanisms* (fail-closed caps, allowlists, audit) whose *sufficiency* is unproven. §8.2 says this; readers evaluating for regulated use should treat it as disqualifying until resolved.
 
 ---
 
 ## Q5 — Does the approach scale past ~50 commands? `[U]`
 
-**Status:** Open · **Threatens:** §3.2 invariant 1 generality
+**Status:** Partially answered (v0.2.0) · **Threatens:** §3.2 invariant 1 generality
 
 Lazy discovery decouples context cost from catalog size — but only if `gax search` returns relevant results. With thousands of registered commands, search quality becomes the bottleneck and a failed search costs extra turns (compounding Q1).
 
@@ -72,17 +74,19 @@ Lazy discovery decouples context cost from catalog size — but only if `gax sea
 
 **Suspicion `[A]`:** there is a catalog size at which lazy discovery needs semantic search or hierarchical namespacing rather than the current lexical matching. We have not found that threshold because our registry is small.
 
+**Partial evidence (v0.2.0) `[M]`.** The suspicion is confirmed at 87 commands (§6.4): keyword matching falls from 0.47 to 0.33 hit@1 when 65 real MCP tools are imported, and to 0.00 on intent-style requests. A remote selection model held 1.00 at ~270 ms. Still open: behaviour at 500+ commands (above the selection API's 254-option limit a lexical prefilter is required again, and its recall is exactly what failed here), and whether the result survives a query set not written by the author (Q9).
+
 ---
 
-## Q6 — Is the envelope's 66-token cost optimal? `[U]`
+## Q6 — Is the envelope's ~78-token cost optimal? `[U]`
 
 **Status:** Open · **Threatens:** §7.1 interpretation
 
-§7.1 prices envelope v1 at ~84 tokens/invocation. Unexamined: whether a leaner encoding preserves the guarantees more cheaply. Candidates: shorter field names, omitting `next` when empty, binary/CBOR for non-LLM surfaces, eliding `schema` after first use in a session.
+§7.1 prices envelope v1 at ~78 tokens/invocation (paired; v0.1.0 said ~84 unpaired). Unexamined: whether a leaner encoding preserves the guarantees more cheaply. Candidates: shorter field names, omitting `next` when empty, binary/CBOR for non-LLM surfaces, eliding `schema` after first use in a session.
 
 **What would resolve it.** Ablate individual envelope fields; measure the token/guarantee frontier.
 
-**Why it matters.** If a redesign delivers the same guarantees at ~20 tokens, the CLI-vs-GAX gap narrows to near-noise and the §8.3 recommendation for small deployments changes. Note the envelope is now the *largest* single component of GAX's overhead — larger than the 27-token gap to CLI — so this is the highest-leverage optimization available.
+**Why it matters.** If a redesign delivers the same guarantees at ~20 tokens, the paired gap to CLI (~170 tokens) shrinks by about a third and the §8.3 recommendation for small deployments may change. The envelope is roughly 46% of GAX's measured overhead, so it remains the highest-leverage optimization available. (v0.1.0 described it as larger than the whole gap to CLI; that comparison rested on the retracted 27-token figure.)
 
 ---
 
@@ -90,7 +94,7 @@ Lazy discovery decouples context cost from catalog size — but only if `gax sea
 
 **Status:** Open · **Threatens:** §3.2 invariant 5
 
-`gax_plan` measures 671 median tokens `[M]`, but we never compared it against an agent orchestrating the same steps turn-by-turn. The claim that server-side plans save context is `[A]`, not `[M]`.
+`gax_plan` measures 646 median tokens `[M]` (per-modality distribution, n = 2), but we never compared it against an agent orchestrating the same steps turn-by-turn. The claim that server-side plans save context is `[A]`, not `[M]`.
 
 **What would resolve it.** Task pairs executed both as a plan and as sequential agent-driven invocations; compare total session tokens.
 
@@ -107,6 +111,18 @@ We designed the system, the harness, and the tasks. §5.1 discloses this; disclo
 **What would resolve it.** A third party running the harness on their own task suite, ideally one designed before reading this paper.
 
 **Standing invitation.** The harness is open source and runs credential-free via `--mock-only --extended`. Contradicting results are welcome and will be logged in `CHANGELOG.md` under IR-8.
+
+---
+
+## Q9 — Does command selection generalize beyond the author's queries? `[U]`
+
+**Status:** Open (added v0.2.0) · **Threatens:** §6.4, Finding 8
+
+The 36 selection queries were written by the author of the system under test, and the 0.7 confidence threshold for "nothing fits" was tuned on the same six out-of-scope queries it is scored on. A 1.00 score on such a set is an upper bound, not an estimate.
+
+**What would resolve it.** A held-out query set written by people unfamiliar with the registry — ideally real agent-issued `gax_search` calls from logged sessions — scored blind, with the threshold fixed beforehand.
+
+**Why it matters.** Selection quality is where GAX can still save agent turns after vendors shipped lazy tool loading; if the result does not generalize, that argument weakens.
 
 ---
 

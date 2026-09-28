@@ -1,0 +1,33 @@
+command: mcp.memory.search_nodes
+version: 1.0.0
+description: Search for nodes in the knowledge graph based on a query
+category: mcp/memory
+adapter: mcp
+required_scopes:
+- mcp:memory:use
+side_effects: read
+idempotent: true
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    query:
+      type: string
+      description: The search query to match against entity names, types, and observation
+        content
+  required:
+  - query
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - '@modelcontextprotocol/server-memory'
+  tool_name: search_nodes
+mcp_pin: sha256:f931cc8a5ae4584a576b253acf24e2473dbb823cc6c9d253e65ad4ef7282aae0
+mcp_pin_imported_from: memory
+mcp_pinned_tool:
+  name: search_nodes
+  description: Search for nodes in the knowledge graph based on a query
+  inputSchema: *id001

@@ -1,0 +1,39 @@
+command: mcp.filesystem.write_file
+version: 1.0.0
+description: Create a new file or completely overwrite an existing file with new content.
+  Use with caution as it will overwrite existing files without warning. Handles text
+  content with proper encoding. Only works within allowed directories.
+category: mcp/filesystem
+adapter: mcp
+required_scopes:
+- mcp:filesystem:use
+side_effects: destructive
+idempotent: false
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    path:
+      type: string
+    content:
+      type: string
+  required:
+  - path
+  - content
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - '@modelcontextprotocol/server-filesystem'
+  - /tmp
+  tool_name: write_file
+mcp_pin: sha256:7b912840bf28bc44ce107f55630d64b645ad78ed92be02185b7ca9143bb0b917
+mcp_pin_imported_from: filesystem
+mcp_pinned_tool:
+  name: write_file
+  description: Create a new file or completely overwrite an existing file with new
+    content. Use with caution as it will overwrite existing files without warning.
+    Handles text content with proper encoding. Only works within allowed directories.
+  inputSchema: *id001

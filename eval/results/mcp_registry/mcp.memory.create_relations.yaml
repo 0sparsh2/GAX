@@ -1,0 +1,49 @@
+command: mcp.memory.create_relations
+version: 1.0.0
+description: Create multiple new relations between entities in the knowledge graph.
+  Relations should be in active voice
+category: mcp/memory
+adapter: mcp
+required_scopes:
+- mcp:memory:use
+side_effects: destructive
+idempotent: false
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    relations:
+      type: array
+      items:
+        type: object
+        properties:
+          from:
+            type: string
+            description: The name of the entity where the relation starts
+          to:
+            type: string
+            description: The name of the entity where the relation ends
+          relationType:
+            type: string
+            description: The type of the relation
+        required:
+        - from
+        - to
+        - relationType
+  required:
+  - relations
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - '@modelcontextprotocol/server-memory'
+  tool_name: create_relations
+mcp_pin: sha256:9618aebf22f9736ab47a333971d03c827bbd63e86e11b3ca2d361d34d5dd1438
+mcp_pin_imported_from: memory
+mcp_pinned_tool:
+  name: create_relations
+  description: Create multiple new relations between entities in the knowledge graph.
+    Relations should be in active voice
+  inputSchema: *id001

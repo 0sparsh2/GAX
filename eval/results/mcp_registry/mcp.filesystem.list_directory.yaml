@@ -1,0 +1,38 @@
+command: mcp.filesystem.list_directory
+version: 1.0.0
+description: Get a detailed listing of all files and directories in a specified path.
+  Results clearly distinguish between files and directories with [FILE] and [DIR]
+  prefixes. This tool is essential for understanding directory structure and finding
+  specific files within a directory. Only works within allowed dir
+category: mcp/filesystem
+adapter: mcp
+required_scopes:
+- mcp:filesystem:use
+side_effects: read
+idempotent: true
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    path:
+      type: string
+  required:
+  - path
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - '@modelcontextprotocol/server-filesystem'
+  - /tmp
+  tool_name: list_directory
+mcp_pin: sha256:488944e6d821c9e6bc6cdc1347c5d01edaa3c1ed633f3b87dbccb3880dfd5702
+mcp_pin_imported_from: filesystem
+mcp_pinned_tool:
+  name: list_directory
+  description: Get a detailed listing of all files and directories in a specified
+    path. Results clearly distinguish between files and directories with [FILE] and
+    [DIR] prefixes. This tool is essential for understanding directory structure and
+    finding specific files within a directory. Only works within allowed directories.
+  inputSchema: *id001

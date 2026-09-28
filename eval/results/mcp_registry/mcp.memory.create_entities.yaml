@@ -1,0 +1,49 @@
+command: mcp.memory.create_entities
+version: 1.0.0
+description: Create multiple new entities in the knowledge graph
+category: mcp/memory
+adapter: mcp
+required_scopes:
+- mcp:memory:use
+side_effects: destructive
+idempotent: false
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    entities:
+      type: array
+      items:
+        type: object
+        properties:
+          name:
+            type: string
+            description: The name of the entity
+          entityType:
+            type: string
+            description: The type of the entity
+          observations:
+            type: array
+            items:
+              type: string
+            description: An array of observation contents associated with the entity
+        required:
+        - name
+        - entityType
+        - observations
+  required:
+  - entities
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - '@modelcontextprotocol/server-memory'
+  tool_name: create_entities
+mcp_pin: sha256:6ce7dc5b45d4e6c256bb20feed616343e011b6929d7d3d36439df4ce10a3231d
+mcp_pin_imported_from: memory
+mcp_pinned_tool:
+  name: create_entities
+  description: Create multiple new entities in the knowledge graph
+  inputSchema: *id001

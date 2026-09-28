@@ -1,0 +1,35 @@
+command: mcp.everything.trigger_long_running_operation
+version: 1.0.0
+description: Demonstrates a long running operation with progress updates.
+category: mcp/everything
+adapter: mcp
+required_scopes:
+- mcp:everything:use
+side_effects: destructive
+idempotent: false
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    duration:
+      default: 10
+      description: Duration of the operation in seconds
+      type: number
+    steps:
+      default: 5
+      description: Number of steps in the operation
+      type: number
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - '@modelcontextprotocol/server-everything'
+  tool_name: trigger-long-running-operation
+mcp_pin: sha256:7efbac46cf0b694fa8e4d07440e16b14900fd884527a065317edd85b8625162b
+mcp_pin_imported_from: everything
+mcp_pinned_tool:
+  name: trigger-long-running-operation
+  description: Demonstrates a long running operation with progress updates.
+  inputSchema: *id001

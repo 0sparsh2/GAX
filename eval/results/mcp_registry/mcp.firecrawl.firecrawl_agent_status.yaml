@@ -1,0 +1,41 @@
+command: mcp.firecrawl.firecrawl_agent_status
+version: 1.0.0
+description: "\nRetrieve progress or final results for a `firecrawl_agent` job ID.\
+  \ A `processing` response is non-terminal and does not contain the final research\
+  \ result. Check again after 15\u201330 seconds until the status is `completed` or\
+  \ `failed`; a typical research run takes one to three minutes and complex jobs "
+category: mcp/firecrawl
+adapter: mcp
+required_scopes:
+- mcp:firecrawl:use
+side_effects: destructive
+idempotent: false
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    id:
+      type: string
+  required:
+  - id
+  additionalProperties: false
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - firecrawl-mcp
+  tool_name: firecrawl_agent_status
+mcp_pin: sha256:61803ef0a303a9704a883c9adac2fa31f8d873cc74f1f1ac82b18a407ea117fd
+mcp_pin_imported_from: firecrawl
+mcp_pinned_tool:
+  name: firecrawl_agent_status
+  description: "\nRetrieve progress or final results for a `firecrawl_agent` job ID.\
+    \ A `processing` response is non-terminal and does not contain the final research\
+    \ result. Check again after 15\u201330 seconds until the status is `completed`\
+    \ or `failed`; a typical research run takes one to three minutes and complex jobs\
+    \ can take longer. If the job cannot finish within the task's available time,\
+    \ use `firecrawl_search` and `firecrawl_scrape` to complete the requested output.\n\
+    \nReturns job status, progress information, and result data when completed.\n"
+  inputSchema: *id001

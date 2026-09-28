@@ -1,0 +1,145 @@
+command: mcp.firecrawl.firecrawl_parse
+version: 1.0.0
+description: '
+
+  Parse one supported document into markdown, HTML, links, summary, targeted answers,
+  or JSON matching a schema. Supported inputs include common HTML, PDF, Word, RTF,
+  OpenDocument, and spreadsheet files; PDF parsing can be bounded with `pdfOptions.maxPages`.
+
+
+  Local MCP reads `filePath` from the serve'
+category: mcp/firecrawl
+adapter: mcp
+required_scopes:
+- mcp:firecrawl:use
+side_effects: destructive
+idempotent: false
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    formats:
+      type: array
+      items:
+        type: string
+        enum:
+        - markdown
+        - html
+        - rawHtml
+        - links
+        - summary
+        - json
+        - query
+    jsonOptions:
+      type: object
+      properties:
+        prompt:
+          type: string
+        schema:
+          type: object
+          propertyNames:
+            type: string
+          additionalProperties: false
+      additionalProperties: false
+    queryOptions:
+      type: object
+      properties:
+        prompt:
+          type: string
+          maxLength: 10000
+        mode:
+          default: freeform
+          type: string
+          enum:
+          - directQuote
+          - freeform
+      required:
+      - prompt
+      additionalProperties: false
+    parsers:
+      type: array
+      items:
+        type: string
+        enum:
+        - pdf
+    pdfOptions:
+      type: object
+      properties:
+        maxPages:
+          type: integer
+          minimum: 1
+          maximum: 10000
+      additionalProperties: false
+    onlyMainContent:
+      type: boolean
+    redactPII:
+      type: boolean
+    includeTags:
+      type: array
+      items:
+        type: string
+    excludeTags:
+      type: array
+      items:
+        type: string
+    removeBase64Images:
+      type: boolean
+    skipTlsVerification:
+      type: boolean
+    storeInCache:
+      type: boolean
+    zeroDataRetention:
+      type: boolean
+    maxAge:
+      description: 'Ignored: parse never reuses or stores indexed content.'
+      type: number
+    proxy:
+      type: string
+      enum:
+      - basic
+      - auto
+    filePath:
+      type: string
+      minLength: 1
+      description: 'Absolute or relative path to a local file to parse. Supported:
+        .html, .htm, .pdf, .docx, .doc, .odt, .rtf, .xlsx, .xls'
+    contentType:
+      description: Optional MIME type override. If omitted, the server infers the
+        file kind from the extension.
+      type: string
+  required:
+  - filePath
+  additionalProperties: false
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - firecrawl-mcp
+  tool_name: firecrawl_parse
+mcp_pin: sha256:bd240723a6f11c87d120ef332653833617479d076b52355215624fa3dca62e84
+mcp_pin_imported_from: firecrawl
+mcp_pinned_tool:
+  name: firecrawl_parse
+  description: '
+
+    Parse one supported document into markdown, HTML, links, summary, targeted answers,
+    or JSON matching a schema. Supported inputs include common HTML, PDF, Word, RTF,
+    OpenDocument, and spreadsheet files; PDF parsing can be bounded with `pdfOptions.maxPages`.
+
+
+    Local MCP reads `filePath` from the server filesystem. Hosted MCP uses two calls:
+    first provide `filePath` to receive upload instructions, upload locally, then
+    call again with the returned `uploadRef`; do not send both fields together. Remote
+    web URLs belong in `firecrawl_scrape`.
+
+
+    Set `redactPII` to request redaction of personally identifiable information in
+    the returned content. `zeroDataRetention` requires an eligible authenticated account;
+    omit it for anonymous keyless use. Returns upload instructions for hosted phase
+    one or parsed document content for the final call. Authenticated final responses
+    can include a `data.metadata.scrapeId` for optional parse feedback.
+
+    '
+  inputSchema: *id001

@@ -1,0 +1,50 @@
+command: mcp.everything.gzip_file_as_resource
+version: 1.0.0
+description: Compresses a single file using gzip compression. Depending upon the selected
+  output type, returns either the compressed data as a gzipped resource or a resource
+  link, allowing it to be downloaded in a subsequent request during the current session.
+category: mcp/everything
+adapter: mcp
+required_scopes:
+- mcp:everything:use
+side_effects: destructive
+idempotent: false
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    name:
+      default: README.md.gz
+      type: string
+      description: Name of the output file
+    data:
+      default: https://raw.githubusercontent.com/modelcontextprotocol/servers/refs/heads/main/README.md
+      type: string
+      format: uri
+      description: URL or data URI of the file content to compress
+    outputType:
+      default: resourceLink
+      description: How the resulting gzipped file should be returned. 'resourceLink'
+        returns a link to a resource that can be read later, 'resource' returns a
+        full resource object.
+      type: string
+      enum:
+      - resourceLink
+      - resource
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - '@modelcontextprotocol/server-everything'
+  tool_name: gzip-file-as-resource
+mcp_pin: sha256:ecf41b3e2d4f69333bf6f1f3c26387923005722e50fc53abd0274d2f3b34a1b9
+mcp_pin_imported_from: everything
+mcp_pinned_tool:
+  name: gzip-file-as-resource
+  description: Compresses a single file using gzip compression. Depending upon the
+    selected output type, returns either the compressed data as a gzipped resource
+    or a resource link, allowing it to be downloaded in a subsequent request during
+    the current session.
+  inputSchema: *id001

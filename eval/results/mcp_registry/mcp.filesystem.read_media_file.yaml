@@ -1,0 +1,36 @@
+command: mcp.filesystem.read_media_file
+version: 1.0.0
+description: Read a file and return it as a base64-encoded content block with its
+  MIME type. Image and audio files are returned as image/audio content; any other
+  file type is returned as an embedded resource. Only works within allowed directories.
+category: mcp/filesystem
+adapter: mcp
+required_scopes:
+- mcp:filesystem:use
+side_effects: read
+idempotent: true
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    path:
+      type: string
+  required:
+  - path
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - '@modelcontextprotocol/server-filesystem'
+  - /tmp
+  tool_name: read_media_file
+mcp_pin: sha256:661d2d1d9e2a555058c3d0b708ef64c27fcd6ad573432a2890106c818b3c4b17
+mcp_pin_imported_from: filesystem
+mcp_pinned_tool:
+  name: read_media_file
+  description: Read a file and return it as a base64-encoded content block with its
+    MIME type. Image and audio files are returned as image/audio content; any other
+    file type is returned as an embedded resource. Only works within allowed directories.
+  inputSchema: *id001

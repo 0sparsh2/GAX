@@ -1,0 +1,34 @@
+command: mcp.filesystem.list_allowed_directories
+version: 1.0.0
+description: Returns the list of directories that this server is allowed to access.
+  Subdirectories within these allowed directories are also accessible. Use this to
+  understand which directories and their nested paths are available before trying
+  to access files.
+category: mcp/filesystem
+adapter: mcp
+required_scopes:
+- mcp:filesystem:use
+side_effects: read
+idempotent: true
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties: {}
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - '@modelcontextprotocol/server-filesystem'
+  - /tmp
+  tool_name: list_allowed_directories
+mcp_pin: sha256:fe7d40d713a335fa54765eb86288cdd59c2a8eedc121f6156f45f9c96271c0e4
+mcp_pin_imported_from: filesystem
+mcp_pinned_tool:
+  name: list_allowed_directories
+  description: Returns the list of directories that this server is allowed to access.
+    Subdirectories within these allowed directories are also accessible. Use this
+    to understand which directories and their nested paths are available before trying
+    to access files.
+  inputSchema: *id001

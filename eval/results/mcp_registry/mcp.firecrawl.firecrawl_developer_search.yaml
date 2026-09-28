@@ -1,0 +1,63 @@
+command: mcp.firecrawl.firecrawl_developer_search
+version: 1.0.0
+description: '
+
+  Search an index of public repositories, GitHub issues, merged pull requests, repository
+  READMEs, and code documentation for programming questions that need external documentation
+  or upstream evidence.
+
+
+  Returns ranked results with an ID, source type, URL, title, and the matched passages
+  in markdown.'
+category: mcp/firecrawl
+adapter: mcp
+required_scopes:
+- mcp:firecrawl:use
+side_effects: read
+idempotent: true
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    query:
+      type: string
+      minLength: 1
+      description: Natural-language developer question or search phrase, including
+        the library, error message, or API involved when relevant.
+    k:
+      description: Number of ranked results to return (default 10).
+      type: integer
+      minimum: 1
+      maximum: 100
+    skills:
+      description: Set to "only" to search only agent-skill files.
+      type: string
+      enum:
+      - only
+  required:
+  - query
+  additionalProperties: false
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - firecrawl-mcp
+  tool_name: firecrawl_developer_search
+mcp_pin: sha256:b436c0df097cf33b5e35e5de86352b87d0a941b3004a5f2c2507fa3d5049ab13
+mcp_pin_imported_from: firecrawl
+mcp_pinned_tool:
+  name: firecrawl_developer_search
+  description: '
+
+    Search an index of public repositories, GitHub issues, merged pull requests, repository
+    READMEs, and code documentation for programming questions that need external documentation
+    or upstream evidence.
+
+
+    Returns ranked results with an ID, source type, URL, title, and the matched passages
+    in markdown.
+
+    '
+  inputSchema: *id001

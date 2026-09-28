@@ -1,0 +1,55 @@
+command: mcp.filesystem.edit_file
+version: 1.0.0
+description: Make line-based edits to a text file. Each edit replaces exact line sequences
+  with new content. Returns a git-style diff showing the changes made. Only works
+  within allowed directories.
+category: mcp/filesystem
+adapter: mcp
+required_scopes:
+- mcp:filesystem:use
+side_effects: destructive
+idempotent: false
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    path:
+      type: string
+    edits:
+      type: array
+      items:
+        type: object
+        properties:
+          oldText:
+            type: string
+            description: Text to search for - must match exactly
+          newText:
+            type: string
+            description: Text to replace with
+        required:
+        - oldText
+        - newText
+    dryRun:
+      default: false
+      description: Preview changes using git-style diff format
+      type: boolean
+  required:
+  - path
+  - edits
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - '@modelcontextprotocol/server-filesystem'
+  - /tmp
+  tool_name: edit_file
+mcp_pin: sha256:fcbcdc0249981d411ac04fddf7b390b674d502fd5ad0cb0c37c9c23f74089b14
+mcp_pin_imported_from: filesystem
+mcp_pinned_tool:
+  name: edit_file
+  description: Make line-based edits to a text file. Each edit replaces exact line
+    sequences with new content. Returns a git-style diff showing the changes made.
+    Only works within allowed directories.
+  inputSchema: *id001

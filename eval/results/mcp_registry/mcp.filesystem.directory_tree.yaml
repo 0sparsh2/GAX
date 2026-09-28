@@ -1,0 +1,44 @@
+command: mcp.filesystem.directory_tree
+version: 1.0.0
+description: Get a recursive tree view of files and directories as a JSON structure.
+  Each entry includes 'name', 'type' (file/directory), and 'children' for directories.
+  Files have no children array, while directories always have a children array (which
+  may be empty). The output is formatted with 2-space indenta
+category: mcp/filesystem
+adapter: mcp
+required_scopes:
+- mcp:filesystem:use
+side_effects: read
+idempotent: true
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    path:
+      type: string
+    excludePatterns:
+      default: []
+      type: array
+      items:
+        type: string
+  required:
+  - path
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - '@modelcontextprotocol/server-filesystem'
+  - /tmp
+  tool_name: directory_tree
+mcp_pin: sha256:25f83f24b499219f8e9e6d6f25bb8546b8a318084d98cdc56a7b4753f956ced5
+mcp_pin_imported_from: filesystem
+mcp_pinned_tool:
+  name: directory_tree
+  description: Get a recursive tree view of files and directories as a JSON structure.
+    Each entry includes 'name', 'type' (file/directory), and 'children' for directories.
+    Files have no children array, while directories always have a children array (which
+    may be empty). The output is formatted with 2-space indentation for readability.
+    Only works within allowed directories.
+  inputSchema: *id001

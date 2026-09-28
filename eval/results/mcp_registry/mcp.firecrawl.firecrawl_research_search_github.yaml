@@ -1,0 +1,49 @@
+command: mcp.firecrawl.firecrawl_research_search_github
+version: 1.0.0
+description: '
+
+  Deprecated compatibility entry point. Use firecrawl_developer_search for GitHub
+  issues, pull requests, and READMEs, plus code documentation, returned as matched
+  passages.
+
+  '
+category: mcp/firecrawl
+adapter: mcp
+required_scopes:
+- mcp:firecrawl:use
+side_effects: read
+idempotent: true
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    query:
+      type: string
+      minLength: 1
+    k:
+      type: integer
+      minimum: 1
+      maximum: 100
+  required:
+  - query
+  additionalProperties: false
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - firecrawl-mcp
+  tool_name: firecrawl_research_search_github
+mcp_pin: sha256:da03c2a3cc6a6b9a8955f8e3ecbd4cb6919389583b46622e4e677cb35c9f2086
+mcp_pin_imported_from: firecrawl
+mcp_pinned_tool:
+  name: firecrawl_research_search_github
+  description: '
+
+    Deprecated compatibility entry point. Use firecrawl_developer_search for GitHub
+    issues, pull requests, and READMEs, plus code documentation, returned as matched
+    passages.
+
+    '
+  inputSchema: *id001

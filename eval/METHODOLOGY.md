@@ -88,3 +88,38 @@ See [docs/ABLATIONS.md](../docs/ABLATIONS.md).
 ## Case study (external workflow)
 
 See [case_study/README.md](case_study/README.md) — LangGraph-style 3-turn agent on a real GitHub repo with published token tables.
+
+## Enforcement benchmark (`run_security_eval.py`)
+
+Tokens say nothing about whether governance *works*. Three checks, results in
+`results/security-eval.{json,md}`:
+
+| Part | What it tests | Pass condition |
+|------|---------------|----------------|
+| A. Side-effect ceiling | Every write/destructive command in the registry (bundled, profiles, imported MCP tools), with a read-only capability that **explicitly allowlists** it | Refused — and a capability at the command's level is allowed (so the check is not simply refusing everything) |
+| B. Pin tampering | A live stdio MCP server rewrites its tool four ways: description, schema, rename, disappearance | `pin_mismatch` before the tool runs; honest server still works |
+| C. Pin false positives | Every pin imported from real public servers, re-verified against those servers | Zero mismatches on unchanged servers |
+
+Part A is policy-only (`check_invoke`), so no real tool is executed with an elevated
+capability. The script exits non-zero on any leak, over-block, or unrefused attack.
+
+## Selection benchmark (`run_search_eval.py`)
+
+A miss in `gax_search` costs the agent a round trip. 36 hand-written queries in
+`search_queries.yaml` — literal, synonym, intent, and out-of-scope (correct answer:
+nothing) — scored hit@1, hit@3 and MRR per bucket, with per-query latency and
+remote token usage. Run at two registry sizes: 22 (bundled + profiles) and 87 (+65
+tools imported from five public MCP servers by `import_mcp_servers.py`, whose
+`snapshot.json` records the exact tool set and pins).
+
+A Jev row counts only if `fallbacks = 0`; otherwise it silently measured the local
+fallback. Known weaknesses: the author wrote the queries, n is small, and the
+out-of-scope confidence threshold was tuned on the same six queries it is scored on.
+
+## Credentials fail silently — check them first
+
+A revoked `GITHUB_TOKEN` does not crash the harness. It produces a complete,
+plausible-looking run in which every `gh` call returned HTTP 401: CLI completion
+0.00, and one task showed GAX *cheaper* than CLI because the CLI side was a short
+error string. That run (September 2026) was discarded. Before publishing, confirm
+`cli` completion is non-zero and the live probe reports `ok: true`.

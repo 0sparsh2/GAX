@@ -6,6 +6,77 @@ Format: version, date, trigger, changes, superseded claims, evidence.
 
 ---
 
+## [0.2.0] — 2026-09-28
+
+**Trigger:** New eval run with changed numbers; new modalities and benchmarks; implementation maturity change (side-effect ceiling, pinned MCP import, pluggable command search); a known-invalid headline figure.
+
+**Evidence base:** `eval/results/comparison.json` (live run, `--live-mcp --extended`, paired comparisons recomputed from its rows), `security-eval.json`, `search-eval-22.json`, `search-eval-87.json`, `eval/case_study/results.json`, and `mcp_registry/snapshot.json` (65 tools from five public MCP servers).
+
+### Pre-commitment vs result (Phase 2)
+
+Written before the refresh ran:
+
+| Expectation | Result | |
+|---|---|---|
+| Paired cli→gax 3–4× | 3.48× | ✅ |
+| Absolute overhead ~150–200 tok; thesis survives; MINOR bump | ~170 tok; separability survives | ✅ |
+| gax completion < 1.0 | 0.73 | ✅ |
+| Live github schema ~4.4–4.5k | 4,450 | ✅ |
+| Pinning 4/4; all 6 real servers import + verify | 4/4; 5 servers, 65 pins, 0 false alarms | ✅ |
+| Jev ≥ 0.95, keyword 0.4–0.5, intent ≈ 0 | Jev 1.00; keyword 0.47 / 0.33; intent 0.00 | ✅ (keyword at 87 below range) |
+| Ceiling refuses destructive pre-invoke, 100% | 41/41 | ✅ |
+| *(not pre-committed)* logging proxy vs GAX | proxy **cheaper** | ❗ finding — contradicts v0.1.0 |
+
+The proxy reversal was not anticipated. It is reported as a finding (§7.4) rather than explained away.
+
+### Superseded (IR-8)
+
+| v0.1.0 claim | Status | Why |
+|---|---|---|
+| GAX 140 vs CLI 113 median tokens — **1.24×**, "~27 tokens" | **Retracted** | Medians over different task subsets (cli n = 7, gax n = 15, 6 shared); the 9 GAX-only tasks were cheap mocks that pulled its median down. Paired: 79 → 248, 3.48×. |
+| "Governance is nearly free"; naive MCP overhead "1,627× the cost of GAX's governance" | **Retracted** | Derived from the 27-token figure. Replaced by ~26× (one live server) / ~260× (fixture) vs the paired ~170-token premium. |
+| Logging proxy 159 vs GAX 140 — "the token argument for proxying does not hold" | **Reversed** | Unpaired (proxy n = 6, gax n = 15). Paired on 5 shared tasks: proxy 93, GAX 161. The proxy is cheaper; the mechanism argument (no pre-invoke refusal) stands. |
+| `cli_agent_spec` 170 > GAX 140 | **Reversed** | Same cause. Paired: 95 vs 161. |
+| Envelope costs ~84 tok | **Revised** to ~78 | Paired on 10 tasks (65 → 143). Conclusion unchanged. |
+| Bridge 610 vs 4,488, 86% cheaper | **Revised** to 579 vs 4,489, 87% | Paired, n = 2 — now stated. |
+| Schema preload 44,170 ≈ naive 44,061, tiered `[M]` | **Re-tiered** to `[A]` | Both add the same 44,026 fixture; the agreement is arithmetic, not an independent measurement. |
+| "Thirteen modalities tie at 1.00 success" (§6.2) | **Retracted** | The success metric counted expected failures as successes and read 1.00 for everything. Replaced by `completion` / `expected_outcome` / `fail_closed`. |
+| 3-server schema sum 10,253 | **Revised** to 10,750 | Servers changed (filesystem 3,127 → 3,345; memory 2,676 → 2,955). |
+
+### Added
+
+- §4: `k8s` adapter, exit code 6, side-effect ceiling, pinned import, pluggable search; updated maturity statement
+- §5.1: two further bias mitigations — paired comparison, and disclosure of a discarded run (IR-4: strengthened)
+- §5.3: paired token methodology; decomposed success metrics; enforcement and selection benchmarks
+- §5.4: small-n pairs, author-written selection queries, live-server drift (replaces the "success-rate artifacts" paragraph, which the decomposition resolved)
+- §6.3 Enforcement (Findings 6–7) and §6.4 Command selection (Finding 8)
+- §8.2: four new limitations — governance is not nearly free; a proxy is cheaper; pinning covers the contract, not the implementation; better selection depends on a remote vendor
+- §8.3: two new rows (logging proxy; untrusted MCP servers)
+- §8.4: lesson 4 — compare paired, check the environment
+- `OPEN_QUESTIONS.md`: Q4 and Q5 partial evidence; Q6 and Q7 figures updated; new Q9 (selection generalization)
+
+### A run was discarded
+
+The first refresh used a revoked `GITHUB_TOKEN`. Every `gh` call returned HTTP 401; the harness completed normally and reported CLI completion 0.00 and a GAX-cheaper-than-CLI task. It was discarded and repeated with a valid credential. Recorded because the failure was silent and the numbers looked plausible.
+
+### Version rationale
+
+MINOR (0.1.0 → 0.2.0), not MAJOR. Two headline figures are retracted and one finding reversed, but the central thesis — discovery, authorization, and response structure are separable, and governance costs orders of magnitude less than eager schema injection — survives the corrected numbers. The claim that governance is *nearly free* does not survive and is withdrawn explicitly in §6.1 and §8.2. A reader who considers that framing central should treat this as a major revision.
+
+### Gate check (Phase 4)
+
+- [x] Every new number appears in §10.2 with a tier
+- [x] No new external citations introduced (IR-1)
+- [x] Bias disclosure intact and strengthened (IR-4)
+- [x] No composite score; token axis removed from Pareto (IR-5)
+- [x] §8.2 still states real limitations — four added, none removed (IR-6)
+- [x] Superseded claims logged above (IR-8)
+- [x] Two improvement passes used (IR-7): pass 1 rewrote §4–10; pass 2 caught two stale figures (§7.2 table, orphan provenance row) and a duplicated table in `README.md`
+- [x] Version bumped, `Last revised` updated
+- [ ] Not done this cycle: §1 contributions list (C1–C3) does not yet mention the enforcement and selection benchmarks; citation re-resolution (IR-1 anti-drift) deferred — last done 2026-07-29
+
+---
+
 ## [0.1.0] — 2026-07-29
 
 **Trigger:** Initial draft.

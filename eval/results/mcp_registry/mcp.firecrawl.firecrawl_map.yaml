@@ -1,0 +1,65 @@
+command: mcp.firecrawl.firecrawl_map
+version: 1.0.0
+description: '
+
+  Enumerate URLs indexed under one website through Firecrawl without fetching each
+  page''s content. Use this when the request asks for a site''s URL inventory, when
+  several relevant pages must be located, or when the desired page URL is unknown.
+  An optional `search` term narrows the URL list, while sit'
+category: mcp/firecrawl
+adapter: mcp
+required_scopes:
+- mcp:firecrawl:use
+side_effects: destructive
+idempotent: false
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    url:
+      type: string
+      format: uri
+    search:
+      type: string
+    sitemap:
+      type: string
+      enum:
+      - include
+      - skip
+      - only
+    includeSubdomains:
+      type: boolean
+    limit:
+      type: number
+    ignoreQueryParameters:
+      type: boolean
+  required:
+  - url
+  additionalProperties: false
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - firecrawl-mcp
+  tool_name: firecrawl_map
+mcp_pin: sha256:6b2992a1f8f030917f412803ac3f39533eb51827f9976189a2fcf3b7eaf07cf0
+mcp_pin_imported_from: firecrawl
+mcp_pinned_tool:
+  name: firecrawl_map
+  description: '
+
+    Enumerate URLs indexed under one website through Firecrawl without fetching each
+    page''s content. Use this when the request asks for a site''s URL inventory, when
+    several relevant pages must be located, or when the desired page URL is unknown.
+    An optional `search` term narrows the URL list, while sitemap, subdomain, query-parameter,
+    and result-limit options control coverage.
+
+
+    Returns matching URLs rather than page bodies. Retrieve one page with `firecrawl_scrape`;
+    collect content across multiple pages with `firecrawl_crawl`. Authenticated responses
+    can include an `id` for optional map feedback.
+
+    '
+  inputSchema: *id001

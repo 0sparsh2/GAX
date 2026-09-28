@@ -1,0 +1,36 @@
+command: mcp.everything.get_sum
+version: 1.0.0
+description: Returns the sum of two numbers
+category: mcp/everything
+adapter: mcp
+required_scopes:
+- mcp:everything:use
+side_effects: read
+idempotent: true
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    a:
+      type: number
+      description: First number
+    b:
+      type: number
+      description: Second number
+  required:
+  - a
+  - b
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - '@modelcontextprotocol/server-everything'
+  tool_name: get-sum
+mcp_pin: sha256:090e34d8f6e1cb4c079f4d9cc62e4c105d67fa629dc3af18c2aba2bba5891489
+mcp_pin_imported_from: everything
+mcp_pinned_tool:
+  name: get-sum
+  description: Returns the sum of two numbers
+  inputSchema: *id001

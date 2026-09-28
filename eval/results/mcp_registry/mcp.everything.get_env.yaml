@@ -1,0 +1,28 @@
+command: mcp.everything.get_env
+version: 1.0.0
+description: Returns all environment variables, helpful for debugging MCP server configuration
+category: mcp/everything
+adapter: mcp
+required_scopes:
+- mcp:everything:use
+side_effects: read
+idempotent: true
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties: {}
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - '@modelcontextprotocol/server-everything'
+  tool_name: get-env
+mcp_pin: sha256:95de105e967bcf1fd5060892121192d6725149d42be8031464799e186bc3d6a5
+mcp_pin_imported_from: everything
+mcp_pinned_tool:
+  name: get-env
+  description: Returns all environment variables, helpful for debugging MCP server
+    configuration
+  inputSchema: *id001

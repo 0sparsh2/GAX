@@ -1,4 +1,4 @@
-# GAX / ACSP — public narrative (May 2026)
+# GAX / ACSP — public narrative (updated September 2026)
 
 One-page story for README visitors, reviewers, and posts. **Bias disclosure:** GAX is our protocol and reference implementation; we separate **external benchmarks**, **our harness**, and **live agent receipts**.
 
@@ -72,13 +72,23 @@ We use these to motivate the problem; **we do not claim we reproduced Scalekit�
 
 | Pair | n paired | median A | median B | median ratio |
 |------|---------:|---------:|---------:|-------------:|
-| **cli → gax** | 6 | 80 | 250 | **~3.5×** (range 1.3–5.9×) |
-| **cli → gax_mcp_bridge** | 1 | 114 | 456 | ~4.0× |
+| **cli → gax** | 6 | 79 | 248 | **3.48×** (range 1.3–5.9×) |
+| **cli → gax_mcp_bridge** | 2 | 112 | 578 | 5.17× (n = 2, indicative) |
 
-Governance properties are **by design, verified by test** — not measured outcomes:
-`cli` emits no `audit_id`; `gax` emits one on every invoke.
+Audit coverage is **by design**, not a measured outcome: `cli` emits no `audit_id`;
+`gax` emits one on every invoke. What *is* measured ([security-eval.md](../eval/results/security-eval.md)):
 
-**Honest conclusion:** CLI wins **tokens by roughly 3.5×** on like-for-like tasks.
+| Enforcement check | Result |
+|---|---:|
+| Read-only capability refused on write/destructive commands, even when allowlisted | **41/41**, 0 over-blocks |
+| MCP tool that rewrote itself after approval, refused before running | **4/4** |
+| False alarms re-verifying 65 real public-server pins | **0** |
+
+And command selection ([search-eval.md](../eval/results/search-eval.md)), first search
+correct at 87 commands: **Jev 1.00** vs keyword 0.33; intent-style
+requests 1.00 vs 0.00.
+
+**Honest conclusion:** CLI wins **tokens by roughly 3.5×** on like-for-like tasks (~169 tokens absolute).
 GAX buys **pre-invoke enforcement, uniform envelopes, and audit correlation** for that
 cost. There is **no single “GAX wins overall”** score, and the token gap is larger than
 we previously published.

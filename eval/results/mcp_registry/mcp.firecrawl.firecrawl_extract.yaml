@@ -1,0 +1,61 @@
+command: mcp.firecrawl.firecrawl_extract
+version: 1.0.0
+description: '
+
+  Deprecated compatibility entry point. Use firecrawl_scrape once per known URL with
+  formats: ["json"] and jsonOptions containing the prompt and schema. Use firecrawl_agent
+  for multi-source research when the URLs are not known or the data spans several
+  sites.
+
+  '
+category: mcp/firecrawl
+adapter: mcp
+required_scopes:
+- mcp:firecrawl:use
+side_effects: destructive
+idempotent: false
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    urls:
+      type: array
+      items:
+        type: string
+    prompt:
+      type: string
+    schema:
+      type: object
+      propertyNames:
+        type: string
+      additionalProperties: false
+    allowExternalLinks:
+      type: boolean
+    enableWebSearch:
+      type: boolean
+    includeSubdomains:
+      type: boolean
+  required:
+  - urls
+  additionalProperties: false
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - firecrawl-mcp
+  tool_name: firecrawl_extract
+mcp_pin: sha256:591249d3e555f507dba5680593d71018b909dab8521dc7dd6691bb7544e937b4
+mcp_pin_imported_from: firecrawl
+mcp_pinned_tool:
+  name: firecrawl_extract
+  description: '
+
+    Deprecated compatibility entry point. Use firecrawl_scrape once per known URL
+    with formats: ["json"] and jsonOptions containing the prompt and schema. Use firecrawl_agent
+    for multi-source research when the URLs are not known or the data spans several
+    sites.
+
+    '
+  inputSchema: *id001

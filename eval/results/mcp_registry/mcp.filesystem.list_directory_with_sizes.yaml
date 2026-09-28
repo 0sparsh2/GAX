@@ -1,0 +1,46 @@
+command: mcp.filesystem.list_directory_with_sizes
+version: 1.0.0
+description: Get a detailed listing of all files and directories in a specified path,
+  including sizes. Results clearly distinguish between files and directories with
+  [FILE] and [DIR] prefixes. This tool is useful for understanding directory structure
+  and finding specific files within a directory. Only works with
+category: mcp/filesystem
+adapter: mcp
+required_scopes:
+- mcp:filesystem:use
+side_effects: read
+idempotent: true
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    path:
+      type: string
+    sortBy:
+      default: name
+      description: Sort entries by name or size
+      type: string
+      enum:
+      - name
+      - size
+  required:
+  - path
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - '@modelcontextprotocol/server-filesystem'
+  - /tmp
+  tool_name: list_directory_with_sizes
+mcp_pin: sha256:6a88e86c3c59f13f5b3602e162746cd7f970554d0f8e5c7193eb5c88f150dd14
+mcp_pin_imported_from: filesystem
+mcp_pinned_tool:
+  name: list_directory_with_sizes
+  description: Get a detailed listing of all files and directories in a specified
+    path, including sizes. Results clearly distinguish between files and directories
+    with [FILE] and [DIR] prefixes. This tool is useful for understanding directory
+    structure and finding specific files within a directory. Only works within allowed
+    directories.
+  inputSchema: *id001

@@ -1,0 +1,45 @@
+command: mcp.memory.add_observations
+version: 1.0.0
+description: Add new observations to existing entities in the knowledge graph
+category: mcp/memory
+adapter: mcp
+required_scopes:
+- mcp:memory:use
+side_effects: destructive
+idempotent: false
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    observations:
+      type: array
+      items:
+        type: object
+        properties:
+          entityName:
+            type: string
+            description: The name of the entity to add the observations to
+          contents:
+            type: array
+            items:
+              type: string
+            description: An array of observation contents to add
+        required:
+        - entityName
+        - contents
+  required:
+  - observations
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - '@modelcontextprotocol/server-memory'
+  tool_name: add_observations
+mcp_pin: sha256:20a69b24a5f88cdfc1cdb6f99f54e1862b86093559b4489f03bcf7de9a334ef8
+mcp_pin_imported_from: memory
+mcp_pinned_tool:
+  name: add_observations
+  description: Add new observations to existing entities in the knowledge graph
+  inputSchema: *id001

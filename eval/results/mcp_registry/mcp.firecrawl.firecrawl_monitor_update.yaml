@@ -1,0 +1,56 @@
+command: mcp.firecrawl.firecrawl_monitor_update
+version: 1.0.0
+description: '
+
+  Patch an existing monitor by ID. The body can change its name, active/paused status,
+  schedule, targets, goal, judging, webhook, notifications, or retention; these changes
+  affect future scheduled checks.
+
+
+  Returns the updated monitor.
+
+  '
+category: mcp/firecrawl
+adapter: mcp
+required_scopes:
+- mcp:firecrawl:use
+side_effects: destructive
+idempotent: false
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    id:
+      type: string
+    body:
+      type: object
+      propertyNames:
+        type: string
+      additionalProperties: false
+  required:
+  - id
+  - body
+  additionalProperties: false
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - firecrawl-mcp
+  tool_name: firecrawl_monitor_update
+mcp_pin: sha256:193604cf7ca08c509ca83232f82e73b7d43de51b4addb577c188e7bf07ea9338
+mcp_pin_imported_from: firecrawl
+mcp_pinned_tool:
+  name: firecrawl_monitor_update
+  description: '
+
+    Patch an existing monitor by ID. The body can change its name, active/paused status,
+    schedule, targets, goal, judging, webhook, notifications, or retention; these
+    changes affect future scheduled checks.
+
+
+    Returns the updated monitor.
+
+    '
+  inputSchema: *id001

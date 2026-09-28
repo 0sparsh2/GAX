@@ -1,0 +1,34 @@
+command: mcp.memory.open_nodes
+version: 1.0.0
+description: Open specific nodes in the knowledge graph by their names
+category: mcp/memory
+adapter: mcp
+required_scopes:
+- mcp:memory:use
+side_effects: destructive
+idempotent: false
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    names:
+      type: array
+      items:
+        type: string
+      description: An array of entity names to retrieve
+  required:
+  - names
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - '@modelcontextprotocol/server-memory'
+  tool_name: open_nodes
+mcp_pin: sha256:b7c053613513ee0d46a5db261c81377546df01e739ce1911e71dbdd86e191310
+mcp_pin_imported_from: memory
+mcp_pinned_tool:
+  name: open_nodes
+  description: Open specific nodes in the knowledge graph by their names
+  inputSchema: *id001

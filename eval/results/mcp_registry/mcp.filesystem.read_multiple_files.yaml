@@ -1,0 +1,43 @@
+command: mcp.filesystem.read_multiple_files
+version: 1.0.0
+description: Read the contents of multiple files simultaneously. This is more efficient
+  than reading files one by one when you need to analyze or compare multiple files.
+  Each file's content is returned with its path as a reference. Failed reads for individual
+  files won't stop the entire operation. Only works wit
+category: mcp/filesystem
+adapter: mcp
+required_scopes:
+- mcp:filesystem:use
+side_effects: read
+idempotent: true
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    paths:
+      minItems: 1
+      type: array
+      items:
+        type: string
+      description: Array of file paths to read. Each path must be a string pointing
+        to a valid file within allowed directories.
+  required:
+  - paths
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - '@modelcontextprotocol/server-filesystem'
+  - /tmp
+  tool_name: read_multiple_files
+mcp_pin: sha256:4c8a0ffe6571a32fd912099c90ded68dd23a05daa2604004330fcd5076ea6e9e
+mcp_pin_imported_from: filesystem
+mcp_pinned_tool:
+  name: read_multiple_files
+  description: Read the contents of multiple files simultaneously. This is more efficient
+    than reading files one by one when you need to analyze or compare multiple files.
+    Each file's content is returned with its path as a reference. Failed reads for
+    individual files won't stop the entire operation. Only works within allowed directories.
+  inputSchema: *id001

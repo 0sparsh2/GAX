@@ -1,0 +1,47 @@
+command: mcp.firecrawl.firecrawl_research_inspect_paper
+version: 1.0.0
+description: '
+
+  Retrieve canonical metadata for one paper ID, such as an arXiv, PMC, PMID, or DOI
+  identifier. Returns the title, abstract, authors, categories, source IDs, and dates
+  as markdown.
+
+  '
+category: mcp/firecrawl
+adapter: mcp
+required_scopes:
+- mcp:firecrawl:use
+side_effects: destructive
+idempotent: false
+input_schema: &id001
+  $schema: http://json-schema.org/draft-07/schema#
+  type: object
+  properties:
+    paperId:
+      type: string
+      minLength: 1
+      description: Canonical paperId or primaryId such as `arxiv:1706.03762`, `pmcid:PMC12530322`,
+        `pmid:40953549`, or `doi:10.1016/j.neunet.2025.108095`.
+  required:
+  - paperId
+  additionalProperties: false
+output_schema:
+  type: object
+mcp:
+  server_command: npx
+  server_args:
+  - -y
+  - firecrawl-mcp
+  tool_name: firecrawl_research_inspect_paper
+mcp_pin: sha256:02dda079ad03d0a1f534a1e8b6cc4f9ab417f32b721994f29682c7b2531e3c5c
+mcp_pin_imported_from: firecrawl
+mcp_pinned_tool:
+  name: firecrawl_research_inspect_paper
+  description: '
+
+    Retrieve canonical metadata for one paper ID, such as an arXiv, PMC, PMID, or
+    DOI identifier. Returns the title, abstract, authors, categories, source IDs,
+    and dates as markdown.
+
+    '
+  inputSchema: *id001
