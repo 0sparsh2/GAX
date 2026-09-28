@@ -70,9 +70,28 @@ def test_tokenize_drops_stopwords():
     assert tokenize("what is the pod") == ["pod"]
 
 
-def test_keyword_is_default():
-    """Measured better than BM25 on the eval set; must stay the default."""
+def test_jev_is_default():
+    assert isinstance(get_searcher(), JevRerank)
+
+
+def test_keyword_opt_out(monkeypatch):
+    monkeypatch.setenv("GAX_SEARCH", "keyword")
     assert isinstance(get_searcher(), KeywordSearch)
+
+
+def test_default_without_key_is_exactly_keyword(monkeypatch):
+    """
+    Most installs have no key. For them the default must be indistinguishable
+    from the old search: same results, no network call, no error.
+    """
+    def boom(*a, **k):
+        raise AssertionError("network call attempted without a key")
+
+    monkeypatch.setattr(httpx, "post", boom)
+    for q in ["pod logs", "what broke in CI", "remove a pod", ""]:
+        a = [h.manifest.command for h in get_searcher().search(q, COMMANDS).hits]
+        b = [h.manifest.command for h in KeywordSearch().search(q, COMMANDS).hits]
+        assert a == b, q
 
 
 def test_unknown_backend_rejected(monkeypatch):
@@ -205,13 +224,6 @@ def test_no_api_key_never_touches_network(monkeypatch):
     res = JevRerank().search("pod logs", COMMANDS)
     assert res.backend == "keyword"
     assert res.fallback_reason.startswith("no Jev API key")
-
-
-def test_opt_in_only(monkeypatch):
-    """A key in the environment must not switch backends on by itself."""
-    monkeypatch.setenv("TYPESAFE_API_KEY", "sk-test")
-    monkeypatch.delenv("GAX_SEARCH", raising=False)
-    assert isinstance(get_searcher(), KeywordSearch)
 
 
 # -- MCP surface -----------------------------------------------------------

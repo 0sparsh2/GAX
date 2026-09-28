@@ -372,6 +372,8 @@ def run_doctor(
             )
         )
 
+    checks.append(_search_check())
+
     # Backends — informational; absence falls back to mocks rather than failing.
     for binary, why in (("gh", "gh.pr.* commands"), ("kubectl", "k8s.* commands")):
         found = shutil.which(binary)
@@ -395,3 +397,27 @@ def run_doctor(
     )
 
     return checks
+
+
+def _search_check() -> Check:
+    """
+    Which command search is live. Informational: a missing key is not a failure
+    (search still works), but it silently means keyword matching, which measured
+    far worse on requests that don't use exact command names.
+    """
+    from gax.search import get_searcher, jev_api_key
+
+    try:
+        backend = get_searcher().name
+    except ValueError as e:
+        return Check("command search", False, str(e), fix="unset GAX_SEARCH or use jev|keyword|bm25")
+    if backend == "jev" and jev_api_key():
+        return Check("command search", True, "jev (sends query + command descriptions to api.typesafe.ai)")
+    if backend == "jev":
+        return Check(
+            "command search",
+            True,
+            "keyword — Jev is the default but no key is set; add JEV_API_KEY for "
+            "natural-language search",
+        )
+    return Check("command search", True, f"{backend} (GAX_SEARCH)")

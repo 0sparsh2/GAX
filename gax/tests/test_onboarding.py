@@ -235,3 +235,13 @@ def test_missing_backend_binary_is_not_a_failure(onboarding, monkeypatch):
     for check in onboarding.run_doctor():
         if check.name.endswith("binary"):
             assert "mock" in check.detail.lower()
+
+
+def test_doctor_reports_search_backend(onboarding, monkeypatch):
+    checks = _by_name(onboarding.run_doctor())
+    assert "keyword" in checks["command search"].detail  # default, no key
+    assert checks["command search"].ok is True
+
+    monkeypatch.setenv("JEV_API_KEY", "sk-test")
+    checks = _by_name(onboarding.run_doctor())
+    assert checks["command search"].detail.startswith("jev")

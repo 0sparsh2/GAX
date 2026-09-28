@@ -66,6 +66,21 @@ export GAX_CAP="$(gax auth cap-mint --command k8s.namespace.delete \
 gax k8s.namespace.delete --namespace staging --dry-run
 ```
 
+## Natural-language command search
+
+Agents rarely know exact command names. With a key, `gax_search` uses
+[Jev](https://docs.typesafe.ai/api) to pick the right command from plain-English
+requests ("what broke in CI" → `gh.run.list`) and to say plainly when nothing fits.
+Measured: 100% vs 40% for keyword matching at 87 commands, ~250 ms per search.
+
+```bash
+export JEV_API_KEY=...          # without it, search falls back to local keyword matching
+export GAX_SEARCH=keyword       # opt out entirely
+```
+
+Sends the query and command descriptions to api.typesafe.ai — never arguments,
+capabilities, or audit data.
+
 ## Use it from any MCP client
 
 ```bash

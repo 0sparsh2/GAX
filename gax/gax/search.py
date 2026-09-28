@@ -9,12 +9,14 @@ against `eval/search_queries.yaml`.
 
 Backends (``GAX_SEARCH``):
 
-- ``keyword`` — the original substring scoring. The default: it measured
-               better than BM25 on the eval set.
+- ``keyword`` — the original substring scoring. What ``jev`` falls back to,
+               and what you get with ``GAX_SEARCH=keyword``.
 - ``bm25``    — term-frequency ranking over command id, description, category.
                Stdlib only. Stricter than keyword; used as Jev's prefilter.
-- ``jev``     — BM25 prefilter, then TypeSafe's Jev reranks the candidates as a
-               single ``choice`` question. Opt-in: needs ``TYPESAFE_API_KEY``.
+- ``jev``     — the default. TypeSafe's Jev picks among the registered commands
+               as a single ``choice`` question. Active only when a key is set
+               (``TYPESAFE_API_KEY`` or ``JEV_API_KEY``); with no key it makes no
+               network call and behaves exactly like ``keyword``.
 
 **Search grants nothing.** It only orders names. Whatever it returns, invoking a
 command still passes the capability, scope, ceiling and policy checks, so a bad
@@ -22,8 +24,9 @@ or manipulated ranking can waste a turn but cannot widen what an agent may do.
 
 **Jev is a remote call.** It sends the agent's query and the candidate command
 ids and descriptions to api.typesafe.ai — never invoke arguments, capabilities,
-or audit data. That is why it is off by default: a governance tool should not
-start sending data to a third party because an environment variable exists. Any
+or audit data. It is the default because it measured far better where users do
+not know command names (see DEFAULT_BACKEND), but it only leaves the machine
+once a key is configured, and ``GAX_SEARCH=keyword`` turns it off entirely. Any
 failure (network, timeout, 4xx/5xx, malformed reply) falls back to keyword search, so the
 remote dependency can degrade ranking but never break search.
 """
@@ -39,10 +42,13 @@ from typing import Any, Protocol
 
 from gax.registry import CommandManifest
 
-# Measured on eval/search_queries.yaml (30 queries, 22 commands): keyword 0.53
-# hit@1, BM25 0.43. The substring scorer earns partial credit that strict term
-# matching loses, so it stays the default. BM25 is used only as Jev's prefilter.
-DEFAULT_BACKEND = "keyword"
+# Measured on eval/search_queries.yaml (36 queries), hit@1:
+#   22 commands: keyword 0.47, jev 1.00 · 87 commands: keyword 0.40, jev 1.00
+#   intent queries at 87 commands: keyword 0.00, jev 1.00
+# Users rarely know exact command names, and keyword search degrades as MCP
+# servers are imported, so Jev is the default. Without a key it falls back to
+# keyword with no network call, so installs without a key are unaffected.
+DEFAULT_BACKEND = "jev"
 
 JEV_URL = "https://api.typesafe.ai/v1/systemone"
 JEV_MODEL = "jev-latest"

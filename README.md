@@ -387,7 +387,7 @@ imported as `destructive`, so your read-only capability can't invoke it until a 
 reads what it does and raises the ceiling. Re-importing never silently re-pins a
 changed tool — that would let tampering be laundered by re-running import.
 
-### Smarter command search (Jev, optional)
+### Command search (Jev)
 
 `gax_search` is how an agent finds a command in its own words. Every miss costs a
 round trip — search, junk, rephrase — re-sending the whole context each time, so
@@ -398,9 +398,9 @@ out-of-scope (where the right answer is "nothing") — hit@1:
 
 | Backend | 22 commands | 87 commands\* | intent @ 87 | out-of-scope | p50 latency |
 |---|---:|---:|---:|---:|---:|
-| `keyword` (default) | 0.47 | 0.40 | **0.00** | 0.17 | <1 ms |
+| `keyword` (fallback) | 0.47 | 0.40 | **0.00** | 0.17 | <1 ms |
 | `bm25` | 0.43 | — | — | — | <1 ms |
-| **`jev`** | **1.00** | **1.00** | **1.00** | **1.00** | ~230–270 ms |
+| **`jev`** (default) | **1.00** | **1.00** | **1.00** | **1.00** | ~230–270 ms |
 
 \*87 = bundled commands plus 65 imported from five real MCP servers (filesystem,
 memory, everything, firecrawl, context7).
@@ -418,16 +418,19 @@ candidate descriptions as a single `choice` question, plus an explicit "none"
 option so out-of-scope requests come back empty instead of as a plausible wrong command:
 
 ```bash
-export GAX_SEARCH=jev TYPESAFE_API_KEY=...   # JEV_API_KEY also accepted
-python eval/run_search_eval.py --backend keyword --backend jev   # measure before relying on it
+export JEV_API_KEY=...          # or TYPESAFE_API_KEY — that's all; jev is the default
+gax doctor                      # "command search: jev" confirms it's live
+export GAX_SEARCH=keyword       # opt out: local matching only, nothing leaves the machine
 ```
 
-**Opt-in by design.** It sends the query and command descriptions to
-api.typesafe.ai — never arguments, capabilities, or audit data. A key alone does not
-turn it on. Any failure falls back to the default search, so an outage is never
-worse than not enabling it. Search only orders names: whatever it ranks, invoking
-still passes every capability and policy check. Low-confidence results tell the
-agent to ask the user rather than guess.
+**What leaves the machine:** the agent's query and the command ids and descriptions
+go to api.typesafe.ai — never arguments, capabilities, or audit data. **No key, no
+network call:** without one, search is exactly the local keyword matcher, so
+installs without a key behave as before. Any Jev failure (timeout, outage, rate
+limit) also falls back to keyword, so the dependency can degrade ranking but never
+break search. Search only orders names: whatever it ranks, invoking still passes
+every capability and policy check. Low-confidence results tell the agent to ask the
+user; confident "nothing fits" results tell it to stop rather than guess.
 
 ### MCP bridge (single tool, by hand)
 
